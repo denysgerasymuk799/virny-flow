@@ -11,10 +11,12 @@ from virny.user_interfaces.multiple_models_with_db_writer_api import compute_met
 from virny.user_interfaces.multiple_models_with_multiple_test_sets_api import compute_metrics_with_multiple_test_sets
 
 from configs.null_imputers_config import NULL_IMPUTERS_CONFIG
-from configs.constants import (EXP_COLLECTION_NAME, EXPERIMENT_RUN_SEEDS, ErrorRepairMethod)
+from configs.constants import (EXP_COLLECTION_NAME, EXPERIMENT_RUN_SEEDS, ErrorRepairMethod,
+                               ACS_INCOME_DATASET)
 from source.utils.common_helpers import (generate_guid, create_virny_base_flow_datasets, get_injection_scenarios)
 from source.utils.dataframe_utils import preprocess_base_flow_dataset, preprocess_mult_base_flow_datasets
 from source.custom_classes.ml_lifecycle import MLLifecycle
+from source.fairness_intervention.preprocessors import remove_disparate_impact
 
 
 class Benchmark(MLLifecycle):
@@ -390,7 +392,8 @@ class Benchmark(MLLifecycle):
 
     def _run_exp_iter_for_standard_imputation(self, data_loader, experiment_seed: int, evaluation_scenario: str,
                                               null_imputer_name: str, model_names: list, tune_imputers: bool,
-                                              ml_impute: bool, save_imputed_datasets: bool, custom_table_fields_dct: dict):
+                                              ml_impute: bool, save_imputed_datasets: bool, custom_table_fields_dct: dict,
+                                              fairness_intervention_config: dict):
         if ml_impute:
             main_base_flow_dataset, extra_base_flow_datasets = self.inject_and_impute_nulls(data_loader=data_loader,
                                                                                             null_imputer_name=null_imputer_name,
@@ -407,6 +410,10 @@ class Benchmark(MLLifecycle):
         # Preprocess the dataset using the defined preprocessor
         main_base_flow_dataset, extra_test_sets = preprocess_mult_base_flow_datasets(main_base_flow_dataset, extra_base_flow_datasets)
 
+        # Apply fairness preprocessor
+        if fairness_intervention_config:
+            main_base_flow_dataset = self._apply_fairness_preprocessor(main_base_flow_dataset, fairness_intervention_config)
+        
         # Tune ML models
         models_config = self._tune_ML_models(model_names=model_names,
                                              base_flow_dataset=main_base_flow_dataset,
@@ -426,7 +433,7 @@ class Benchmark(MLLifecycle):
                                                 verbose=0)
 
     def _run_exp_iter(self, init_data_loader, run_num, evaluation_scenario, null_imputer_name,
-                      model_names, tune_imputers, ml_impute, save_imputed_datasets):
+                      model_names, tune_imputers, ml_impute, save_imputed_datasets, fairness_intervention_config):
         data_loader = copy.deepcopy(init_data_loader)
 
         custom_table_fields_dct = dict()
@@ -465,10 +472,11 @@ class Benchmark(MLLifecycle):
                                                        tune_imputers=tune_imputers,
                                                        ml_impute=ml_impute,
                                                        save_imputed_datasets=save_imputed_datasets,
-                                                       custom_table_fields_dct=custom_table_fields_dct)
+                                                       custom_table_fields_dct=custom_table_fields_dct,
+                                                       fairness_intervention_config=fairness_intervention_config)
 
     def run_experiment(self, run_nums: list, evaluation_scenarios: list, model_names: list,
-                       tune_imputers: bool, ml_impute: bool, save_imputed_datasets: bool):
+                       tune_imputers: bool, ml_impute: bool, save_imputed_datasets: bool, fairness_intervention_config: bool):
         self._db.connect()
 
         total_iterations = len(self.null_imputers) * len(evaluation_scenarios) * len(run_nums)
@@ -490,9 +498,51 @@ class Benchmark(MLLifecycle):
                                            model_names=model_names,
                                            tune_imputers=tune_imputers,
                                            ml_impute=ml_impute,
-                                           save_imputed_datasets=save_imputed_datasets)
+                                           save_imputed_datasets=save_imputed_datasets,
+                                           fairness_intervention_config=fairness_intervention_config)
                         pbar.update(1)
                         print('\n\n\n\n', flush=True)
 
         self._db.close()
         self._logger.info("Experimental results were successfully saved!")
+        
+    def _apply_fairness_preprocessor(self, base_flow_dataset, fairness_intervention_config):
+        """
+        Apply fairness preprocessor to the dataset
+        """
+        # TODO: Add logic for other fairness preprocessors
+        return self._apply_dir_preprocessor(base_flow_dataset, fairness_intervention_config)
+    
+    def _apply_dir_preprocessor(self, base_flow_dataset, fairness_intervention_config):
+        """
+        Apply dir preprocessor to the dataset
+        """
+        init_data_loader = copy.deepcopy(base_flow_dataset)
+        sensitive_attr_for_intervention = None
+        sensitive_attrs_dct = fairness_intervention_config["sensitive_attributes_dct"]
+        intervention_param = fairness_intervention_config["intervention_param"]
+        
+        if self.dataset_name == ACS_INCOME_DATASET:
+            sensitive_attr_for_intervention = 'SEX&RAC1P_binary'
+            base_flow_dataset.categorical_columns = [col for col in base_flow_dataset.categorical_columns if col not in ('SEX', 'RAC1P')]
+            base_flow_dataset.X_data[sensitive_attr_for_intervention] = base_flow_dataset.X_data.apply(
+                lambda row: 0 if (row['SEX'] == sensitive_attrs_dct['SEX'] and row['RAC1P'] in sensitive_attrs_dct['RAC1P']) else 1,
+                axis=1
+            )
+            base_flow_dataset.full_df = base_flow_dataset.full_df.drop(['SEX', 'RAC1P'], axis=1)
+            base_flow_dataset.X_data = base_flow_dataset.X_data.drop(['SEX', 'RAC1P'], axis=1)
+
+        else:
+            raise ValueError(f"Dataset {self.dataset_name} is not supported for DIR preprocessing")
+
+        base_flow_dataset.init_features_df = init_data_loader.full_df.drop(init_data_loader.target, axis=1, errors='ignore')
+        # Align indexes of base_flow_dataset with data_loader for sensitive_attr_for_intervention column
+        base_flow_dataset.X_train_val[sensitive_attr_for_intervention] = base_flow_dataset.X_data.loc[base_flow_dataset.X_train_val.index, sensitive_attr_for_intervention]
+        base_flow_dataset.X_test[sensitive_attr_for_intervention] = base_flow_dataset.X_data.loc[base_flow_dataset.X_test.index, sensitive_attr_for_intervention]
+
+        # Fair preprocessing
+        cur_base_flow_dataset = remove_disparate_impact(base_flow_dataset,
+                                                        alpha=intervention_param,
+                                                        sensitive_attribute=sensitive_attr_for_intervention)
+            
+        return cur_base_flow_dataset
