@@ -6,10 +6,10 @@ from unittest.mock import MagicMock
 from sklearn.model_selection import train_test_split
 
 from tests import compare_dfs, get_df_condition, compare_base_flow_datasets
-from source.custom_classes.benchmark import Benchmark
-from source.utils.common_helpers import get_injection_scenarios
 from configs.constants import ACS_INCOME_DATASET, LAW_SCHOOL_DATASET, ErrorRepairMethod, MLModels, ErrorInjectionStrategy
 from configs.scenarios_config import ERROR_INJECTION_SCENARIOS_CONFIG
+from virny_flow.custom_classes.benchmark import Benchmark
+from virny_flow.utils.common_helpers import get_injection_scenarios
 
 
 @pytest.fixture(scope='function')
@@ -352,7 +352,7 @@ def test_load_imputed_train_test_sets_for_median_mode_and_law_school_mcar3():
                           model_names=[])
 
     # Create a mock for save_sets_dir_path in benchmark.load_imputed_train_test_sets()
-    with mock.patch('source.custom_classes.benchmark.pathlib.Path') as mock_path:
+    with mock.patch('virny_flow.custom_classes.benchmark.pathlib.Path') as mock_path:
         # Setup the mock to return a specific path when joined
         instance = mock_path.return_value  # this is the instance returned when Path() is called
         instance.parent.parent.parent.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value = save_sets_dir_path
@@ -400,7 +400,7 @@ def test_load_imputed_train_test_sets_for_median_mode_and_law_school_mar3():
                           model_names=[])
 
     # Create a mock for save_sets_dir_path in benchmark.load_imputed_train_test_sets()
-    with mock.patch('source.custom_classes.benchmark.pathlib.Path') as mock_path:
+    with mock.patch('virny_flow.custom_classes.benchmark.pathlib.Path') as mock_path:
         # Setup the mock to return a specific path when joined
         instance = mock_path.return_value  # this is the instance returned when Path() is called
         instance.parent.parent.parent.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value = save_sets_dir_path
@@ -448,7 +448,7 @@ def test_load_imputed_train_test_sets_for_median_mode_and_law_school_mnar3():
                           model_names=[])
 
     # Create a mock for save_sets_dir_path in benchmark.load_imputed_train_test_sets()
-    with mock.patch('source.custom_classes.benchmark.pathlib.Path') as mock_path:
+    with mock.patch('virny_flow.custom_classes.benchmark.pathlib.Path') as mock_path:
         # Setup the mock to return a specific path when joined
         instance = mock_path.return_value  # this is the instance returned when Path() is called
         instance.parent.parent.parent.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value = save_sets_dir_path
@@ -496,7 +496,7 @@ def test_load_imputed_train_test_sets_for_median_mode_and_law_school_mix_scenari
                           model_names=[])
 
     # Create a mock for save_sets_dir_path in benchmark.load_imputed_train_test_sets()
-    with mock.patch('source.custom_classes.benchmark.pathlib.Path') as mock_path:
+    with mock.patch('virny_flow.custom_classes.benchmark.pathlib.Path') as mock_path:
         # Setup the mock to return a specific path when joined
         instance = mock_path.return_value  # this is the instance returned when Path() is called
         instance.parent.parent.parent.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value = save_sets_dir_path
@@ -544,7 +544,7 @@ def test_load_imputed_train_test_sets_for_median_mode_and_acs_income_mcar3():
                           model_names=[])
 
     # Create a mock for save_sets_dir_path in benchmark.load_imputed_train_test_sets()
-    with mock.patch('source.custom_classes.benchmark.pathlib.Path') as mock_path:
+    with mock.patch('virny_flow.custom_classes.benchmark.pathlib.Path') as mock_path:
         # Setup the mock to return a specific path when joined
         instance = mock_path.return_value  # this is the instance returned when Path() is called
         instance.parent.parent.parent.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value = save_sets_dir_path
@@ -592,7 +592,7 @@ def test_load_imputed_train_test_sets_for_median_mode_and_acs_income_mar3():
                           model_names=[])
 
     # Create a mock for save_sets_dir_path in benchmark.load_imputed_train_test_sets()
-    with mock.patch('source.custom_classes.benchmark.pathlib.Path') as mock_path:
+    with mock.patch('virny_flow.custom_classes.benchmark.pathlib.Path') as mock_path:
         # Setup the mock to return a specific path when joined
         instance = mock_path.return_value  # this is the instance returned when Path() is called
         instance.parent.parent.parent.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value = save_sets_dir_path
@@ -640,7 +640,7 @@ def test_load_imputed_train_test_sets_for_median_mode_and_acs_income_mnar3():
                           model_names=[])
 
     # Create a mock for save_sets_dir_path in benchmark.load_imputed_train_test_sets()
-    with mock.patch('source.custom_classes.benchmark.pathlib.Path') as mock_path:
+    with mock.patch('virny_flow.custom_classes.benchmark.pathlib.Path') as mock_path:
 
         # Setup the mock to return a specific path when joined
         instance = mock_path.return_value  # this is the instance returned when Path() is called
@@ -689,7 +689,7 @@ def test_load_imputed_train_test_sets_for_median_mode_and_acs_income_mixed_scena
                           model_names=[])
 
     # Create a mock for save_sets_dir_path in benchmark.load_imputed_train_test_sets()
-    with mock.patch('source.custom_classes.benchmark.pathlib.Path') as mock_path:
+    with mock.patch('virny_flow.custom_classes.benchmark.pathlib.Path') as mock_path:
         # Setup the mock to return a specific path when joined
         instance = mock_path.return_value  # this is the instance returned when Path() is called
         instance.parent.parent.parent.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value = save_sets_dir_path

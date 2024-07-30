@@ -1,4 +1,4 @@
-# Still More Shades of Null: A Benchmark for Responsible Missing Value Imputation
+# VirnyFlow
 
 This repository contains the source code, scripts, and datasets for the Shades-of-Null benchmark. The benchmark uses state-of-the-art MVM techniques on a suite of novel evaluation settings on popular fairness benchmark datasets, including multi-mechanism missingness (when several different missingness patterns co-exist in the data) and missingness shift (when the missingness mechanism changes between development/training and deployment/testing), and using a large set of holistic evaluation metrics, including fairness and stability. The benchmark includes functionality for storing experiment results in a database, with MongoDB chosen for our purposes. Additionally, the benchmark is designed to be extensible, allowing researchers to incorporate custom datasets and apply new MVM techniques.
 
@@ -29,22 +29,6 @@ Add MongoDB secrets (optional)
 DB_NAME=your_mongodb_name
 CONNECTION_STRING=your_mongodb_connection_string
 ```
-
-## Repository structure
-
-* `source` directory contains code with custom classes for managing benchmark, database client, error injectors, null imputers, visualizations and some utils functions.
-* `configs` directory contains all constants and configs for datasets, null imputers, ML models and evaluation scenarios.
-* `scripts` directory contains main scripts for evaluating null imputers, baselines and ML models.
-* `tests` directory contains tests covering the benchmark and null imputers.
-* `notebooks` directory contains Jupyter notebooks with EDA and results visualization.
-    * `cluster_analysis` subdirectory contains notebooks with analysis of the number of clusters in each dataset using silhoette scores and PCA, t-SNE, UMAP algorithms. Used to choose the correct number of clusters for the `clustering` null imputer.
-    * `EDA` subdirectory contains notebooks with analysis of feature importance and feature correlation with the target for 6 datasets used in our experiments (_Section 3.1_ in the paper).
-    * `visualizations` subdirectory contains two subdirectories with visualisations for imputation performance and model performance. Each of these subdirectories has the following structure:
-      * `single_mechanism_exp` folder includes plots for single-mechanism missingness in both train and test sets (_Section 4_ in the paper).
-      * `multi_mechanism_exp` folder includes plots for multi-mechanism missingness in both train and test sets (_Section 5_ in the paper).
-      * `exp1` folder includes plots for missingness shift with a fixed error rate in both train and test sets (_Appendix D.1_ in the paper).
-      * `exp2` folder includes plots for missingness shift with a variable error rate in the train set and a fixed error rate in the test set (_Section 6_ in the paper).
-      * `exp3` folder includes plots for missingness shift with a fixed error rate in the train set and a variable error rate in the test set (_Section 6_ in the paper).
 
 
 ## Usage

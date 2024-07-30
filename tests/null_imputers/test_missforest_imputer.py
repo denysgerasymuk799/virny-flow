@@ -2,8 +2,8 @@ import pytest
 import numpy as np
 import pandas as pd
 
-from source.null_imputers.missforest_imputer import MissForestImputer
-from source.utils.dataframe_utils import get_object_columns_indexes
+from virny_flow.null_imputers.missforest_imputer import MissForestImputer
+from virny_flow.utils.dataframe_utils import get_object_columns_indexes
 
 
 # Test if output of MissForestImputer does not contain nulls

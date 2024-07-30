@@ -2,8 +2,8 @@ import pytest
 import numpy as np
 import pandas as pd
 
-from source.null_imputers.kmeans_imputer import KMeansImputer
-from source.utils.dataframe_utils import get_object_columns_indexes, get_numerical_columns_indexes
+from virny_flow.null_imputers.kmeans_imputer import KMeansImputer
+from virny_flow.utils.dataframe_utils import get_object_columns_indexes, get_numerical_columns_indexes
 from sklearn.impute import SimpleImputer
 
 

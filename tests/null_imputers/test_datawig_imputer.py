@@ -1,11 +1,10 @@
 import pytest
 import pathlib
 
-import source.null_imputers.datawig_imputer as datawig_imputer
-from source.utils.common_helpers import get_injection_scenarios
+import virny_flow.null_imputers.datawig_imputer as datawig_imputer
+from virny_flow.utils.common_helpers import get_injection_scenarios
 from configs.datasets_config import ACS_INCOME_DATASET
 from configs.constants import ErrorRepairMethod
-from configs.null_imputers_config import NULL_IMPUTERS_HYPERPARAMS
 
 from tests import assert_nested_dicts_equal
 

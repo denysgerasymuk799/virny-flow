@@ -16,7 +16,7 @@ import warnings
 from datetime import datetime
 from dotenv import load_dotenv
 
-from source.custom_classes.benchmark import Benchmark
+from virny_flow.custom_classes.benchmark import Benchmark
 
 
 def preconfigure_experiment(env_file_path: str = Path(__file__).parent.joinpath('..', 'configs', 'secrets.env')):
