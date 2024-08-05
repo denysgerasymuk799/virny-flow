@@ -27,6 +27,21 @@ class ErrorRepairMethod(Enum):
 
 
 # ====================================================================
+# Fairness Interventions
+# ====================================================================
+class FairnessIntervention(Enum):
+    dir = 'DIR'  # Disparate Impact Remover
+    lfr = 'LFR'  # Learning Fair Representations
+    ad = 'AD'    # Adversarial Debiasing
+    egr = 'EGR'  # Exponentiated Gradient Reduction
+    eop = 'EOP'  # Equalized Odds Postprocessing
+    roc = 'ROC'  # Reject Option Classification
+
+    def __str__(self):
+        return self.value
+
+
+# ====================================================================
 # ML Models
 # ====================================================================
 class MLModels(Enum):

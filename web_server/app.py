@@ -1,12 +1,16 @@
 from fastapi.responses import JSONResponse
 
 from init_config import app, db_client
+from domain_logic.execution_plan import create_execution_plan
 
 
 @app.on_event("startup")
 async def startup_event():
     print("Starting up...")
     db_client.connect()
+
+    # Create an optimized execution plan
+    create_execution_plan(db_client)
 
 
 @app.on_event("shutdown")

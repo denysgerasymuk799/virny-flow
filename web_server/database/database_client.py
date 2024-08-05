@@ -8,7 +8,7 @@ from pymongo import MongoClient
 
 
 class DatabaseClient:
-    def __init__(self, secrets_path: str = pathlib.Path(__file__).parent.joinpath('..', 'secrets.env')):
+    def __init__(self, secrets_path: str = pathlib.Path(__file__).parent.parent.joinpath( 'configs', 'secrets.env')):
         load_dotenv(secrets_path, override=True)  # Take environment variables from .env
 
         # Provide the mongodb atlas url to connect python to mongodb using pymongo
@@ -37,6 +37,13 @@ class DatabaseClient:
             records.append(record)
 
         return records
+
+    def write_records_into_db(self, collection_name: str, records: list, static_values_dct: dict):
+        for key, value in static_values_dct.items():
+            for record in records:
+                record[key] = value
+
+        self.execute_write_query(records, collection_name)
 
     def write_pandas_df_into_db(self, collection_name: str, df: pd.DataFrame, custom_tbl_fields_dct: dict = None):
         if df.shape[0] == 0:
@@ -67,16 +74,6 @@ class DatabaseClient:
 
         metric_df.columns = new_column_names
         return metric_df
-
-    def get_db_writer(self, collection_name: str):
-        collection_obj = self._get_collection(collection_name)
-
-        def db_writer_func(run_models_metrics_df, collection=collection_obj):
-            # Rename Pandas columns to lower case
-            run_models_metrics_df.columns = run_models_metrics_df.columns.str.lower()
-            collection.insert_many(run_models_metrics_df.to_dict('records'))
-
-        return db_writer_func
 
     def close(self):
         self.client.close()

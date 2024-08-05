@@ -6,7 +6,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from lightgbm import LGBMClassifier
 
-from configs.constants import MLModels
+from domain_logic.constants import MLModels
 
 
 def get_models_params_for_tuning(models_tuning_seed):

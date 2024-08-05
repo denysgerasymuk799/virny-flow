@@ -1,5 +1,0 @@
-config_name: "german_experiments"
-datasets: ["german"]
-null_imputers: ["median-mode", "median-dummy"]
-fairness_interventions: []
-models: ["lr_clf"]
