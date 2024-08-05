@@ -3,13 +3,12 @@ import numpy as np
 from datetime import datetime
 from virny.custom_classes.base_inprocessing_wrapper import BaseInprocessingWrapper
 
-from external_dependencies.CPClean.utils import makedir
-from external_dependencies.CPClean.repair.repair import repair
-from external_dependencies.CPClean.training.preprocess import preprocess
-from external_dependencies.CPClean.training.knn import KNN
-from external_dependencies.CPClean.cleaner.CPClean.clean import CPClean
-from external_dependencies.CPClean.cleaner.CPClean.debugger import Debugger
-
+from virny_flow.external_dependencies.CPClean.utils import makedir
+from virny_flow.external_dependencies.CPClean.repair.repair import repair
+from virny_flow.external_dependencies.CPClean.training.preprocess import preprocess
+from virny_flow.external_dependencies.CPClean.training.knn import KNN
+from virny_flow.external_dependencies.CPClean.cleaner.CPClean.clean import CPClean
+from virny_flow.external_dependencies.CPClean.cleaner.CPClean.debugger import Debugger
 from virny_flow.utils.common_helpers import generate_base64_hash
 
 
