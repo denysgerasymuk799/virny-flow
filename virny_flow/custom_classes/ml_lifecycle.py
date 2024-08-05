@@ -155,13 +155,8 @@ class MLLifecycle:
         if not is_in_enum(null_imputer_name, ErrorRepairMethod) or null_imputer_name not in NULL_IMPUTERS_CONFIG.keys():
             raise ValueError(f'{null_imputer_name} null imputer is not implemented')
 
-        if tune_imputers:
-            hyperparams = None
-        else:
-            train_injection_strategy, _ = get_injection_scenarios(evaluation_scenario)
-            hyperparams = NULL_IMPUTERS_HYPERPARAMS.get(null_imputer_name, {}).get(self.dataset_name, {}).get(train_injection_strategy, {})
-
         # Use a method, kwargs, and hyperparams from NULL_IMPUTERS_CONFIG
+        hyperparams = None
         imputation_method = NULL_IMPUTERS_CONFIG[null_imputer_name]["method"]
         imputation_kwargs = NULL_IMPUTERS_CONFIG[null_imputer_name]["kwargs"]
         imputation_kwargs.update({'experiment_seed': experiment_seed})

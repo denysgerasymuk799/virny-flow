@@ -2,10 +2,9 @@ import pandas as pd
 from virny.custom_classes.metrics_composer import MetricsComposer
 from virny.configs.constants import *
 
-from configs.constants import (EXP_COLLECTION_NAME, DIABETES_DATASET, GERMAN_CREDIT_DATASET, BANK_MARKETING_DATASET,
-                               CARDIOVASCULAR_DISEASE_DATASET, ACS_INCOME_DATASET, LAW_SCHOOL_DATASET)
 from configs.scenarios_config import EVALUATION_SCENARIOS_CONFIG
 from configs.datasets_config import DATASET_CONFIG
+from virny_flow.configs.constants import EXP_COLLECTION_NAME
 from virny_flow.custom_classes.database_client import DatabaseClient
 
 
@@ -39,20 +38,13 @@ def get_evaluation_scenario(train_injection_scenario):
 
 def get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: str, test_injection_scenario: str,
                                                           metric_name: str, db_client, dataset_to_group: dict = None):
-    dataset_to_model_name_dct = {
-        DIABETES_DATASET: 'rf_clf',
-        GERMAN_CREDIT_DATASET: 'rf_clf',
-        ACS_INCOME_DATASET: 'mlp_clf',
-        LAW_SCHOOL_DATASET: 'lr_clf',
-        BANK_MARKETING_DATASET: 'lgbm_clf',
-        CARDIOVASCULAR_DISEASE_DATASET: 'lgbm_clf',
-    }
+    dataset_best_model = 'rf_clf'
     evaluation_scenario = get_evaluation_scenario(train_injection_scenario)
 
     models_metric_df_for_diff_datasets = pd.DataFrame()
     for dataset_name in DATASET_CONFIG.keys():
         group = 'overall' if dataset_to_group is None else dataset_to_group[dataset_name]
-        model_name = dataset_to_model_name_dct[dataset_name]
+        model_name = dataset_best_model
 
         if group == 'overall':
             models_metric_df = get_models_metric_df(db_client=db_client,
