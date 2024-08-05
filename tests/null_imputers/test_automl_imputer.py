@@ -1,8 +1,8 @@
 import pytest
 import pathlib
 
-from source.utils.common_helpers import get_injection_scenarios
-from source.null_imputers.imputation_methods import impute_with_automl
+from virny_flow.utils.common_helpers import get_injection_scenarios
+from virny_flow.null_imputers.imputation_methods import impute_with_automl
 from configs.constants import ErrorRepairMethod
 from configs.datasets_config import ACS_INCOME_DATASET
 

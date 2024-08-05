@@ -20,9 +20,9 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 from configs.scenarios_config import EVALUATION_SCENARIOS_CONFIG
-from source.custom_classes.benchmark import Benchmark
-from source.custom_classes.database_client import get_secrets_path
-from source.validation import validate_args, str2bool
+from virny_flow.custom_classes.benchmark import Benchmark
+from virny_flow.custom_classes.database_client import get_secrets_path
+from virny_flow.validation import validate_args, str2bool
 
 
 def preconfigure_experiment(env_file_path: str = Path(__file__).parent.joinpath('..', 'configs', 'secrets.env')):

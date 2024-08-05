@@ -1,7 +1,7 @@
 import pytest
 
 from virny.datasets import ACSIncomeDataset
-from source.error_injectors.nulls_injector import NullsInjector
+from virny_flow.error_injectors.nulls_injector import NullsInjector
 
 
 @pytest.fixture(scope="function")
