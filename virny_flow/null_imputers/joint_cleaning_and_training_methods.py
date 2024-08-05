@@ -7,9 +7,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
 
-from virny_flow.utils.pipeline_utils import encode_dataset_for_missforest
-
-from configs.constants import ErrorRepairMethod
+from virny_flow.configs.constants import ErrorRepairMethod
 from virny_flow.null_imputers.cpclean_wrapper import CPCleanWrapper
 from virny_flow.null_imputers.boostclean_wrapper import BoostCleanWrapper
 
@@ -142,7 +140,8 @@ def tune_random_forest_for_boostclean(X_train_list, y_train, random_state):
         best_params_list.append({'fn': RandomForestClassifier, 'params': grid_search.best_params_})
         
     return best_params_list
-    
+
+
 def get_boostclean_params_for_tuning(models_tuning_seed):
     return {
         'RandomForestClassifier': {

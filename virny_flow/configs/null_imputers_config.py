@@ -1,6 +1,6 @@
 import virny_flow.null_imputers.datawig_imputer as datawig_imputer
 
-from configs.constants import ErrorRepairMethod
+from virny_flow.configs.constants import ErrorRepairMethod
 from virny_flow.null_imputers.imputation_methods import (impute_with_deletion, impute_with_simple_imputer, impute_with_automl,
                                                          impute_with_missforest, impute_with_kmeans)
 from virny_flow.null_imputers.joint_cleaning_and_training_methods import prepare_cpclean, prepare_boostclean

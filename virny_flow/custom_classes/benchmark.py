@@ -10,8 +10,8 @@ from sklearn.model_selection import train_test_split
 from virny.user_interfaces.multiple_models_with_db_writer_api import compute_metrics_with_db_writer
 from virny.user_interfaces.multiple_models_with_multiple_test_sets_api import compute_metrics_with_multiple_test_sets
 
-from configs.null_imputers_config import NULL_IMPUTERS_CONFIG
-from configs.constants import (EXP_COLLECTION_NAME, EXPERIMENT_RUN_SEEDS, ErrorRepairMethod)
+from virny_flow.configs.null_imputers_config import NULL_IMPUTERS_CONFIG
+from virny_flow.configs.constants import (EXP_COLLECTION_NAME, EXPERIMENT_RUN_SEEDS, ErrorRepairMethod)
 from virny_flow.utils.common_helpers import (generate_guid, create_virny_base_flow_datasets, get_injection_scenarios)
 from virny_flow.utils.dataframe_utils import preprocess_base_flow_dataset, preprocess_mult_base_flow_datasets
 from virny_flow.custom_classes.ml_lifecycle import MLLifecycle

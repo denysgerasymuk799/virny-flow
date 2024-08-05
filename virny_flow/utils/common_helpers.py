@@ -6,8 +6,6 @@ import base64
 import pandas as pd
 from virny.custom_classes.base_dataset import BaseFlowDataset
 
-from configs.scenarios_config import EVALUATION_SCENARIOS_CONFIG
-
 
 def generate_guid(ordered_hierarchy_lst: list):
     identifier = '|'.join([str(val) for val in ordered_hierarchy_lst])
@@ -24,16 +22,6 @@ def generate_base64_hash(length=8):
 
     # Return the required length
     return random_hash[:length]
-
-
-def get_injection_scenarios(evaluation_scenario: str):
-    scenario_config = EVALUATION_SCENARIOS_CONFIG[evaluation_scenario]
-    train_injection_scenario, test_injection_scenarios_lst = \
-        scenario_config['train_injection_scenario'], scenario_config['test_injection_scenarios']
-    train_injection_scenario = train_injection_scenario.upper()
-    test_injection_scenarios_lst = [injection_scenario.upper() for injection_scenario in test_injection_scenarios_lst]
-
-    return train_injection_scenario, test_injection_scenarios_lst
 
 
 def create_base_flow_dataset(data_loader, dataset_sensitive_attrs,

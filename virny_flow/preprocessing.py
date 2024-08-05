@@ -1,5 +1,5 @@
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler, OrdinalEncoder
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 
 def get_simple_preprocessor(base_flow_dataset):

@@ -11,12 +11,11 @@ from sklearn.model_selection import train_test_split
 from virny.utils.custom_initializers import create_config_obj
 from virny.utils import create_test_protected_groups
 
-from configs.models_config_for_tuning import get_models_params_for_tuning
-from configs.null_imputers_config import NULL_IMPUTERS_CONFIG, NULL_IMPUTERS_HYPERPARAMS
-from configs.constants import (MODEL_HYPER_PARAMS_COLLECTION_NAME, IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
-                               NUM_FOLDS_FOR_TUNING, ErrorRepairMethod, ErrorInjectionStrategy)
 from configs.datasets_config import DATASET_CONFIG
-from configs.scenarios_config import ERROR_INJECTION_SCENARIOS_CONFIG
+from configs.models_config_for_tuning import get_models_params_for_tuning
+from virny_flow.configs.null_imputers_config import NULL_IMPUTERS_CONFIG
+from virny_flow.configs.constants import (MODEL_HYPER_PARAMS_COLLECTION_NAME, IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
+                                          NUM_FOLDS_FOR_TUNING, ErrorRepairMethod)
 from virny_flow.utils.custom_logger import get_logger
 from virny_flow.utils.dataframe_utils import calculate_kl_divergence
 from virny_flow.utils.model_tuning_utils import tune_ML_models

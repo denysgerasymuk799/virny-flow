@@ -1,8 +1,7 @@
-import numpy as np
-import pandas as pd
-from scipy.stats import mode
 import sys
-import os
+import numpy as np
+
+from scipy.stats import mode
 from pathlib import Path
 sys.path.append(str(Path(f"{__file__}").parent.parent))
 
@@ -182,7 +181,7 @@ class KMeansImputer(AbstractNullImputer):
             missing_in_cluster_indices = np.intersect1d(cluster_indices, missing_rows)
             for col in self.missing_columns_:
                 if col in self.missing_cat_columns_:
-                    # calucate mode discarding nan and assign to missing values
+                    # Calculate mode discarding nan and assign to missing values
                     X[missing_in_cluster_indices, col] = self.cluster_statistics_[(cluster, col)]
                 else:
                     X[missing_in_cluster_indices, col] = self.cluster_statistics_[(cluster, col)]
