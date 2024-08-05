@@ -511,6 +511,7 @@ class Benchmark(MLLifecycle):
         Apply fairness preprocessor to the dataset
         """
         # TODO: Add logic for other fairness preprocessors
+        self._logger.info("Applying fairness preprocessor to the dataset...")
         return self._apply_dir_preprocessor(base_flow_dataset, fairness_intervention_config)
     
     def _apply_dir_preprocessor(self, base_flow_dataset, fairness_intervention_config):
@@ -525,20 +526,20 @@ class Benchmark(MLLifecycle):
         if self.dataset_name == ACS_INCOME_DATASET:
             sensitive_attr_for_intervention = 'SEX&RAC1P_binary'
             base_flow_dataset.categorical_columns = [col for col in base_flow_dataset.categorical_columns if col not in ('SEX', 'RAC1P')]
-            base_flow_dataset.X_data[sensitive_attr_for_intervention] = base_flow_dataset.X_data.apply(
+            base_flow_dataset.X_train_val[sensitive_attr_for_intervention] = base_flow_dataset.X_train_val.apply(
                 lambda row: 0 if (row['SEX'] == sensitive_attrs_dct['SEX'] and row['RAC1P'] in sensitive_attrs_dct['RAC1P']) else 1,
                 axis=1
             )
             base_flow_dataset.full_df = base_flow_dataset.full_df.drop(['SEX', 'RAC1P'], axis=1)
-            base_flow_dataset.X_data = base_flow_dataset.X_data.drop(['SEX', 'RAC1P'], axis=1)
+            base_flow_dataset.X_train_val = base_flow_dataset.X_train_val.drop(['SEX', 'RAC1P'], axis=1)
 
         else:
             raise ValueError(f"Dataset {self.dataset_name} is not supported for DIR preprocessing")
 
         base_flow_dataset.init_features_df = init_data_loader.full_df.drop(init_data_loader.target, axis=1, errors='ignore')
         # Align indexes of base_flow_dataset with data_loader for sensitive_attr_for_intervention column
-        base_flow_dataset.X_train_val[sensitive_attr_for_intervention] = base_flow_dataset.X_data.loc[base_flow_dataset.X_train_val.index, sensitive_attr_for_intervention]
-        base_flow_dataset.X_test[sensitive_attr_for_intervention] = base_flow_dataset.X_data.loc[base_flow_dataset.X_test.index, sensitive_attr_for_intervention]
+        base_flow_dataset.X_train_val[sensitive_attr_for_intervention] = base_flow_dataset.X_train_val.loc[base_flow_dataset.X_train_val.index, sensitive_attr_for_intervention]
+        base_flow_dataset.X_test[sensitive_attr_for_intervention] = base_flow_dataset.X_train_val.loc[base_flow_dataset.X_test.index, sensitive_attr_for_intervention]
 
         # Fair preprocessing
         cur_base_flow_dataset = remove_disparate_impact(base_flow_dataset,
