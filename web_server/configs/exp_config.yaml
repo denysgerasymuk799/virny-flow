@@ -1,4 +1,4 @@
-config_name: "german_experiments"
+exp_config_name: "german_experiments"
 dataset: "german"
 sensitive_attribute_for_intervention: "sex"
 null_imputers: ["median-mode", "median-dummy"]

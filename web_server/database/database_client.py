@@ -1,10 +1,13 @@
 import os
 import pathlib
 import certifi
-import pandas as pd
+import motor.motor_asyncio
 
+from bson.objectid import ObjectId
 from dotenv import load_dotenv
-from pymongo import MongoClient
+from datetime import datetime, timezone
+
+from domain_logic.constants import EXP_PROGRESS_TRACKING_TABLE, NO_TASKS, ProgressStatus
 
 
 class DatabaseClient:
@@ -19,61 +22,68 @@ class DatabaseClient:
 
     def connect(self):
         # Create a connection using MongoClient
-        self.client = MongoClient(self.connection_string, tlsCAFile=certifi.where())
+        self.client = motor.motor_asyncio.AsyncIOMotorClient(self.connection_string,
+                                                             serverSelectionTimeoutMS=60_000,
+                                                             tls=True,
+                                                             tlsAllowInvalidCertificates=True,
+                                                             tlsCAFile=certifi.where())
 
     def _get_collection(self, collection_name):
         return self.client[self.db_name][collection_name]
 
-    def execute_write_query(self, records, collection_name):
+    async def check_record_exists(self, query: dict):
+        collection = self._get_collection(collection_name=EXP_PROGRESS_TRACKING_TABLE)
+        return await collection.find_one(query) is not None
+
+    async def execute_write_query(self, records, collection_name):
         collection = self._get_collection(collection_name)
-        collection.insert_many(records)
+        await collection.insert_many(records)
 
-    def execute_read_query(self, collection_name: str, query: dict):
+    async def update_one_query(self, collection_name: str, _id, update_val_dct: dict):
         collection = self._get_collection(collection_name)
-        cursor = collection.find(query)
-        records = []
-        for record in cursor:
-            del record['_id']
-            records.append(record)
+        object_id = ObjectId(_id) if isinstance(_id, str) else _id
 
-        return records
+        # Update a single document
+        result = await collection.update_one(
+            {"_id": object_id},  # Filter to match the document
+            {"$set": update_val_dct}  # Update operation
+        )
+        print(f"Matched {result.matched_count} document(s) and modified {result.modified_count} document(s).")
+        return result.modified_count
 
-    def write_records_into_db(self, collection_name: str, records: list, static_values_dct: dict):
+    async def read_one_query(self, collection_name: str, query: dict, sort_param: list = None):
+        collection = self._get_collection(collection_name)
+        return await collection.find_one(query, sort=sort_param)
+
+    async def write_records_into_db(self, collection_name: str, records: list, static_values_dct: dict):
         for key, value in static_values_dct.items():
             for record in records:
                 record[key] = value
 
-        self.execute_write_query(records, collection_name)
+        await self.execute_write_query(records, collection_name)
 
-    def write_pandas_df_into_db(self, collection_name: str, df: pd.DataFrame, custom_tbl_fields_dct: dict = None):
-        if df.shape[0] == 0:
-            print('Dataframe is empty. Skip writing to a database.')
-            return
+    async def read_worker_task_from_db(self, exp_config_name: str):
+        collection_name = EXP_PROGRESS_TRACKING_TABLE
+        query = {
+            'exp_config_name': exp_config_name,
+            'status': ProgressStatus.NOT_STARTED.value,
+            'tag': 'OK',
+        }
 
-        # Append custom fields to the df
-        for column, value in custom_tbl_fields_dct.items():
-            df[column] = value
+        high_priority_task = await self.read_one_query(collection_name, query, sort_param=[('task_priority', 1)])
+        if high_priority_task is not None:
+            await self.update_one_query(collection_name, _id=high_priority_task["_id"],
+                                        update_val_dct={"status": ProgressStatus.ASSIGNED.value,
+                                                        "update_datetime": datetime.now(timezone.utc)})
+            return high_priority_task
+        else:
+            return NO_TASKS
 
-        # Rename Pandas columns to lower case
-        df.columns = df.columns.str.lower()
-        df['tag'] = 'OK'
-
-        self.execute_write_query(df.to_dict('records'), collection_name)
-        print('Dataframe is successfully written into a database')
-
-    def read_metric_df_from_db(self, collection_name: str, query: dict):
-        records = self.execute_read_query(query=query,
-                                          collection_name=collection_name)
-        metric_df = pd.DataFrame(records)
-
-        # Capitalize column names to be consistent across the whole library
-        new_column_names = []
-        for col in metric_df.columns:
-            new_col_name = '_'.join([c.capitalize() for c in col.split('_')])
-            new_column_names.append(new_col_name)
-
-        metric_df.columns = new_column_names
-        return metric_df
+    async def complete_worker_task_in_db(self, task_id: str):
+        return await self.update_one_query(collection_name=EXP_PROGRESS_TRACKING_TABLE,
+                                           _id=task_id,
+                                           update_val_dct={"status": ProgressStatus.DONE.value,
+                                                           "update_datetime": datetime.now(timezone.utc)})
 
     def close(self):
         self.client.close()

@@ -2,6 +2,19 @@ from enum import Enum
 
 
 EXP_PROGRESS_TRACKING_TABLE = 'exp_progress_tracking'
+NO_TASKS = 'NO_TASKS'
+
+
+# ====================================================================
+# Progress Statuses
+# ====================================================================
+class ProgressStatus(Enum):
+    NOT_STARTED = "NOT_STARTED"
+    ASSIGNED = "ASSIGNED"
+    DONE = "DONE"
+
+    def __str__(self):
+        return self.value
 
 
 # ====================================================================

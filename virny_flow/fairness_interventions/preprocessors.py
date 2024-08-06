@@ -1,13 +1,9 @@
 import copy
 import numpy as np
-import pandas as pd
 
-from aif360.datasets import BinaryLabelDataset, StandardDataset
-from aif360.algorithms.preprocessing import DisparateImpactRemover, LFR
+from aif360.datasets import BinaryLabelDataset
+from aif360.algorithms.preprocessing import DisparateImpactRemover
 
-from virny.datasets.base import BaseDataLoader
-from virny.custom_classes.base_dataset import BaseFlowDataset
-from virny.preprocessing.basic_preprocessing import preprocess_dataset
 
 def remove_disparate_impact(init_base_flow_dataset, alpha, sensitive_attribute):
     """

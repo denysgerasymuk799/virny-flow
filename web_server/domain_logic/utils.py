@@ -17,8 +17,8 @@ def validate_config(exp_config_obj):
     # ============================================================================================================
     # Required parameters
     # ============================================================================================================
-    if not isinstance(exp_config_obj.config_name, str):
-        raise ValueError('config_name must be string')
+    if not isinstance(exp_config_obj.exp_config_name, str):
+        raise ValueError('exp_config_name must be string')
 
     if not isinstance(exp_config_obj.dataset, str):
         raise ValueError('dataset argument must be string')

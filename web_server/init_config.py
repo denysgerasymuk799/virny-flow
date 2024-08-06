@@ -3,12 +3,18 @@ from fastapi import FastAPI
 from database.database_client import DatabaseClient
 
 
-# Initial configurations
+# Config objects
 app = FastAPI(title='virny-flow-webserver')
+db_client = DatabaseClient()
 
-# For local debugging you can use 'localhost'
+# Global constants
 # host = 'cassandra-node'
 host = 'localhost'
 port = 8080
 
-db_client = DatabaseClient()
+cors = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+    'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, HEAD, OPTIONS'
+}
