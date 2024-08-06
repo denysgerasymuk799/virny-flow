@@ -1,19 +1,15 @@
-import os
 import copy
 import tqdm
 import pathlib
 import pandas as pd
+
 from pprint import pprint
-
-from sklearn.model_selection import train_test_split
-
-from virny.user_interfaces.multiple_models_with_db_writer_api import compute_metrics_with_db_writer
 from virny.user_interfaces.multiple_models_with_multiple_test_sets_api import compute_metrics_with_multiple_test_sets
 
 from virny_flow.configs.null_imputers_config import NULL_IMPUTERS_CONFIG
 from virny_flow.configs.constants import (EXP_COLLECTION_NAME, EXPERIMENT_RUN_SEEDS, ErrorRepairMethod)
-from virny_flow.utils.common_helpers import (generate_guid, create_virny_base_flow_datasets, get_injection_scenarios)
-from virny_flow.utils.dataframe_utils import preprocess_base_flow_dataset, preprocess_mult_base_flow_datasets
+from virny_flow.utils.common_helpers import generate_guid, create_virny_base_flow_datasets
+from virny_flow.utils.dataframe_utils import preprocess_mult_base_flow_datasets
 from virny_flow.custom_classes.ml_lifecycle import MLLifecycle
 
 
@@ -28,72 +24,6 @@ class Benchmark(MLLifecycle):
         super().__init__(dataset_name=dataset_name,
                          null_imputers=null_imputers,
                          model_names=model_names)
-
-    def _run_baseline_evaluation_iter(self, init_data_loader, run_num: int, model_names: list):
-        null_imputer_name = 'baseline'
-        evaluation_scenario = 'baseline'
-        data_loader = copy.deepcopy(init_data_loader)
-
-        custom_table_fields_dct = dict()
-        experiment_seed = EXPERIMENT_RUN_SEEDS[run_num - 1]
-        custom_table_fields_dct['session_uuid'] = self._session_uuid
-        custom_table_fields_dct['null_imputer_name'] = null_imputer_name
-        custom_table_fields_dct['evaluation_scenario'] = evaluation_scenario
-        custom_table_fields_dct['experiment_iteration'] = f'exp_iter_{run_num}'
-        custom_table_fields_dct['dataset_split_seed'] = experiment_seed
-        custom_table_fields_dct['model_init_seed'] = experiment_seed
-
-        # Create exp_pipeline_guid to define a row level of granularity.
-        # concat(exp_pipeline_guid, model_name, subgroup, metric) can be used to check duplicates of results
-        # for the same experimental pipeline.
-        custom_table_fields_dct['exp_pipeline_guid'] = (
-            generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name, evaluation_scenario, experiment_seed]))
-
-        self._logger.info("Start an experiment iteration for the following custom params:")
-        pprint(custom_table_fields_dct)
-        print('\n', flush=True)
-
-        # Prepare and preprocess the dataset using the defined preprocessor
-        base_flow_dataset = self._prepare_baseline_dataset(data_loader, experiment_seed)
-        base_flow_dataset = preprocess_base_flow_dataset(base_flow_dataset)
-
-        # Tune ML models
-        models_config = self._tune_ML_models(model_names=model_names,
-                                             base_flow_dataset=base_flow_dataset,
-                                             experiment_seed=experiment_seed,
-                                             evaluation_scenario=evaluation_scenario,
-                                             null_imputer_name=null_imputer_name)
-
-        # Compute metrics for tuned models
-        self.virny_config.random_state = experiment_seed  # Set random state for the metric computation with Virny
-        compute_metrics_with_db_writer(dataset=base_flow_dataset,
-                                       config=self.virny_config,
-                                       models_config=models_config,
-                                       custom_tbl_fields_dct=custom_table_fields_dct,
-                                       db_writer_func=self._db.get_db_writer(collection_name=EXP_COLLECTION_NAME),
-                                       notebook_logs_stdout=False,
-                                       verbose=0)
-
-    def evaluate_baselines(self, run_nums: list, model_names: list):
-        self._db.connect()
-
-        total_iterations = len(run_nums)
-        with tqdm.tqdm(total=total_iterations, desc="Baseline Evaluation Progress") as pbar:
-            for run_idx, run_num in enumerate(run_nums):
-                self._logger.info(f"{'=' * 30} NEW BASELINE EVALUATION RUN {'=' * 30}")
-                print('Configs for a new baseline evaluation run:')
-                print(
-                    f"Models: {model_names})\n"
-                    f"Run num: {run_num} ({run_idx + 1} out of {len(run_nums)})\n"
-                )
-                self._run_baseline_evaluation_iter(init_data_loader=self.init_data_loader,
-                                                   run_num=run_num,
-                                                   model_names=model_names)
-                pbar.update(1)
-                print('\n\n\n\n', flush=True)
-
-        self._db.close()
-        self._logger.info("Performance metrics of the baselines were successfully saved!")
 
     def inject_and_impute_nulls(self, data_loader, null_imputer_name: str, evaluation_scenario: str,
                                 experiment_seed: int, tune_imputers: bool = True, save_imputed_datasets: bool = False):
@@ -226,64 +156,6 @@ class Benchmark(MLLifecycle):
 
         self._db.close()
         self._logger.info("Experimental results were successfully saved!")
-
-    def load_imputed_train_test_sets(self, data_loader, null_imputer_name: str, evaluation_scenario: str,
-                                     experiment_seed: int):
-        if self.test_set_fraction < 0.0 or self.test_set_fraction > 1.0:
-            raise ValueError("test_set_fraction must be a float in the [0.0-1.0] range")
-
-        # Split the dataset
-        y_train_val, y_test = train_test_split(data_loader.y_data,
-                                               test_size=self.test_set_fraction,
-                                               random_state=experiment_seed)
-
-        # Read imputed train and test sets from save_sets_dir_path
-        save_sets_dir_path = (pathlib.Path(__file__).parent.parent.parent
-                                  .joinpath('results')
-                                  .joinpath('imputed_datasets')
-                                  .joinpath(self.dataset_name)
-                                  .joinpath(null_imputer_name)
-                                  .joinpath(evaluation_scenario)
-                                  .joinpath(str(experiment_seed)))
-
-        # Create a base flow dataset for Virny to compute metrics
-        numerical_columns_wo_sensitive_attrs = [col for col in data_loader.numerical_columns if col not in self.dataset_sensitive_attrs]
-        categorical_columns_wo_sensitive_attrs = [col for col in data_loader.categorical_columns if col not in self.dataset_sensitive_attrs]
-
-        # Read X_train_val set
-        train_set_filename = f'imputed_{self.dataset_name}_{null_imputer_name}_{evaluation_scenario}_{experiment_seed}_X_train_val.csv'
-        X_train_val_imputed_wo_sensitive_attrs = pd.read_csv(os.path.join(save_sets_dir_path, train_set_filename),
-                                                             header=0, index_col=0)
-        X_train_val_imputed_wo_sensitive_attrs[categorical_columns_wo_sensitive_attrs] = (
-            X_train_val_imputed_wo_sensitive_attrs[categorical_columns_wo_sensitive_attrs].astype(str))
-
-        # Subset y_train_val to align with X_train_val_imputed_wo_sensitive_attrs
-        if null_imputer_name == ErrorRepairMethod.deletion.value:
-            y_train_val = y_train_val.loc[X_train_val_imputed_wo_sensitive_attrs.index]
-
-        # Read X_test sets
-        X_tests_imputed_wo_sensitive_attrs_lst = list()
-        _, test_injection_scenarios_lst = get_injection_scenarios(evaluation_scenario)
-        for test_injection_scenario in test_injection_scenarios_lst:
-            test_set_filename = f'imputed_{self.dataset_name}_{null_imputer_name}_{evaluation_scenario}_{experiment_seed}_X_test_{test_injection_scenario}.csv'
-            X_test_imputed_wo_sensitive_attrs = pd.read_csv(os.path.join(save_sets_dir_path, test_set_filename),
-                                                            header=0, index_col=0)
-            X_test_imputed_wo_sensitive_attrs[categorical_columns_wo_sensitive_attrs] = (
-                X_test_imputed_wo_sensitive_attrs[categorical_columns_wo_sensitive_attrs].astype(str))
-            X_tests_imputed_wo_sensitive_attrs_lst.append(X_test_imputed_wo_sensitive_attrs)
-
-        # Create base flow datasets for Virny to compute metrics
-        main_base_flow_dataset, extra_base_flow_datasets = \
-            create_virny_base_flow_datasets(data_loader=data_loader,
-                                            dataset_sensitive_attrs=self.dataset_sensitive_attrs,
-                                            X_train_val_wo_sensitive_attrs=X_train_val_imputed_wo_sensitive_attrs,
-                                            X_tests_wo_sensitive_attrs_lst=X_tests_imputed_wo_sensitive_attrs_lst,
-                                            y_train_val=y_train_val,
-                                            y_test=y_test,
-                                            numerical_columns_wo_sensitive_attrs=numerical_columns_wo_sensitive_attrs,
-                                            categorical_columns_wo_sensitive_attrs=categorical_columns_wo_sensitive_attrs)
-
-        return main_base_flow_dataset, extra_base_flow_datasets
 
     def _run_exp_iter_for_joint_cleaning_and_training(self, data_loader, experiment_seed: int, evaluation_scenario: str,
                                                       null_imputer_name: str, tune_imputers: bool,

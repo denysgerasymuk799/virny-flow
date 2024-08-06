@@ -64,32 +64,31 @@ def parse_input_args():
 
 if __name__ == '__main__':
     start_time = datetime.now()
-    preconfigure_experiment(env_file_path=get_secrets_path('secrets_3.env'))
+    preconfigure_experiment(env_file_path=get_secrets_path('secrets.env'))
     args = parse_input_args()
 
     benchmark = Benchmark(dataset_name=args.dataset,
                           null_imputers=args.null_imputers,
                           model_names=args.models)
     
-    if args.fairness_preprocessing:
-        fairness_intervention_config = {
-            "sensitive_attributes_dct": {
-                'SEX': '2', 
-                'RAC1P': ['2', '3', '4', '5', '6', '7', '8', '9'], 
-                'SEX & RAC1P': None
-            },
-            "intervention_param": 0.5,
-        }
-    else:
-        fairness_intervention_config = None
+    # if args.fairness_preprocessing:
+    #     fairness_intervention_config = {
+    #         "sensitive_attributes_dct": {
+    #             'SEX': '2',
+    #             'RAC1P': ['2', '3', '4', '5', '6', '7', '8', '9'],
+    #             'SEX & RAC1P': None
+    #         },
+    #         "intervention_param": 0.5,
+    #     }
+    # else:
+    #     fairness_intervention_config = None
     
     benchmark.run_experiment(run_nums=args.run_nums,
                              evaluation_scenarios=args.evaluation_scenarios,
                              model_names=args.models,
                              tune_imputers=args.tune_imputers,
                              ml_impute=args.ml_impute,
-                             save_imputed_datasets=args.save_imputed_datasets,
-                             fairness_intervention_config=fairness_intervention_config)
+                             save_imputed_datasets=args.save_imputed_datasets)
 
     end_time = datetime.now()
     print(f'The script is successfully executed. Run time: {end_time - start_time}')

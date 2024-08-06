@@ -77,7 +77,7 @@ class DatabaseClient:
                                                         "update_datetime": datetime.now(timezone.utc)})
             return high_priority_task
         else:
-            return NO_TASKS
+            return {"_id": None, "task_name": NO_TASKS}
 
     async def complete_worker_task_in_db(self, task_id: str):
         return await self.update_one_query(collection_name=EXP_PROGRESS_TRACKING_TABLE,

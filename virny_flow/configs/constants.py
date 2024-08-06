@@ -6,6 +6,7 @@ NUM_FOLDS_FOR_TUNING = 3
 EXP_COLLECTION_NAME = 'exp_nulls_data_cleaning'
 MODEL_HYPER_PARAMS_COLLECTION_NAME = 'tuned_model_hyper_params'
 IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME = 'imputation_performance_metrics'
+NO_TASKS = 'NO_TASKS'
 
 
 # ====================================================================

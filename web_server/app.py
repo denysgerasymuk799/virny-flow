@@ -1,9 +1,8 @@
-from fastapi import status
+from fastapi import status, Query
 from fastapi.responses import JSONResponse
 
 from init_config import app, db_client, cors
 from domain_logic.custom_logger import logger
-from domain_logic.api_models import GetWorkerTaskRequest, CompleteWorkerTaskRequest
 from domain_logic.execution_plan import create_execution_plan
 
 
@@ -28,8 +27,8 @@ def shutdown_event():
 
 
 @app.get("/get_worker_task", response_class=JSONResponse)
-async def get_worker_task(request: GetWorkerTaskRequest):
-    high_priority_task = await db_client.read_worker_task_from_db(exp_config_name=request.exp_config_name)
+async def get_worker_task(exp_config_name: str = Query()):
+    high_priority_task = await db_client.read_worker_task_from_db(exp_config_name=exp_config_name)
     logger.info(f'New task was retrieved: {high_priority_task["task_name"]}')
     return JSONResponse(content={"task_name": high_priority_task["task_name"],
                                  "task_id": str(high_priority_task["_id"])},
@@ -37,10 +36,10 @@ async def get_worker_task(request: GetWorkerTaskRequest):
 
 
 @app.post("/complete_worker_task", response_class=JSONResponse)
-async def complete_worker_task(request: CompleteWorkerTaskRequest):
-    modified_count = await db_client.complete_worker_task_in_db(task_id=request.task_id)
-    logger.info(f'Task {request.task_name} with task_id = {request.task_id} was successfully completed.')
-    return JSONResponse(status_code=status.HTTP_200_OK, content=f"Modified {modified_count} document(s)")
+async def complete_worker_task(task_id: str = Query(), task_name: str = Query()):
+    modified_count = await db_client.complete_worker_task_in_db(task_id=task_id)
+    logger.info(f'Task {task_name} with task_id = {task_id} was successfully completed.')
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"message": f"Modified {modified_count} document(s)"})
 
 
 # For local development
