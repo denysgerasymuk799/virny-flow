@@ -11,16 +11,15 @@ from sklearn.model_selection import train_test_split
 from virny.utils.custom_initializers import create_config_obj
 from virny.utils import create_test_protected_groups
 
-from configs.datasets_config import DATASET_CONFIG
-from configs.models_config_for_tuning import get_models_params_for_tuning
 from virny_flow.configs.null_imputers_config import NULL_IMPUTERS_CONFIG
 from virny_flow.configs.constants import (MODEL_HYPER_PARAMS_COLLECTION_NAME, IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
                                           NUM_FOLDS_FOR_TUNING, ErrorRepairMethod)
 from virny_flow.utils.custom_logger import get_logger
 from virny_flow.utils.dataframe_utils import calculate_kl_divergence
 from virny_flow.utils.model_tuning_utils import tune_ML_models
-from virny_flow.utils.common_helpers import (generate_guid, create_base_flow_dataset, get_injection_scenarios)
-from virny_flow.custom_classes.database_client import DatabaseClient, get_secrets_path
+from virny_flow.utils.common_helpers import generate_guid, create_base_flow_dataset
+from virny_flow.custom_classes.database_client import DatabaseClient
+from virny_flow.custom_classes.s3_client import S3Client
 from virny_flow.error_injectors.nulls_injector import NullsInjector
 from virny_flow.validation import is_in_enum
 
@@ -29,22 +28,24 @@ class MLLifecycle:
     """
     Class encapsulates all required ML lifecycle steps to run different experiments
     """
-    def __init__(self, dataset_name: str, null_imputers: list, model_names: list):
+    def __init__(self, exp_config_name: str, dataset_name: str, secrets_path: str,
+                 dataset_config: dict, model_params_for_tuning: dict):
         """
         Constructor defining default variables
         """
-        self.null_imputers = null_imputers
-        self.model_names = model_names
+        self.exp_config_name = exp_config_name
         self.dataset_name = dataset_name
+        self.model_params_for_tuning = model_params_for_tuning
 
         self.num_folds_for_tuning = NUM_FOLDS_FOR_TUNING
-        self.test_set_fraction = DATASET_CONFIG[dataset_name]['test_set_fraction']
-        self.virny_config = create_config_obj(DATASET_CONFIG[dataset_name]['virny_config_path'])
+        self.test_set_fraction = dataset_config[dataset_name]['test_set_fraction']
+        self.virny_config = create_config_obj(dataset_config[dataset_name]['virny_config_path'])
         self.dataset_sensitive_attrs = [col for col in self.virny_config.sensitive_attributes_dct.keys() if '&' not in col]
-        self.init_data_loader = DATASET_CONFIG[dataset_name]['data_loader'](**DATASET_CONFIG[dataset_name]['data_loader_kwargs'])
+        self.init_data_loader = dataset_config[dataset_name]['data_loader'](**dataset_config[dataset_name]['data_loader_kwargs'])
 
         self._logger = get_logger()
-        self._db = DatabaseClient(secrets_path=get_secrets_path('secrets.env'))
+        self._db = DatabaseClient(secrets_path)
+        self._s3_client = S3Client(secrets_path='../../virny_flow_demo/configs/secrets.env')
         # Create a unique uuid per session to manipulate in the database
         # by all experimental results generated in this session
         self._session_uuid = str(uuid.uuid1())
@@ -74,7 +75,7 @@ class MLLifecycle:
     def _tune_ML_models(self, model_names, base_flow_dataset, experiment_seed,
                         evaluation_scenario, null_imputer_name):
         # Get hyper-parameters for tuning. Each time reinitialize an init model and its hyper-params for tuning.
-        all_models_params_for_tuning = get_models_params_for_tuning(experiment_seed)
+        all_models_params_for_tuning = self.model_params_for_tuning
         models_params_for_tuning = {model_name: all_models_params_for_tuning[model_name] for model_name in model_names}
 
         # Tune models and create a models config for metrics computation
@@ -167,13 +168,21 @@ class MLLifecycle:
 
         imputation_start_time = datetime.now()
         if null_imputer_name == ErrorRepairMethod.datawig.value:
-            output_path = (pathlib.Path(__file__).parent.parent.parent
-                           .joinpath('results')
-                           .joinpath('intermediate_state')
-                           .joinpath(null_imputer_name)
-                           .joinpath(self.dataset_name)
-                           .joinpath(evaluation_scenario)
-                           .joinpath(str(experiment_seed)))
+            if evaluation_scenario is None:
+                output_path = (pathlib.Path(__file__).parent.parent.parent
+                               .joinpath('intermediate_state')
+                               .joinpath(self.exp_config_name)
+                               .joinpath('null_imputation_stage')
+                               .joinpath(null_imputer_name)
+                               .joinpath(self.dataset_name))
+            else:
+                output_path = (pathlib.Path(__file__).parent.parent.parent
+                               .joinpath('results')
+                               .joinpath('intermediate_state')
+                               .joinpath(null_imputer_name)
+                               .joinpath(self.dataset_name)
+                               .joinpath(evaluation_scenario)
+                               .joinpath(str(experiment_seed)))
             X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct = (
                 imputation_method(X_train_with_nulls=X_train_with_nulls,
                                   X_tests_with_nulls_lst=X_tests_with_nulls_lst,
@@ -188,13 +197,22 @@ class MLLifecycle:
             shutil.rmtree(output_path)
 
         elif null_imputer_name == ErrorRepairMethod.automl.value:
-            output_path = (pathlib.Path(__file__).parent.parent.parent
-                           .joinpath('results')
-                           .joinpath('intermediate_state')
-                           .joinpath(null_imputer_name)
-                           .joinpath(self.dataset_name)
-                           .joinpath(evaluation_scenario)
-                           .joinpath(str(experiment_seed)))
+            if evaluation_scenario is None:
+                output_path = (pathlib.Path(__file__).parent.parent.parent
+                               .joinpath('intermediate_state')
+                               .joinpath(self.exp_config_name)
+                               .joinpath('null_imputation_stage')
+                               .joinpath(null_imputer_name)
+                               .joinpath(self.dataset_name))
+            else:
+                output_path = (pathlib.Path(__file__).parent.parent.parent
+                               .joinpath('results')
+                               .joinpath('intermediate_state')
+                               .joinpath(null_imputer_name)
+                               .joinpath(self.dataset_name)
+                               .joinpath(evaluation_scenario)
+                               .joinpath(str(experiment_seed)))
+
             imputation_kwargs.update({'directory': output_path})
             X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct = (
                 imputation_method(X_train_with_nulls=X_train_with_nulls,
@@ -364,6 +382,20 @@ class MLLifecycle:
                                             })
 
         self._logger.info("Performance metrics and tuned parameters of the null imputer are saved into a database")
+
+    def _save_imputed_datasets_to_s3(self, X_train_val: pd.DataFrame, X_tests_lst: pd.DataFrame, null_imputer_name: str):
+        save_sets_dir_path = f'{self.exp_config_name}/null_imputation_stage/{self.dataset_name}/{null_imputer_name}'
+
+        # Write X_train_val to S3 as a CSV
+        train_set_filename = f'imputed_{self.exp_config_name}_{self.dataset_name}_{null_imputer_name}_X_train_val.csv'
+        self._s3_client.write_csv(X_train_val, f'{save_sets_dir_path}/{train_set_filename}')
+
+        # Save each imputed test set in S3
+        for test_set_idx, X_test in enumerate(X_tests_lst):
+            test_set_filename = f'imputed_{self.exp_config_name}_{self.dataset_name}_{null_imputer_name}_X_test.csv'
+            self._s3_client.write_csv(X_test, f'{save_sets_dir_path}/{test_set_filename}')
+
+        self._logger.info("Imputed train and test sets are saved to S3")
 
     def _save_imputed_datasets_to_fs(self, X_train_val: pd.DataFrame, X_tests_lst: pd.DataFrame,
                                      null_imputer_name: str, evaluation_scenario: str, experiment_seed: int):

@@ -6,12 +6,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from lightgbm import LGBMClassifier
 
-from domain_logic.constants import MLModels
-
 
 def get_models_params_for_tuning(models_tuning_seed):
     return {
-        MLModels.dt_clf.value: {
+        'dt_clf': {
             'model': DecisionTreeClassifier(random_state=models_tuning_seed),
             'params': {
                 "max_depth": [5, 10, 20, 30],
@@ -20,7 +18,7 @@ def get_models_params_for_tuning(models_tuning_seed):
                 "criterion": ["gini", "entropy"]
             }
         },
-        MLModels.lr_clf.value: {
+        'lr_clf': {
             'model': LogisticRegression(random_state=models_tuning_seed, max_iter=1000),
             'params': {
                 'penalty': ['l1', 'l2'],
@@ -28,7 +26,7 @@ def get_models_params_for_tuning(models_tuning_seed):
                 'solver': ['newton-cg', 'lbfgs', 'sag', 'saga'],
             }
         },
-        MLModels.lgbm_clf.value: {
+        'lgbm_clf': {
             'model': LGBMClassifier(random_state=models_tuning_seed, n_jobs=48, num_threads=48),
             'params': {
                 'n_estimators': [50, 100, 200, 500],
@@ -38,7 +36,7 @@ def get_models_params_for_tuning(models_tuning_seed):
                 'verbosity': [-1]
             }
         },
-        MLModels.rf_clf.value: {
+        'rf_clf': {
             'model': RandomForestClassifier(random_state=models_tuning_seed),
             'params': {
                 'n_estimators': [50, 100, 200, 500],
@@ -48,7 +46,7 @@ def get_models_params_for_tuning(models_tuning_seed):
                 'bootstrap': [True, False]
             }
         },
-        MLModels.mlp_clf.value: {
+        'mlp_clf': {
             'model': MLPClassifier(hidden_layer_sizes=(100,100,), random_state=models_tuning_seed, max_iter=1000),
             'params': {
                 'activation': ['logistic', 'tanh', 'relu'],

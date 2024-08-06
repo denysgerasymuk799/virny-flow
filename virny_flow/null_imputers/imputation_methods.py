@@ -40,17 +40,19 @@ def impute_with_simple_imputer(X_train_with_nulls: pd.DataFrame, X_tests_with_nu
     X_tests_imputed_lst = list(map(lambda X_test_with_nulls: copy.deepcopy(X_test_with_nulls), X_tests_with_nulls_lst))
 
     # Impute numerical columns
-    num_imputer = SimpleImputer(strategy=kwargs['num'])
-    X_train_imputed[numeric_columns_with_nulls] = num_imputer.fit_transform(X_train_imputed[numeric_columns_with_nulls])
-    for i in range(len(X_tests_imputed_lst)):
-        X_tests_imputed_lst[i][numeric_columns_with_nulls] = num_imputer.transform(X_tests_imputed_lst[i][numeric_columns_with_nulls])
+    if X_train_imputed[numeric_columns_with_nulls].isnull().values.any():
+        num_imputer = SimpleImputer(strategy=kwargs['num'])
+        X_train_imputed[numeric_columns_with_nulls] = num_imputer.fit_transform(X_train_imputed[numeric_columns_with_nulls])
+        for i in range(len(X_tests_imputed_lst)):
+            X_tests_imputed_lst[i][numeric_columns_with_nulls] = num_imputer.transform(X_tests_imputed_lst[i][numeric_columns_with_nulls])
 
     # Impute categorical columns
-    cat_imputer = SimpleImputer(strategy=kwargs['cat'], fill_value='missing') \
-        if kwargs['cat'] == 'constant' else SimpleImputer(strategy=kwargs['cat'])
-    X_train_imputed[categorical_columns_with_nulls] = cat_imputer.fit_transform(X_train_imputed[categorical_columns_with_nulls])
-    for i in range(len(X_tests_imputed_lst)):
-        X_tests_imputed_lst[i][categorical_columns_with_nulls] = cat_imputer.transform(X_tests_imputed_lst[i][categorical_columns_with_nulls])
+    if X_train_imputed[categorical_columns_with_nulls].isnull().values.any():
+        cat_imputer = SimpleImputer(strategy=kwargs['cat'], fill_value='missing') \
+            if kwargs['cat'] == 'constant' else SimpleImputer(strategy=kwargs['cat'])
+        X_train_imputed[categorical_columns_with_nulls] = cat_imputer.fit_transform(X_train_imputed[categorical_columns_with_nulls])
+        for i in range(len(X_tests_imputed_lst)):
+            X_tests_imputed_lst[i][categorical_columns_with_nulls] = cat_imputer.transform(X_tests_imputed_lst[i][categorical_columns_with_nulls])
 
     null_imputer_params_dct = None
     return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct

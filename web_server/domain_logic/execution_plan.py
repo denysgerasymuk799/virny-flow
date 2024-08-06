@@ -1,7 +1,7 @@
 import pathlib
 from datetime import datetime, timezone
 
-from domain_logic.utils import create_config_obj, validate_config
+from domain_logic.utils import create_config_obj
 from domain_logic.constants import EXP_PROGRESS_TRACKING_TABLE, ProgressStatus
 
 
@@ -9,15 +9,19 @@ async def create_execution_plan(db_client):
     # Read an experimental config
     config_yaml_path = pathlib.Path(__file__).parent.parent.joinpath('.', 'configs', 'exp_config.yaml')
     exp_config = create_config_obj(config_yaml_path=config_yaml_path)
-    validate_config(exp_config)
 
     # Create an optimized execution plan
-    execution_plan = []
+    stage1 = []
+    stage2 = []
+    stage3 = []
     for null_imputer in exp_config.null_imputers:
+        stage1.append(null_imputer)
         for fairness_intervention in exp_config.fairness_interventions:
+            stage2.append(f'{null_imputer}&{fairness_intervention}')
             for model in exp_config.models:
-                task_name = f'{null_imputer}&{fairness_intervention}&{model}'
-                execution_plan.append(task_name)
+                stage3.append(f'{null_imputer}&{fairness_intervention}&{model}')
+
+    execution_plan = stage1 + stage2 + stage3
 
     # Save the execution plan in the database
     if await db_client.check_record_exists(query={"exp_config_name": exp_config.exp_config_name}):

@@ -1,66 +1,84 @@
 import os
-import pathlib
-from sklearn.model_selection import train_test_split
+import boto3
+import pandas as pd
+
+from io import BytesIO
+from dotenv import load_dotenv
+from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 
 
 class S3Client:
-    def __init__(self):
-        pass
+    def __init__(self, secrets_path: str):
+        load_dotenv(secrets_path, override=True)  # Take environment variables from .env
 
-    def load_imputed_train_test_sets(self, data_loader, null_imputer_name: str, evaluation_scenario: str,
-                                     experiment_seed: int):
-        if self.test_set_fraction < 0.0 or self.test_set_fraction > 1.0:
-            raise ValueError("test_set_fraction must be a float in the [0.0-1.0] range")
+        self.bucket_name = os.getenv("BUCKET_NAME")
+        self.region_name = os.getenv("REGION_NAME")
 
-        # Split the dataset
-        y_train_val, y_test = train_test_split(data_loader.y_data,
-                                               test_size=self.test_set_fraction,
-                                               random_state=experiment_seed)
+        session = boto3.Session(
+            aws_access_key_id=os.getenv("USER_PUBLIC_KEY"),
+            aws_secret_access_key=os.getenv("USER_SECRET_KEY"),
+            region_name=self.region_name
+        )
+        self.s3_client = session.client('s3')
 
-        # Read imputed train and test sets from save_sets_dir_path
-        save_sets_dir_path = (pathlib.Path(__file__).parent.parent.parent
-                              .joinpath('results')
-                              .joinpath('imputed_datasets')
-                              .joinpath(self.dataset_name)
-                              .joinpath(null_imputer_name)
-                              .joinpath(evaluation_scenario)
-                              .joinpath(str(experiment_seed)))
+    def write_csv(self, df: pd.DataFrame, key: str) -> bool:
+        """
+        Write a DataFrame as a CSV file to an S3 bucket.
 
-        # Create a base flow dataset for Virny to compute metrics
-        numerical_columns_wo_sensitive_attrs = [col for col in data_loader.numerical_columns if col not in self.dataset_sensitive_attrs]
-        categorical_columns_wo_sensitive_attrs = [col for col in data_loader.categorical_columns if col not in self.dataset_sensitive_attrs]
+        :param df: The DataFrame to be stored as a CSV.
+        :param key: The S3 key (file name) under which the CSV will be stored.
+        :return: True if the CSV was stored, otherwise False.
+        """
+        try:
+            csv_buffer = BytesIO()
+            df.to_csv(csv_buffer, index=False)
+            self.s3_client.put_object(Bucket=self.bucket_name, Key=key, Body=csv_buffer.getvalue())
+            print(f"CSV written to {self.bucket_name}/{key}")
+            return True
+        except NoCredentialsError:
+            print("Credentials not available")
+            return False
+        except PartialCredentialsError:
+            print("Incomplete credentials provided")
+            return False
 
-        # Read X_train_val set
-        train_set_filename = f'imputed_{self.dataset_name}_{null_imputer_name}_{evaluation_scenario}_{experiment_seed}_X_train_val.csv'
-        X_train_val_imputed_wo_sensitive_attrs = pd.read_csv(os.path.join(save_sets_dir_path, train_set_filename),
-                                                             header=0, index_col=0)
-        X_train_val_imputed_wo_sensitive_attrs[categorical_columns_wo_sensitive_attrs] = (
-            X_train_val_imputed_wo_sensitive_attrs[categorical_columns_wo_sensitive_attrs].astype(str))
+    def read_csv(self, key: str) -> pd.DataFrame:
+        """
+        Read a CSV file from an S3 bucket into a DataFrame.
 
-        # Subset y_train_val to align with X_train_val_imputed_wo_sensitive_attrs
-        if null_imputer_name == ErrorRepairMethod.deletion.value:
-            y_train_val = y_train_val.loc[X_train_val_imputed_wo_sensitive_attrs.index]
+        :param key: The S3 key (file name) of the CSV to be read.
+        :return: The DataFrame if the CSV was found, otherwise None.
+        """
+        try:
+            response = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
+            csv_buffer = BytesIO(response['Body'].read())
+            df = pd.read_csv(csv_buffer)
+            print(f"CSV read from {self.bucket_name}/{key}")
+            return df
+        except self.s3_client.exceptions.NoSuchKey:
+            print("The CSV does not exist")
+            return None
+        except NoCredentialsError:
+            print("Credentials not available")
+            return None
+        except PartialCredentialsError:
+            print("Incomplete credentials provided")
+            return None
 
-        # Read X_test sets
-        X_tests_imputed_wo_sensitive_attrs_lst = list()
-        _, test_injection_scenarios_lst = get_injection_scenarios(evaluation_scenario)
-        for test_injection_scenario in test_injection_scenarios_lst:
-            test_set_filename = f'imputed_{self.dataset_name}_{null_imputer_name}_{evaluation_scenario}_{experiment_seed}_X_test_{test_injection_scenario}.csv'
-            X_test_imputed_wo_sensitive_attrs = pd.read_csv(os.path.join(save_sets_dir_path, test_set_filename),
-                                                            header=0, index_col=0)
-            X_test_imputed_wo_sensitive_attrs[categorical_columns_wo_sensitive_attrs] = (
-                X_test_imputed_wo_sensitive_attrs[categorical_columns_wo_sensitive_attrs].astype(str))
-            X_tests_imputed_wo_sensitive_attrs_lst.append(X_test_imputed_wo_sensitive_attrs)
+    def list_files(self, prefix: str = '') -> list:
+        """
+        List files in the S3 bucket with the given prefix.
 
-        # Create base flow datasets for Virny to compute metrics
-        main_base_flow_dataset, extra_base_flow_datasets = \
-            create_virny_base_flow_datasets(data_loader=data_loader,
-                                            dataset_sensitive_attrs=self.dataset_sensitive_attrs,
-                                            X_train_val_wo_sensitive_attrs=X_train_val_imputed_wo_sensitive_attrs,
-                                            X_tests_wo_sensitive_attrs_lst=X_tests_imputed_wo_sensitive_attrs_lst,
-                                            y_train_val=y_train_val,
-                                            y_test=y_test,
-                                            numerical_columns_wo_sensitive_attrs=numerical_columns_wo_sensitive_attrs,
-                                            categorical_columns_wo_sensitive_attrs=categorical_columns_wo_sensitive_attrs)
-
-        return main_base_flow_dataset, extra_base_flow_datasets
+        :param prefix: Prefix to filter the files.
+        :return: List of file keys.
+        """
+        try:
+            response = self.s3_client.list_objects_v2(Bucket=self.bucket_name, Prefix=prefix)
+            files = [obj['Key'] for obj in response.get('Contents', [])]
+            return files
+        except NoCredentialsError:
+            print("Credentials not available")
+            return []
+        except PartialCredentialsError:
+            print("Incomplete credentials provided")
+            return []

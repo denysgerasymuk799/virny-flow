@@ -2,8 +2,10 @@ import copy
 import hashlib
 import secrets
 import base64
-
+import yaml
 import pandas as pd
+
+from munch import DefaultMunch
 from virny.custom_classes.base_dataset import BaseFlowDataset
 
 
@@ -22,6 +24,24 @@ def generate_base64_hash(length=8):
 
     # Return the required length
     return random_hash[:length]
+
+
+def create_config_obj(exp_config_yaml_path: str):
+    """
+    Return a config object created based on a exp config yaml file.
+
+    Parameters
+    ----------
+    exp_config_yaml_path
+        Path to a config yaml file
+
+    """
+    with open(exp_config_yaml_path) as f:
+        config_dct = yaml.load(f, Loader=yaml.FullLoader)
+
+    config_obj = DefaultMunch.fromDict(config_dct)
+
+    return config_obj
 
 
 def create_base_flow_dataset(data_loader, dataset_sensitive_attrs,

@@ -1,6 +1,6 @@
 import pathlib
 
-from configs.data_loaders import GermanCreditDataset
+from virny_flow_demo.configs.data_loaders import GermanCreditDataset
 
 
 DATASET_CONFIG = {

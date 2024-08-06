@@ -23,8 +23,8 @@ class WebServerClient:
                 response = requests.post(url=url, params=params, headers=header) if request_type == 'POST' \
                     else requests.get(url=url, params=params, headers=header)
                 if response.status_code == 400:
-                    self._logger.error(f'Function request_with_retries(), number of request {n_retry + 1},'
-                                       f' exception: 400 Bad client request;\nMessage: {response.json()["detail"]}\n\n')
+                    self._logger.error(f'Function request_with_retries(), number of request {n_retry + 1}, '
+                                       f'exception: 400 Bad client request;\nMessage: {response.json()["detail"]}\n\n')
                     break
 
                 response.raise_for_status()
@@ -51,10 +51,10 @@ class WebServerClient:
         if response.status_code == 200:
             # Parse the response content (assuming it's JSON)
             task = response.json()
-            print("New task name:", task["task_name"])
+            self._logger.info(f"New task name: {task['task_name']}")
             return task
         else:
-            print("Failed to retrieve data. Status code:", response.status_code)
+            self._logger.info(f"Failed to retrieve data. Status code: {response.status_code}.")
             return None
 
     def complete_worker_task(self, task_id: str, task_name: str):
@@ -71,6 +71,6 @@ class WebServerClient:
         if response.status_code == 200:
             # Parse the response content (assuming it's JSON)
             data = response.json()
-            print("Response:", data['message'])
+            self._logger.info(f"Response: {data['message']}")
         else:
-            print("Failed to retrieve data. Status code:", response.status_code)
+            self._logger.info(f"Failed to retrieve data. Status code: {response.status_code}.")
