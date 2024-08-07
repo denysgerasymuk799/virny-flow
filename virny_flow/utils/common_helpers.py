@@ -2,11 +2,11 @@ import copy
 import hashlib
 import secrets
 import base64
-
+import yaml
 import pandas as pd
-from virny.custom_classes.base_dataset import BaseFlowDataset
 
-from configs.scenarios_config import EVALUATION_SCENARIOS_CONFIG
+from munch import DefaultMunch
+from virny.custom_classes.base_dataset import BaseFlowDataset
 
 
 def generate_guid(ordered_hierarchy_lst: list):
@@ -26,14 +26,22 @@ def generate_base64_hash(length=8):
     return random_hash[:length]
 
 
-def get_injection_scenarios(evaluation_scenario: str):
-    scenario_config = EVALUATION_SCENARIOS_CONFIG[evaluation_scenario]
-    train_injection_scenario, test_injection_scenarios_lst = \
-        scenario_config['train_injection_scenario'], scenario_config['test_injection_scenarios']
-    train_injection_scenario = train_injection_scenario.upper()
-    test_injection_scenarios_lst = [injection_scenario.upper() for injection_scenario in test_injection_scenarios_lst]
+def create_config_obj(exp_config_yaml_path: str):
+    """
+    Return a config object created based on a exp config yaml file.
 
-    return train_injection_scenario, test_injection_scenarios_lst
+    Parameters
+    ----------
+    exp_config_yaml_path
+        Path to a config yaml file
+
+    """
+    with open(exp_config_yaml_path) as f:
+        config_dct = yaml.load(f, Loader=yaml.FullLoader)
+
+    config_obj = DefaultMunch.fromDict(config_dct)
+
+    return config_obj
 
 
 def create_base_flow_dataset(data_loader, dataset_sensitive_attrs,

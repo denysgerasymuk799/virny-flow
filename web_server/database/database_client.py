@@ -1,0 +1,89 @@
+import os
+import pathlib
+import certifi
+import motor.motor_asyncio
+
+from bson.objectid import ObjectId
+from dotenv import load_dotenv
+from datetime import datetime, timezone
+
+from domain_logic.constants import EXP_PROGRESS_TRACKING_TABLE, NO_TASKS, ProgressStatus
+
+
+class DatabaseClient:
+    def __init__(self, secrets_path: str = pathlib.Path(__file__).parent.parent.joinpath( 'configs', 'secrets.env')):
+        load_dotenv(secrets_path, override=True)  # Take environment variables from .env
+
+        # Provide the mongodb atlas url to connect python to mongodb using pymongo
+        self.connection_string = os.getenv("CONNECTION_STRING")
+        self.db_name = os.getenv("DB_NAME")
+
+        self.client = None
+
+    def connect(self):
+        # Create a connection using MongoClient
+        self.client = motor.motor_asyncio.AsyncIOMotorClient(self.connection_string,
+                                                             serverSelectionTimeoutMS=60_000,
+                                                             tls=True,
+                                                             tlsAllowInvalidCertificates=True,
+                                                             tlsCAFile=certifi.where())
+
+    def _get_collection(self, collection_name):
+        return self.client[self.db_name][collection_name]
+
+    async def check_record_exists(self, query: dict):
+        collection = self._get_collection(collection_name=EXP_PROGRESS_TRACKING_TABLE)
+        return await collection.find_one(query) is not None
+
+    async def execute_write_query(self, records, collection_name):
+        collection = self._get_collection(collection_name)
+        await collection.insert_many(records)
+
+    async def update_one_query(self, collection_name: str, _id, update_val_dct: dict):
+        collection = self._get_collection(collection_name)
+        object_id = ObjectId(_id) if isinstance(_id, str) else _id
+
+        # Update a single document
+        result = await collection.update_one(
+            {"_id": object_id},  # Filter to match the document
+            {"$set": update_val_dct}  # Update operation
+        )
+        print(f"Matched {result.matched_count} document(s) and modified {result.modified_count} document(s).")
+        return result.modified_count
+
+    async def read_one_query(self, collection_name: str, query: dict, sort_param: list = None):
+        collection = self._get_collection(collection_name)
+        return await collection.find_one(query, sort=sort_param)
+
+    async def write_records_into_db(self, collection_name: str, records: list, static_values_dct: dict):
+        for key, value in static_values_dct.items():
+            for record in records:
+                record[key] = value
+
+        await self.execute_write_query(records, collection_name)
+
+    async def read_worker_task_from_db(self, exp_config_name: str):
+        collection_name = EXP_PROGRESS_TRACKING_TABLE
+        query = {
+            'exp_config_name': exp_config_name,
+            'status': ProgressStatus.NOT_STARTED.value,
+            'tag': 'OK',
+        }
+
+        high_priority_task = await self.read_one_query(collection_name, query, sort_param=[('task_priority', 1)])
+        if high_priority_task is not None:
+            await self.update_one_query(collection_name, _id=high_priority_task["_id"],
+                                        update_val_dct={"status": ProgressStatus.ASSIGNED.value,
+                                                        "update_datetime": datetime.now(timezone.utc)})
+            return high_priority_task
+        else:
+            return {"_id": None, "task_name": NO_TASKS}
+
+    async def complete_worker_task_in_db(self, task_id: str):
+        return await self.update_one_query(collection_name=EXP_PROGRESS_TRACKING_TABLE,
+                                           _id=task_id,
+                                           update_val_dct={"status": ProgressStatus.DONE.value,
+                                                           "update_datetime": datetime.now(timezone.utc)})
+
+    def close(self):
+        self.client.close()

@@ -1,0 +1,8 @@
+exp_config_name: "german_experiments"
+dataset: "german"
+sensitive_attribute_for_intervention: "sex"
+null_imputers: ["median-mode", "median-dummy"]
+fairness_interventions: ["DIR"]
+models: ["lr_clf", "rf_clf"]
+random_state: 42
+secrets_path: "./configs/secrets.env"

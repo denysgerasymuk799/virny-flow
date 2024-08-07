@@ -1,16 +1,14 @@
 import os
 import numpy as np
 import pandas as pd
-from datetime import datetime
 from virny.custom_classes.base_inprocessing_wrapper import BaseInprocessingWrapper
 
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import GridSearchCV
 
-from external_dependencies.CPClean.training.knn import KNN
-from external_dependencies.CPClean.cleaner.boost_clean import transform_y, train_classifiers, tune_classifiers
-from external_dependencies.CPClean.repair.repair import repair
-from external_dependencies.CPClean.training.preprocess import preprocess_boostclean
+from virny_flow.external_dependencies.CPClean.repair.repair import repair
+from virny_flow.external_dependencies.CPClean.training.preprocess import preprocess_boostclean
+from virny_flow.external_dependencies.CPClean.cleaner.boost_clean import transform_y, train_classifiers
+
 
 BOOST_CLEAN_DEFAULT_MODEL_PARAMS = {
     'fn': RandomForestClassifier,

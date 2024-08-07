@@ -45,6 +45,8 @@ def parse_input_args():
                         help="True -- apply ML-oriented imputers, False -- use pre-computed imputed datasets")
     parser.add_argument("--evaluation_scenarios", type=str, help="a list of evaluation scenarios",
                         default=str(list(EVALUATION_SCENARIOS_CONFIG.keys())))
+    parser.add_argument("--fairness_preprocessing", type=str2bool, required=False, default=False,
+                        help="True -- apply fairness preprocessing, False -- do not apply fairness preprocessing (Available only for the ACSIncome dataset)")
 
     args = parser.parse_args()
     args = validate_args(exp_config_obj=args)
@@ -62,12 +64,25 @@ def parse_input_args():
 
 if __name__ == '__main__':
     start_time = datetime.now()
-    preconfigure_experiment(env_file_path=get_secrets_path('secrets_3.env'))
+    preconfigure_experiment(env_file_path=get_secrets_path('secrets.env'))
     args = parse_input_args()
 
     benchmark = Benchmark(dataset_name=args.dataset,
                           null_imputers=args.null_imputers,
                           model_names=args.models)
+    
+    # if args.fairness_preprocessing:
+    #     fairness_intervention_config = {
+    #         "sensitive_attributes_dct": {
+    #             'SEX': '2',
+    #             'RAC1P': ['2', '3', '4', '5', '6', '7', '8', '9'],
+    #             'SEX & RAC1P': None
+    #         },
+    #         "intervention_param": 0.5,
+    #     }
+    # else:
+    #     fairness_intervention_config = None
+    
     benchmark.run_experiment(run_nums=args.run_nums,
                              evaluation_scenarios=args.evaluation_scenarios,
                              model_names=args.models,
