@@ -10,7 +10,7 @@ from virny_flow.utils.dataframe_utils import preprocess_mult_base_flow_datasets
 from virny_flow.configs.constants import EXP_COLLECTION_NAME, EXPERIMENT_RUN_SEEDS, ErrorRepairMethod, STAGE_SEPARATOR
 
 
-class Benchmark(MLLifecycle):
+class PipelineEvaluator(MLLifecycle):
     """
     Class encapsulates all experimental pipelines
     """

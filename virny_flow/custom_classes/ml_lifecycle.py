@@ -49,7 +49,7 @@ class MLLifecycle:
         # Create a unique uuid per session to manipulate in the database
         # by all experimental results generated in this session
         self._session_uuid = str(uuid.uuid1())
-        print('Session UUID for all results of experiments in the current benchmark session:', self._session_uuid)
+        print('Session UUID for all results of experiments in the current session:', self._session_uuid)
 
     def _split_dataset(self, data_loader, experiment_seed: int):
         if self.test_set_fraction < 0.0 or self.test_set_fraction > 1.0:
