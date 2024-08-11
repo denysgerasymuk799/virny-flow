@@ -2,14 +2,36 @@ from enum import Enum
 
 
 EXP_PROGRESS_TRACKING_TABLE = 'exp_progress_tracking'
-NO_TASKS = 'NO_TASKS'
+NO_READY_TASK = 'NO_READY_TASK'
+FINISH_EXECUTION = 'FINISH_EXECUTION'
+STAGE_SEPARATOR = '&'
 
 
 # ====================================================================
-# Progress Statuses
+# Stage Names
 # ====================================================================
-class ProgressStatus(Enum):
-    NOT_STARTED = "NOT_STARTED"
+class StageName(Enum):
+    null_imputation = "null_imputation"
+    fairness_intervention = "fairness_intervention"
+    model_evaluation = "model_evaluation"
+
+    def __str__(self):
+        return self.value
+
+
+STAGE_NAME_TO_STAGE_ID = {
+    StageName.null_imputation.value: 1,
+    StageName.fairness_intervention.value: 2,
+    StageName.model_evaluation.value: 3,
+}
+
+
+# ====================================================================
+# Task Statuses
+# ====================================================================
+class TaskStatus(Enum):
+    BLOCKED = "BLOCKED"
+    READY = "READY"
     ASSIGNED = "ASSIGNED"
     DONE = "DONE"
 

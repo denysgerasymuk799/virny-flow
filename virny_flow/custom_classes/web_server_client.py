@@ -57,10 +57,12 @@ class WebServerClient:
             self._logger.info(f"Failed to retrieve data. Status code: {response.status_code}.")
             return None
 
-    def complete_worker_task(self, task_id: str, task_name: str):
+    def complete_worker_task(self, exp_config_name: str, task_guid: str, task_name: str, stage_id: int):
         params = {
-            "task_id": task_id,
+            "exp_config_name": exp_config_name,
+            "task_guid": task_guid,
             "task_name": task_name,
+            "stage_id": stage_id,
         }
         response = self.request_with_retries(url=f'{self.address}/complete_worker_task',
                                              params=params,
