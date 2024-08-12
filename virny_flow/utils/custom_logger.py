@@ -10,13 +10,14 @@ class CustomHandler(logging.StreamHandler):
         self.setFormatter(formatter)
 
 
-def get_logger():
-    logger = logging.getLogger('root')
+def get_logger(logger_name):
+    logger = logging.getLogger(logger_name)
     logger.setLevel('INFO')
     logging.disable(logging.DEBUG)
 
     if logger.hasHandlers():
         logger.handlers.clear()
     logger.addHandler(CustomHandler())
+    logger.propagate = False
 
     return logger

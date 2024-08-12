@@ -43,9 +43,9 @@ class MLLifecycle:
         self.dataset_sensitive_attrs = [col for col in self.virny_config.sensitive_attributes_dct.keys() if '&' not in col]
         self.init_data_loader = dataset_config[dataset_name]['data_loader'](**dataset_config[dataset_name]['data_loader_kwargs'])
 
-        self._logger = get_logger()
+        self._logger = get_logger(logger_name='ml_lifecycle')
         self._db = DatabaseClient(secrets_path)
-        self._s3_client = S3Client(secrets_path='../../virny_flow_demo/configs/secrets.env')
+        self._s3_client = S3Client(secrets_path)
         # Create a unique uuid per session to manipulate in the database
         # by all experimental results generated in this session
         self._session_uuid = str(uuid.uuid1())
@@ -72,8 +72,8 @@ class MLLifecycle:
         return (X_train_val_wo_sensitive_attrs, X_tests_wo_sensitive_attrs_lst,
                 numerical_columns_wo_sensitive_attrs, categorical_columns_wo_sensitive_attrs)
 
-    def _tune_ML_models(self, model_names, base_flow_dataset, experiment_seed,
-                        evaluation_scenario, null_imputer_name):
+    def _tune_ML_models(self, model_names, base_flow_dataset, evaluation_scenario,
+                        experiment_seed, null_imputer_name, fairness_intervention_name):
         # Get hyper-parameters for tuning. Each time reinitialize an init model and its hyper-params for tuning.
         all_models_params_for_tuning = self.model_params_for_tuning
         models_params_for_tuning = {model_name: all_models_params_for_tuning[model_name] for model_name in model_names}
@@ -88,20 +88,22 @@ class MLLifecycle:
         date_time_str = datetime.now(timezone.utc)
         tuned_params_df['Model_Best_Params'] = tuned_params_df['Model_Best_Params']
         tuned_params_df['Model_Tuning_Guid'] = tuned_params_df['Model_Name'].apply(
-            lambda model_name: generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name,
-                                                                    evaluation_scenario, experiment_seed, model_name])
+            lambda model_name: generate_guid(ordered_hierarchy_lst=[self.exp_config_name, evaluation_scenario, experiment_seed,
+                                                                    self.dataset_name, null_imputer_name, fairness_intervention_name, model_name])
         )
         self._db.write_pandas_df_into_db(collection_name=MODEL_HYPER_PARAMS_COLLECTION_NAME,
                                          df=tuned_params_df,
                                          custom_tbl_fields_dct={
-                                             'exp_pipeline_guid': generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name, evaluation_scenario, experiment_seed]),
+                                             'exp_pipeline_guid': generate_guid(ordered_hierarchy_lst=[self.exp_config_name, evaluation_scenario, experiment_seed, self.dataset_name, null_imputer_name, fairness_intervention_name]),
                                              'session_uuid': self._session_uuid,
-                                             'null_imputer_name': null_imputer_name,
+                                             'exp_config_name': self.exp_config_name,
                                              'evaluation_scenario': evaluation_scenario,
                                              'experiment_seed': experiment_seed,
+                                             'null_imputer_name': null_imputer_name,
+                                             'fairness_intervention_name': fairness_intervention_name,
                                              'record_create_date_time': date_time_str,
                                          })
-        self._logger.info("Models are tuned and their hyper-params are saved into a database")
+        self._logger.info("Models are tuned and their hyper-params are saved into the database")
 
         return models_config
 
@@ -356,7 +358,7 @@ class MLLifecycle:
                                              'null_imputer_params_dct': null_imputer_params_dct
                                          })
 
-        # Save imputation results into a database for each test set from the evaluation scenario
+        # Save imputation results into the database for each test set from the evaluation scenario
         _, test_injection_scenarios_lst = get_injection_scenarios(evaluation_scenario)
         test_record_create_date_time = datetime.now(timezone.utc)
         for test_set_idx, test_imputation_metrics_df in enumerate(test_imputation_metrics_dfs_lst):
@@ -381,21 +383,7 @@ class MLLifecycle:
                                                  'null_imputer_params_dct': null_imputer_params_dct
                                             })
 
-        self._logger.info("Performance metrics and tuned parameters of the null imputer are saved into a database")
-
-    def _save_imputed_datasets_to_s3(self, X_train_val: pd.DataFrame, X_tests_lst: pd.DataFrame, null_imputer_name: str):
-        save_sets_dir_path = f'{self.exp_config_name}/null_imputation_stage/{self.dataset_name}/{null_imputer_name}'
-
-        # Write X_train_val to S3 as a CSV
-        train_set_filename = f'imputed_{self.exp_config_name}_{self.dataset_name}_{null_imputer_name}_X_train_val.csv'
-        self._s3_client.write_csv(X_train_val, f'{save_sets_dir_path}/{train_set_filename}')
-
-        # Save each imputed test set in S3
-        for test_set_idx, X_test in enumerate(X_tests_lst):
-            test_set_filename = f'imputed_{self.exp_config_name}_{self.dataset_name}_{null_imputer_name}_X_test.csv'
-            self._s3_client.write_csv(X_test, f'{save_sets_dir_path}/{test_set_filename}')
-
-        self._logger.info("Imputed train and test sets are saved to S3")
+        self._logger.info("Performance metrics and tuned parameters of the null imputer are saved into the database")
 
     def _save_imputed_datasets_to_fs(self, X_train_val: pd.DataFrame, X_tests_lst: pd.DataFrame,
                                      null_imputer_name: str, evaluation_scenario: str, experiment_seed: int):

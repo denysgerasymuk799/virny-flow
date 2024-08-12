@@ -5,10 +5,10 @@ import requests
 from virny_flow.utils.custom_logger import get_logger
 
 
-class WebServerClient:
+class VirnyFlowClient:
     def __init__(self, address: str):
         self.address = address.rstrip('/')
-        self._logger = get_logger()
+        self._logger = get_logger(logger_name="virny_flow_client")
 
     def request_with_retries(self, url, params, header, request_type):
         """
@@ -51,7 +51,7 @@ class WebServerClient:
         if response.status_code == 200:
             # Parse the response content (assuming it's JSON)
             task = response.json()
-            self._logger.info(f"New task name: {task['task_name']}")
+            self._logger.info(f"New task {task['task_name']} was taken")
             return task
         else:
             self._logger.info(f"Failed to retrieve data. Status code: {response.status_code}.")

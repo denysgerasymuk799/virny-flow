@@ -107,6 +107,7 @@ def read_repaired_datasets(X_train, paths, categorical_columns_with_nulls):
             
         return X_train_repairs
 
+
 def encode_dataset_for_boostclean(df, categorical_columns):
     """Encode categorical columns with OneHotEncoder."""
     df_enc = df.copy(deep=True)

@@ -5,6 +5,7 @@ EXP_PROGRESS_TRACKING_TABLE = 'exp_progress_tracking'
 NO_READY_TASK = 'NO_READY_TASK'
 FINISH_EXECUTION = 'FINISH_EXECUTION'
 STAGE_SEPARATOR = '&'
+NO_FAIRNESS_INTERVENTION = 'NO_FAIRNESS_INTERVENTION'
 
 
 # ====================================================================

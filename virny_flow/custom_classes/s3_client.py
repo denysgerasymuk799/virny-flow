@@ -21,7 +21,7 @@ class S3Client:
         )
         self.s3_client = session.client('s3')
 
-    def write_csv(self, df: pd.DataFrame, key: str) -> bool:
+    def write_csv(self, df: pd.DataFrame, key: str, index: bool) -> bool:
         """
         Write a DataFrame as a CSV file to an S3 bucket.
 
@@ -31,7 +31,7 @@ class S3Client:
         """
         try:
             csv_buffer = BytesIO()
-            df.to_csv(csv_buffer, index=False)
+            df.to_csv(csv_buffer, index=index)
             self.s3_client.put_object(Bucket=self.bucket_name, Key=key, Body=csv_buffer.getvalue())
             print(f"CSV written to {self.bucket_name}/{key}")
             return True
@@ -42,7 +42,7 @@ class S3Client:
             print("Incomplete credentials provided")
             return False
 
-    def read_csv(self, key: str) -> pd.DataFrame:
+    def read_csv(self, key: str, index: bool) -> pd.DataFrame:
         """
         Read a CSV file from an S3 bucket into a DataFrame.
 
@@ -52,7 +52,7 @@ class S3Client:
         try:
             response = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
             csv_buffer = BytesIO(response['Body'].read())
-            df = pd.read_csv(csv_buffer)
+            df = pd.read_csv(csv_buffer, header=0, index_col=0 if index else None)
             print(f"CSV read from {self.bucket_name}/{key}")
             return df
         except self.s3_client.exceptions.NoSuchKey:

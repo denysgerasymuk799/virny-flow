@@ -3,12 +3,13 @@ from enum import Enum
 
 EXPERIMENT_RUN_SEEDS = [100 * i for i in range(1, 11)]
 NUM_FOLDS_FOR_TUNING = 3
-EXP_COLLECTION_NAME = 'exp_nulls_data_cleaning'
+EXP_COLLECTION_NAME = 'exp_pipeline_metrics'
 MODEL_HYPER_PARAMS_COLLECTION_NAME = 'tuned_model_hyper_params'
 IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME = 'imputation_performance_metrics'
 NO_READY_TASK = 'NO_READY_TASK'
 FINISH_EXECUTION = 'FINISH_EXECUTION'
 STAGE_SEPARATOR = '&'
+NO_FAIRNESS_INTERVENTION = 'NO_FAIRNESS_INTERVENTION'
 
 
 # ====================================================================
@@ -33,12 +34,12 @@ class ErrorRepairMethod(Enum):
 # Fairness Interventions
 # ====================================================================
 class FairnessIntervention(Enum):
-    dir = 'DIR'  # Disparate Impact Remover
-    lfr = 'LFR'  # Learning Fair Representations
-    ad = 'AD'    # Adversarial Debiasing
-    egr = 'EGR'  # Exponentiated Gradient Reduction
-    eop = 'EOP'  # Equalized Odds Postprocessing
-    roc = 'ROC'  # Reject Option Classification
+    DIR = 'DIR'  # Disparate Impact Remover
+    LFR = 'LFR'  # Learning Fair Representations
+    AD = 'AD'    # Adversarial Debiasing
+    EGR = 'EGR'  # Exponentiated Gradient Reduction
+    EOP = 'EOP'  # Equalized Odds Postprocessing
+    ROC = 'ROC'  # Reject Option Classification
 
     def __str__(self):
         return self.value

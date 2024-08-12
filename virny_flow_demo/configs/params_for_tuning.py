@@ -6,16 +6,35 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from lightgbm import LGBMClassifier
 
+from virny_flow.configs.constants import FairnessIntervention
+
+
+FAIRNESS_INTERVENTION_HYPERPARAMS = {
+    FairnessIntervention.DIR.value: {"repair_level": 0.7},
+    FairnessIntervention.LFR.value: {"k": 5, "Ax": 0.01, "Ay": 1.0, "Az": 50.0},
+    FairnessIntervention.AD.value: {"scope_name": "debiased_classifier",
+                                    "adversary_loss_weight": 0.1, "num_epochs": 50, "batch_size": 128,
+                                    "classifier_num_hidden_units": 200, "debias": True},
+    FairnessIntervention.EGR.value: {"constraints": "DemographicParity",
+                                     "eps": 0.01, "max_iter": 50, "nu": None, "eta0": 2.0,
+                                     "run_linprog_step": True, "drop_prot_attr": True},
+    FairnessIntervention.EOP.value: {},
+    FairnessIntervention.ROC.value: {"low_class_thresh": 0.01, "high_class_thresh": 0.99, "num_class_thresh": 100,
+                                     "num_ROC_margin": 50, "metric_name": "Statistical parity difference",
+                                     "metric_ub": 0.05, "metric_lb": -0.05},
+}
+
 
 def get_models_params_for_tuning(models_tuning_seed):
     return {
         'dt_clf': {
             'model': DecisionTreeClassifier(random_state=models_tuning_seed),
             'params': {
-                "max_depth": [5, 10, 20, 30],
-                'min_samples_leaf': [5, 10, 20, 50, 100],
-                "max_features": [0.6, 'sqrt'],
-                "criterion": ["gini", "entropy"]
+                "max_depth": [5, 10],
+                # "max_depth": [5, 10, 20, 30],
+                # 'min_samples_leaf': [5, 10, 20, 50, 100],
+                # "max_features": [0.6, 'sqrt'],
+                # "criterion": ["gini", "entropy"]
             }
         },
         'lr_clf': {
@@ -39,11 +58,12 @@ def get_models_params_for_tuning(models_tuning_seed):
         'rf_clf': {
             'model': RandomForestClassifier(random_state=models_tuning_seed),
             'params': {
-                'n_estimators': [50, 100, 200, 500],
-                'max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
-                'min_samples_split': [2, 5, 10],
-                'min_samples_leaf': [1, 2, 4],
-                'bootstrap': [True, False]
+                'n_estimators': [50, 100],
+                # 'n_estimators': [50, 100, 200, 500],
+                # 'max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
+                # 'min_samples_split': [2, 5, 10],
+                # 'min_samples_leaf': [1, 2, 4],
+                # 'bootstrap': [True, False]
             }
         },
         'mlp_clf': {

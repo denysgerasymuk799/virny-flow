@@ -1,6 +1,23 @@
 import copy
+import pandas as pd
 
 from virny_flow.utils.dataframe_utils import encode_cat, decode_cat, encode_cat_with_existing_encoder
+
+
+def get_df_condition(df: pd.DataFrame, col: str, dis, include_dis: bool):
+    if isinstance(dis, list):
+        return df[col].isin(dis) if include_dis else ~df[col].isin(dis)
+    else:
+        return df[col] == dis if include_dis else df[col] != dis
+
+
+def get_dis_group_condition(df, attrs, dis_values):
+    # Construct a complex df condition for the dis group
+    dis_condition = get_df_condition(df, attrs[0], dis_values[0], include_dis=True)
+    for idx in range(1, len(attrs)):
+        dis_condition &= get_df_condition(df, attrs[idx], dis_values[idx], include_dis=True)
+
+    return dis_condition
 
 
 def encode_dataset_for_missforest(df, cat_encoders: dict = None, dataset_name: str = None,

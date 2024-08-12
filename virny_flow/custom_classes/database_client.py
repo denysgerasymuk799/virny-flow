@@ -56,7 +56,7 @@ class DatabaseClient:
         df['tag'] = 'OK'
 
         self.execute_write_query(df.to_dict('records'), collection_name)
-        print('Dataframe is successfully written into a database')
+        print('Dataframe is successfully written into the database')
 
     def read_metric_df_from_db(self, collection_name: str, query: dict):
         records = self.execute_read_query(query=query,
