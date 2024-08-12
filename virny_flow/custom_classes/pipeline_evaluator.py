@@ -1,20 +1,25 @@
 import copy
 import tqdm
+import pandas as pd
 
 from pprint import pprint
+from sklearn.model_selection import train_test_split
 from virny.user_interfaces.multiple_models_with_multiple_test_sets_api import compute_metrics_with_multiple_test_sets
 
-from virny_flow.utils.common_helpers import generate_guid
 from virny_flow.custom_classes.ml_lifecycle import MLLifecycle
-from virny_flow.utils.dataframe_utils import preprocess_mult_base_flow_datasets
-from virny_flow.configs.constants import EXP_COLLECTION_NAME, EXPERIMENT_RUN_SEEDS, ErrorRepairMethod, STAGE_SEPARATOR
+from virny_flow.utils.pipeline_utils import get_dis_group_condition
+from virny_flow.preprocessing import preprocess_base_flow_dataset
+from virny_flow.fairness_interventions.preprocessors import remove_disparate_impact
+from virny_flow.utils.common_helpers import generate_guid, create_base_flow_dataset
+from virny_flow.configs.constants import (EXP_COLLECTION_NAME, EXPERIMENT_RUN_SEEDS, ErrorRepairMethod, STAGE_SEPARATOR,
+                                          NO_FAIRNESS_INTERVENTION, FairnessIntervention)
 
 
 class PipelineEvaluator(MLLifecycle):
     """
     Class encapsulates all experimental pipelines
     """
-    def __init__(self, exp_config, dataset_config, models_config):
+    def __init__(self, exp_config, dataset_config, fairness_intervention_config, models_config):
         """
         Constructor defining default variables
         """
@@ -24,18 +29,32 @@ class PipelineEvaluator(MLLifecycle):
                          dataset_config=dataset_config,
                          model_params_for_tuning=models_config)
 
+        self.exp_config = exp_config
+        self.fairness_intervention_config = fairness_intervention_config
+
     def execute_task(self, task_name: str, seed: int):
         self._db.connect()
 
-        num_stages = task_name.count(STAGE_SEPARATOR) + 1
-        if num_stages == 1:
+        stage_num = task_name.count(STAGE_SEPARATOR) + 1
+        if stage_num == 1:
             null_imputer_name = task_name
-            self._run_null_imputation_stage(init_data_loader=self.init_data_loader,
-                                            experiment_seed=seed,
-                                            null_imputer_name=null_imputer_name,
-                                            tune_imputers=True,
-                                            save_imputed_datasets=True)
+            self.run_null_imputation_stage(init_data_loader=self.init_data_loader,
+                                           experiment_seed=seed,
+                                           null_imputer_name=null_imputer_name,
+                                           tune_imputers=True,
+                                           save_imputed_datasets=True)
             execution_status = True
+
+        elif stage_num == 2:
+            null_imputer_name, fairness_intervention_name = task_name.split(STAGE_SEPARATOR)
+            self.run_fairness_intervention_stage(init_data_loader=self.init_data_loader,
+                                                 experiment_seed=seed,
+                                                 null_imputer_name=null_imputer_name,
+                                                 fairness_intervention_name=fairness_intervention_name,
+                                                 tune_fairness_interventions=True,
+                                                 save_preprocessed_datasets=True)
+            execution_status = True
+
         else:
             self._logger.info(f"Task {task_name} has an incorrect format")
             execution_status = False
@@ -45,22 +64,14 @@ class PipelineEvaluator(MLLifecycle):
 
         return execution_status
 
-    def _run_null_imputation_stage(self, init_data_loader, experiment_seed, null_imputer_name,
-                                   tune_imputers, save_imputed_datasets):
+    def run_null_imputation_stage(self, init_data_loader, experiment_seed: int, null_imputer_name: str,
+                                  tune_imputers: bool, save_imputed_datasets: bool):
         if null_imputer_name in (ErrorRepairMethod.boost_clean.value, ErrorRepairMethod.cp_clean.value):
             raise ValueError(f'To work with {ErrorRepairMethod.boost_clean.value} or {ErrorRepairMethod.cp_clean.value}, '
                              f'use scripts/evaluate_models.py')
 
-        data_loader = copy.deepcopy(init_data_loader)
-        self.impute_nulls(data_loader=data_loader,
-                          null_imputer_name=null_imputer_name,
-                          experiment_seed=experiment_seed,
-                          tune_imputers=tune_imputers,
-                          save_imputed_datasets=save_imputed_datasets)
-
-    def impute_nulls(self, data_loader, null_imputer_name: str, experiment_seed: int,
-                     tune_imputers: bool = True, save_imputed_datasets: bool = False):
         # Split the dataset
+        data_loader = copy.deepcopy(init_data_loader)
         X_train_val_with_nulls, X_test_with_nulls, y_train_val, y_test = self._split_dataset(data_loader, experiment_seed)
 
         # Remove sensitive attributes from train and test sets with nulls to avoid their usage during imputation
@@ -81,12 +92,126 @@ class PipelineEvaluator(MLLifecycle):
                                                   categorical_columns=categorical_columns_wo_sensitive_attrs,
                                                   numerical_columns=numerical_columns_wo_sensitive_attrs,
                                                   tune_imputers=tune_imputers)
-        print('X_tests_imputed_wo_sensitive_attrs_lst[0].columns -- ', X_tests_imputed_wo_sensitive_attrs_lst[0].columns)
 
         if save_imputed_datasets:
-            self._save_imputed_datasets_to_s3(X_train_val=X_train_val_imputed_wo_sensitive_attrs,
-                                              X_tests_lst=X_tests_imputed_wo_sensitive_attrs_lst,
-                                              null_imputer_name=null_imputer_name)
+            X_test_imputed_wo_sensitive_attrs = X_tests_imputed_wo_sensitive_attrs_lst[0]
+            self._save_preprocessed_datasets_to_s3(X_train_val=X_train_val_imputed_wo_sensitive_attrs,
+                                                   X_test=X_test_imputed_wo_sensitive_attrs,
+                                                   stage_name="null_imputation",
+                                                   preprocessor_name=null_imputer_name)
+
+    def _save_preprocessed_datasets_to_s3(self, X_train_val: pd.DataFrame, X_test: pd.DataFrame,
+                                          stage_name: str, preprocessor_name: str):
+        save_sets_dir_path = f'{self.exp_config_name}/{stage_name}_stage/{self.dataset_name}/{preprocessor_name}'
+
+        # Write X_train_val to S3 as a CSV
+        train_set_filename = f'preprocessed_{self.exp_config_name}_{self.dataset_name}_{preprocessor_name}_X_train_val.csv'
+        self._s3_client.write_csv(X_train_val, f'{save_sets_dir_path}/{train_set_filename}', index=True)
+
+        # Save each imputed test set in S3
+        test_set_filename = f'preprocessed_{self.exp_config_name}_{self.dataset_name}_{preprocessor_name}_X_test.csv'
+        self._s3_client.write_csv(X_test, f'{save_sets_dir_path}/{test_set_filename}', index=True)
+
+        self._logger.info(f"Train and test sets preprocessed by {preprocessor_name} are saved to S3")
+
+    def run_fairness_intervention_stage(self, init_data_loader, experiment_seed: int, null_imputer_name: str,
+                                        fairness_intervention_name: str, tune_fairness_interventions: bool,
+                                        save_preprocessed_datasets: bool):
+        data_loader = copy.deepcopy(init_data_loader)
+        main_base_flow_dataset = self._load_preprocessed_train_test_sets(data_loader=data_loader,
+                                                                         stage_name="null_imputation",
+                                                                         preprocessor_name=null_imputer_name,
+                                                                         experiment_seed=experiment_seed)
+        # Preprocess the dataset using the pre-defined preprocessor
+        preprocessed_base_flow_dataset = preprocess_base_flow_dataset(main_base_flow_dataset)
+
+        if fairness_intervention_name != NO_FAIRNESS_INTERVENTION:
+            # Create a binary column for the fairness intervention
+            input_sensitive_attrs_for_intervention = self.exp_config.sensitive_attrs_for_intervention
+            binary_sensitive_attr_for_intervention = '&'.join(input_sensitive_attrs_for_intervention) + '_binary'
+
+            # Create train and test sensitive attr dfs
+            train_sensitive_attrs_df, test_sensitive_attrs_df, _, _ = self._split_dataset(data_loader, experiment_seed)
+            train_sensitive_attrs_df = train_sensitive_attrs_df[input_sensitive_attrs_for_intervention]
+            test_sensitive_attrs_df = test_sensitive_attrs_df[input_sensitive_attrs_for_intervention]
+
+            print("preprocessed_base_flow_dataset.X_train_val.index[:10]:", preprocessed_base_flow_dataset.X_train_val.index[:10])
+            print("train_sensitive_attrs_df.index[:10]:", train_sensitive_attrs_df.index[:10])
+            print("preprocessed_base_flow_dataset.X_test.index[:10]:", preprocessed_base_flow_dataset.X_test.index[:10])
+            print("test_sensitive_attrs_df.index[:10]:", test_sensitive_attrs_df.index[:10])
+
+            # Add a new binary column to the training set
+            train_dis_group_mask = get_dis_group_condition(train_sensitive_attrs_df,
+                                                           attrs=input_sensitive_attrs_for_intervention,
+                                                           dis_values=[self.virny_config.sensitive_attributes_dct[attr]
+                                                                       for attr in input_sensitive_attrs_for_intervention])
+            preprocessed_base_flow_dataset.X_train_val[binary_sensitive_attr_for_intervention] = None  # Create a new column for the fairness intervention
+            preprocessed_base_flow_dataset.X_train_val.loc[train_dis_group_mask, binary_sensitive_attr_for_intervention] = 0
+            preprocessed_base_flow_dataset.X_train_val.loc[~train_dis_group_mask, binary_sensitive_attr_for_intervention] = 1
+
+            # Add a new binary column to the test set
+            test_dis_group_mask = get_dis_group_condition(test_sensitive_attrs_df,
+                                                          attrs=input_sensitive_attrs_for_intervention,
+                                                          dis_values=[self.virny_config.sensitive_attributes_dct[attr]
+                                                                      for attr in input_sensitive_attrs_for_intervention])
+            preprocessed_base_flow_dataset.X_test[binary_sensitive_attr_for_intervention] = None  # Create a new column for the fairness intervention
+            preprocessed_base_flow_dataset.X_test.loc[test_dis_group_mask, binary_sensitive_attr_for_intervention] = 0
+            preprocessed_base_flow_dataset.X_test.loc[~test_dis_group_mask, binary_sensitive_attr_for_intervention] = 1
+
+        # Apply fairness-enhancing preprocessors
+        if fairness_intervention_name == FairnessIntervention.DIR.value:
+            preprocessed_base_flow_dataset = remove_disparate_impact(preprocessed_base_flow_dataset,
+                                                                     repair_level=self.fairness_intervention_config[FairnessIntervention.DIR.value]["repair_level"],
+                                                                     sensitive_attribute=binary_sensitive_attr_for_intervention)
+        if save_preprocessed_datasets:
+            self._save_preprocessed_datasets_to_s3(X_train_val=preprocessed_base_flow_dataset.X_train_val,
+                                                   X_test=preprocessed_base_flow_dataset.X_test,
+                                                   stage_name="fairness_intervention",
+                                                   preprocessor_name=fairness_intervention_name)
+
+    def _load_preprocessed_train_test_sets(self, data_loader, stage_name: str, preprocessor_name: str, experiment_seed: int):
+        if self.test_set_fraction < 0.0 or self.test_set_fraction > 1.0:
+            raise ValueError("test_set_fraction must be a float in the [0.0-1.0] range")
+
+        # Split the dataset
+        y_train_val, y_test = train_test_split(data_loader.y_data,
+                                               test_size=self.test_set_fraction,
+                                               random_state=experiment_seed)
+
+        # Create a base flow dataset for Virny to compute metrics
+        numerical_columns_wo_sensitive_attrs = [col for col in data_loader.numerical_columns if col not in self.dataset_sensitive_attrs]
+        categorical_columns_wo_sensitive_attrs = [col for col in data_loader.categorical_columns if col not in self.dataset_sensitive_attrs]
+
+        # Read X_train_val set from S3 as CSV
+        save_sets_dir_path = f'{self.exp_config_name}/{stage_name}_stage/{self.dataset_name}/{preprocessor_name}'
+        train_set_filename = f'preprocessed_{self.exp_config_name}_{self.dataset_name}_{preprocessor_name}_X_train_val.csv'
+        X_train_val_imputed_wo_sensitive_attrs = self._s3_client.read_csv(key=f'{save_sets_dir_path}/{train_set_filename}',
+                                                                          index=True)
+        X_train_val_imputed_wo_sensitive_attrs[categorical_columns_wo_sensitive_attrs] = (
+            X_train_val_imputed_wo_sensitive_attrs[categorical_columns_wo_sensitive_attrs].astype(str))
+
+        # Subset y_train_val to align with X_train_val_imputed_wo_sensitive_attrs
+        if preprocessor_name == ErrorRepairMethod.deletion.value:
+            y_train_val = y_train_val.loc[X_train_val_imputed_wo_sensitive_attrs.index]
+
+        # Read X_test set from S3 as CSV
+        test_set_filename = f'preprocessed_{self.exp_config_name}_{self.dataset_name}_{preprocessor_name}_X_test.csv'
+        X_test_imputed_wo_sensitive_attrs = self._s3_client.read_csv(key=f'{save_sets_dir_path}/{test_set_filename}',
+                                                                     index=True)
+        X_test_imputed_wo_sensitive_attrs[categorical_columns_wo_sensitive_attrs] = (
+            X_test_imputed_wo_sensitive_attrs[categorical_columns_wo_sensitive_attrs].astype(str))
+
+        # Create base flow datasets for Virny to compute metrics
+        main_base_flow_dataset = create_base_flow_dataset(data_loader=copy.deepcopy(data_loader),
+                                                          dataset_sensitive_attrs=self.dataset_sensitive_attrs,
+                                                          X_train_val_wo_sensitive_attrs=X_train_val_imputed_wo_sensitive_attrs,
+                                                          X_test_wo_sensitive_attrs=X_test_imputed_wo_sensitive_attrs,
+                                                          y_train_val=y_train_val,
+                                                          y_test=copy.deepcopy(y_test),
+                                                          numerical_columns_wo_sensitive_attrs=numerical_columns_wo_sensitive_attrs,
+                                                          categorical_columns_wo_sensitive_attrs=categorical_columns_wo_sensitive_attrs)
+
+        return main_base_flow_dataset
 
     def _run_exp_iter_for_standard_imputation(self, data_loader, experiment_seed: int, evaluation_scenario: str,
                                               null_imputer_name: str, model_names: list, tune_imputers: bool,

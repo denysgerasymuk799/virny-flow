@@ -2,7 +2,7 @@ import pathlib
 from datetime import datetime, timezone
 
 from domain_logic.utils import create_config_obj
-from domain_logic.constants import EXP_PROGRESS_TRACKING_TABLE, TaskStatus, STAGE_SEPARATOR
+from domain_logic.constants import EXP_PROGRESS_TRACKING_TABLE, TaskStatus, STAGE_SEPARATOR, NO_FAIRNESS_INTERVENTION
 
 
 async def create_execution_plan(db_client):
@@ -16,7 +16,7 @@ async def create_execution_plan(db_client):
     stage3 = []
     for null_imputer in exp_config.null_imputers:
         stage1.append(null_imputer)
-        for fairness_intervention in exp_config.fairness_interventions:
+        for fairness_intervention in exp_config.fairness_interventions + [NO_FAIRNESS_INTERVENTION]:
             stage2.append(f'{null_imputer}{STAGE_SEPARATOR}{fairness_intervention}')
             for model in exp_config.models:
                 stage3.append(f'{null_imputer}{STAGE_SEPARATOR}{fairness_intervention}{STAGE_SEPARATOR}{model}')

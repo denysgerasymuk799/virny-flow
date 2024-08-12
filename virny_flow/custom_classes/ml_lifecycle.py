@@ -383,20 +383,6 @@ class MLLifecycle:
 
         self._logger.info("Performance metrics and tuned parameters of the null imputer are saved into a database")
 
-    def _save_imputed_datasets_to_s3(self, X_train_val: pd.DataFrame, X_tests_lst: pd.DataFrame, null_imputer_name: str):
-        save_sets_dir_path = f'{self.exp_config_name}/null_imputation_stage/{self.dataset_name}/{null_imputer_name}'
-
-        # Write X_train_val to S3 as a CSV
-        train_set_filename = f'imputed_{self.exp_config_name}_{self.dataset_name}_{null_imputer_name}_X_train_val.csv'
-        self._s3_client.write_csv(X_train_val, f'{save_sets_dir_path}/{train_set_filename}')
-
-        # Save each imputed test set in S3
-        for test_set_idx, X_test in enumerate(X_tests_lst):
-            test_set_filename = f'imputed_{self.exp_config_name}_{self.dataset_name}_{null_imputer_name}_X_test.csv'
-            self._s3_client.write_csv(X_test, f'{save_sets_dir_path}/{test_set_filename}')
-
-        self._logger.info("Imputed train and test sets are saved to S3")
-
     def _save_imputed_datasets_to_fs(self, X_train_val: pd.DataFrame, X_tests_lst: pd.DataFrame,
                                      null_imputer_name: str, evaluation_scenario: str, experiment_seed: int):
         save_sets_dir_path = (pathlib.Path(__file__).parent.parent.parent

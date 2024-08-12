@@ -6,6 +6,24 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from lightgbm import LGBMClassifier
 
+from virny_flow.configs.constants import FairnessIntervention
+
+
+FAIRNESS_INTERVENTION_HYPERPARAMS = {
+    FairnessIntervention.DIR.value: {"repair_level": 0.7},
+    FairnessIntervention.LFR.value: {"k": 5, "Ax": 0.01, "Ay": 1.0, "Az": 50.0},
+    FairnessIntervention.AD.value: {"scope_name": "debiased_classifier",
+                                    "adversary_loss_weight": 0.1, "num_epochs": 50, "batch_size": 128,
+                                    "classifier_num_hidden_units": 200, "debias": True},
+    FairnessIntervention.EGR.value: {"constraints": "DemographicParity",
+                                     "eps": 0.01, "max_iter": 50, "nu": None, "eta0": 2.0,
+                                     "run_linprog_step": True, "drop_prot_attr": True},
+    FairnessIntervention.EOP.value: {},
+    FairnessIntervention.ROC.value: {"low_class_thresh": 0.01, "high_class_thresh": 0.99, "num_class_thresh": 100,
+                                     "num_ROC_margin": 50, "metric_name": "Statistical parity difference",
+                                     "metric_ub": 0.05, "metric_lb": -0.05},
+}
+
 
 def get_models_params_for_tuning(models_tuning_seed):
     return {

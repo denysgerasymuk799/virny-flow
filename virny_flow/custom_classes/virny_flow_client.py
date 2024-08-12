@@ -5,7 +5,7 @@ import requests
 from virny_flow.utils.custom_logger import get_logger
 
 
-class WebServerClient:
+class VirnyFlowClient:
     def __init__(self, address: str):
         self.address = address.rstrip('/')
         self._logger = get_logger()

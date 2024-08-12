@@ -23,8 +23,8 @@ def validate_config(exp_config_obj):
     if not isinstance(exp_config_obj.dataset, str):
         raise ValueError('dataset argument must be string')
 
-    if not isinstance(exp_config_obj.sensitive_attribute_for_intervention, str):
-        raise ValueError('sensitive_attribute_for_intervention must be string')
+    if not isinstance(exp_config_obj.sensitive_attrs_for_intervention, list):
+        raise ValueError('sensitive_attrs_for_intervention must be a list')
 
     if not isinstance(exp_config_obj.random_state, int):
         raise ValueError('random_state must be integer')
