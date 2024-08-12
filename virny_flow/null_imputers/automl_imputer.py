@@ -203,7 +203,7 @@ class AutoMLImputer(BaseImputer):
 
         self._statistics = {'medians': dict(), 'modes': dict()}
         self._predictors = dict()
-        self.__logger = get_logger()
+        self.__logger = get_logger(logger_name="automl_imputer")
 
     def get_best_hyperparameters(self):
         super().get_best_hyperparameters()

@@ -1,13 +1,18 @@
+import os
 import time
+import warnings
 
 from virny_flow.configs.constants import FINISH_EXECUTION, NO_READY_TASK
-from virny_flow.utils.custom_logger import get_logger
 from virny_flow.custom_classes.pipeline_evaluator import PipelineEvaluator
 from virny_flow.custom_classes.virny_flow_client import VirnyFlowClient
 
 
 def worker_interface(exp_config, virny_flow_address: str, dataset_config: dict,
                      fairness_intervention_config: dict, models_config: dict):
+    # Suppress all warnings
+    warnings.filterwarnings("ignore")
+    os.environ["PYTHONWARNINGS"] = "ignore"
+
     # Init objects
     pipeline_evaluator = PipelineEvaluator(exp_config=exp_config,
                                            dataset_config=dataset_config,
@@ -21,6 +26,7 @@ def worker_interface(exp_config, virny_flow_address: str, dataset_config: dict,
     # While loop until no any task
     while task["task_name"] != FINISH_EXECUTION and task is not None:
         if task["task_name"] == NO_READY_TASK:
+            print('Sleeping for 10 seconds...', flush=True)
             time.sleep(10)  # Sleep for 10 seconds to wait for tasks to be unblocked
         else:
             # Use PipelineEvaluator to execute the task
@@ -30,6 +36,7 @@ def worker_interface(exp_config, virny_flow_address: str, dataset_config: dict,
                                                        task_guid=task["task_guid"],
                                                        task_name=task["task_name"],
                                                        stage_id=task["stage_id"])
+            print('\n\n', flush=True)
 
         # Request a new task in VirnyFlow
         task = virny_flow_client.get_worker_task(exp_config.exp_config_name)

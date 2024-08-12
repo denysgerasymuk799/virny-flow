@@ -107,18 +107,20 @@ class DatabaseClient:
 
     async def complete_worker_task_in_db(self, exp_config_name: str, task_guid: str, task_name: str, stage_id: int):
         # Set the current task as DONE
-        await self.update_one_query(collection_name=EXP_PROGRESS_TRACKING_TABLE,
-                                    _id=task_guid,
-                                    update_val_dct={"task_status": TaskStatus.DONE.value,
-                                                    "update_datetime": datetime.now(timezone.utc)})
+        done_tasks_count = await self.update_one_query(collection_name=EXP_PROGRESS_TRACKING_TABLE,
+                                                       _id=task_guid,
+                                                       update_val_dct={"task_status": TaskStatus.DONE.value,
+                                                                       "update_datetime": datetime.now(timezone.utc)})
         # Unblock further related tasks if exist
+        ready_tasks_count = None
         if stage_id != STAGE_NAME_TO_STAGE_ID[StageName.model_evaluation.value]:
-            await self.update_query(collection_name=EXP_PROGRESS_TRACKING_TABLE,
-                                    condition={'exp_config_name': exp_config_name,
-                                               "stage_id": stage_id + 1,
-                                               "task_name": {"$regex": f'^{task_name}'}},
-                                    update_val_dct={"task_status": TaskStatus.READY.value,
-                                                    "update_datetime": datetime.now(timezone.utc)})
+            ready_tasks_count = await self.update_query(collection_name=EXP_PROGRESS_TRACKING_TABLE,
+                                                        condition={'exp_config_name': exp_config_name,
+                                                                   "stage_id": stage_id + 1,
+                                                                   "task_name": {"$regex": f'^{task_name}'}},
+                                                        update_val_dct={"task_status": TaskStatus.READY.value,
+                                                                        "update_datetime": datetime.now(timezone.utc)})
+        return done_tasks_count, ready_tasks_count
 
     def close(self):
         self.client.close()

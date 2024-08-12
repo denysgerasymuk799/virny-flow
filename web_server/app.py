@@ -39,12 +39,12 @@ async def get_worker_task(exp_config_name: str = Query()):
 @app.post("/complete_worker_task", response_class=JSONResponse)
 async def complete_worker_task(exp_config_name: str = Query(), task_guid: str = Query(),
                                task_name: str = Query(), stage_id: int = Query()):
-    modified_count = await db_client.complete_worker_task_in_db(exp_config_name=exp_config_name,
-                                                                task_guid=task_guid,
-                                                                task_name=task_name,
-                                                                stage_id=stage_id)
+    done_tasks_count, ready_tasks_count = await db_client.complete_worker_task_in_db(exp_config_name=exp_config_name,
+                                                                                     task_guid=task_guid,
+                                                                                     task_name=task_name,
+                                                                                     stage_id=stage_id)
     logger.info(f'Task {task_name} with task_guid = {task_guid} was successfully completed.')
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"message": f"Modified {modified_count} document(s)"})
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"message": f"Marked {done_tasks_count} document(s) as DONE and {ready_tasks_count} document(s) as READY"})
 
 
 # For local development
