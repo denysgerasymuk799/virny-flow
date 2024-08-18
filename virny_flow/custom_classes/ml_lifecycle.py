@@ -54,9 +54,9 @@ class MLLifecycle:
         return X_train_val, X_test, y_train_val, y_test
 
     def _remove_sensitive_attrs(self, X_train_val: pd.DataFrame, X_tests_lst: list, data_loader):
-        X_train_val_wo_sensitive_attrs = X_train_val.drop(self.dataset_sensitive_attrs, axis=1)
+        X_train_val_wo_sensitive_attrs = X_train_val.drop(self.dataset_sensitive_attrs, axis=1, errors='ignore')
         X_tests_wo_sensitive_attrs_lst = list(map(
-            lambda X_test: X_test.drop(self.dataset_sensitive_attrs, axis=1),
+            lambda X_test: X_test.drop(self.dataset_sensitive_attrs, axis=1, errors='ignore'),
             X_tests_lst
         ))
         numerical_columns_wo_sensitive_attrs = [col for col in data_loader.numerical_columns if col not in self.dataset_sensitive_attrs]

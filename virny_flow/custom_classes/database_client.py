@@ -87,6 +87,14 @@ class DatabaseClient:
         pipeline_names_with_prefix = [task_name for task_name in task_names_with_prefix if task_name.count(STAGE_SEPARATOR) == 2]
         return pipeline_names_with_prefix
 
+    def read_pipeline_names(self, exp_config_name: str):
+        collection_name = EXP_PROGRESS_TRACKING_COLLECTION_NAME
+        query = {"exp_config_name": exp_config_name, "task_name": {"$regex": f".*{STAGE_SEPARATOR}.*{STAGE_SEPARATOR}.*"}}
+        records = self.execute_read_query(query=query,
+                                          collection_name=collection_name)
+        pipeline_names = [record['task_name'] for record in records]
+        return pipeline_names
+
     def get_db_writer(self, collection_name: str):
         collection_obj = self._get_collection(collection_name)
 

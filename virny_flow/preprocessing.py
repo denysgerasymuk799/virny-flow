@@ -15,7 +15,7 @@ def preprocess_base_flow_dataset(base_flow_dataset):
     base_flow_dataset.X_train_val = column_transformer.fit_transform(base_flow_dataset.X_train_val)
     base_flow_dataset.X_test = column_transformer.transform(base_flow_dataset.X_test)
 
-    return base_flow_dataset
+    return base_flow_dataset, column_transformer
 
 
 def preprocess_mult_base_flow_datasets(main_base_flow_dataset, extra_base_flow_datasets):
