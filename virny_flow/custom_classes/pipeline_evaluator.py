@@ -10,7 +10,7 @@ from virny_flow.preprocessing import preprocess_base_flow_dataset
 from virny_flow.fairness_interventions.preprocessors import remove_disparate_impact
 from virny_flow.utils.common_helpers import generate_guid, create_base_flow_dataset
 from virny_flow.configs.constants import (EXP_COLLECTION_NAME, ErrorRepairMethod, STAGE_SEPARATOR,
-                                          NO_FAIRNESS_INTERVENTION, FairnessIntervention)
+                                          NO_FAIRNESS_INTERVENTION, FairnessIntervention, S3Folder)
 
 
 class PipelineEvaluator(MLLifecycle):
@@ -29,10 +29,12 @@ class PipelineEvaluator(MLLifecycle):
 
         self.exp_config = exp_config
         self.fairness_intervention_config = fairness_intervention_config
+        self.task_name = None
 
     def execute_task(self, task_name: str, seed: int):
         self._db.connect()
 
+        self.task_name = task_name
         stage_num = task_name.count(STAGE_SEPARATOR) + 1
         if stage_num == 1:
             null_imputer_name = task_name
@@ -90,7 +92,8 @@ class PipelineEvaluator(MLLifecycle):
                                                                                 data_loader=data_loader)
 
         # Impute nulls
-        (X_train_val_imputed_wo_sensitive_attrs, X_tests_imputed_wo_sensitive_attrs_lst, null_imputer_params_dct,
+        (X_train_val_imputed_wo_sensitive_attrs, X_tests_imputed_wo_sensitive_attrs_lst,
+         null_imputer_params_dct, null_imputer,
          imputation_runtime) = self._impute_nulls(X_train_with_nulls=X_train_val_with_nulls_wo_sensitive_attrs,
                                                   X_tests_with_nulls_lst=X_tests_with_nulls_wo_sensitive_attrs_lst,
                                                   null_imputer_name=null_imputer_name,
@@ -106,10 +109,13 @@ class PipelineEvaluator(MLLifecycle):
                                                    X_test=X_test_imputed_wo_sensitive_attrs,
                                                    stage_name="null_imputation",
                                                    preprocessor_name=null_imputer_name)
+            self._save_artifacts_to_s3(preprocessor_name='null_imputer',
+                                       preprocessor=null_imputer,
+                                       preprocessor_params_dct=null_imputer_params_dct)
 
     def _save_preprocessed_datasets_to_s3(self, X_train_val: pd.DataFrame, X_test: pd.DataFrame,
                                           stage_name: str, preprocessor_name: str):
-        save_sets_dir_path = f'{self.exp_config_name}/{stage_name}_stage/{self.dataset_name}/{preprocessor_name}'
+        save_sets_dir_path = f'{S3Folder.experiments.value}/{self.exp_config_name}/{S3Folder.intermediate_state.value}/{stage_name}_stage/{self.dataset_name}/{preprocessor_name}'
 
         # Write X_train_val to S3 as a CSV
         train_set_filename = f'preprocessed_{self.exp_config_name}_{self.dataset_name}_{preprocessor_name}_X_train_val.csv'
@@ -119,7 +125,25 @@ class PipelineEvaluator(MLLifecycle):
         test_set_filename = f'preprocessed_{self.exp_config_name}_{self.dataset_name}_{preprocessor_name}_X_test.csv'
         self._s3_client.write_csv(X_test, f'{save_sets_dir_path}/{test_set_filename}', index=True)
 
-        self._logger.info(f"Train and test sets preprocessed by {preprocessor_name} are saved in S3")
+        self._logger.info(f"Train and test sets preprocessed by {preprocessor_name} were saved in S3")
+
+    def _save_artifacts_to_s3(self, preprocessor_name: str, preprocessor, preprocessor_params_dct: dict):
+        save_sets_dir_path = f'{S3Folder.experiments.value}/{self.exp_config_name}/{S3Folder.artifacts.value}'
+        task_names_with_prefix = self._db.read_tasks_by_prefix(exp_config_name=self.exp_config_name,
+                                                               prefix=self.task_name)
+        pipeline_names_with_prefix = [task_name for task_name in task_names_with_prefix if task_name.count(STAGE_SEPARATOR) == 2]
+
+        # Write artifacts to each related pipeline in S3
+        for pipeline_name in pipeline_names_with_prefix:
+            # Write preprocessor object to S3
+            preprocessor_filename = f'{preprocessor_name}.pkl'
+            self._s3_client.write_pickle(obj=preprocessor, key=f'{save_sets_dir_path}/{pipeline_name}/{preprocessor_filename}')
+
+            # Write preprocessor params to S3
+            preprocessor_params_filename = f'{preprocessor_name}_params.json'
+            self._s3_client.write_json(data=preprocessor_params_dct, key=f'{save_sets_dir_path}/{pipeline_name}/{preprocessor_params_filename}')
+
+        self._logger.info(f"Artifacts for {preprocessor_name} were saved in S3")
 
     def run_fairness_intervention_stage(self, init_data_loader, experiment_seed: int, null_imputer_name: str,
                                         fairness_intervention_name: str, tune_fairness_interventions: bool,
@@ -162,9 +186,15 @@ class PipelineEvaluator(MLLifecycle):
 
         # Apply fairness-enhancing preprocessors
         if fairness_intervention_name == FairnessIntervention.DIR.value:
-            preprocessed_base_flow_dataset = remove_disparate_impact(preprocessed_base_flow_dataset,
-                                                                     repair_level=self.fairness_intervention_config[FairnessIntervention.DIR.value]["repair_level"],
-                                                                     sensitive_attribute=binary_sensitive_attr_for_intervention)
+            preprocessed_base_flow_dataset, fair_preprocessor =\
+                remove_disparate_impact(preprocessed_base_flow_dataset,
+                                        repair_level=self.fairness_intervention_config[FairnessIntervention.DIR.value]["repair_level"],
+                                        sensitive_attribute=binary_sensitive_attr_for_intervention)
+            fair_preprocessor_params_dct = {"repair_level": self.fairness_intervention_config[FairnessIntervention.DIR.value]["repair_level"]}
+            self._save_artifacts_to_s3(preprocessor_name='fair_preprocessor',
+                                       preprocessor=fair_preprocessor,
+                                       preprocessor_params_dct=fair_preprocessor_params_dct)
+
         if save_preprocessed_datasets:
             self._save_preprocessed_datasets_to_s3(X_train_val=preprocessed_base_flow_dataset.X_train_val,
                                                    X_test=preprocessed_base_flow_dataset.X_test,
@@ -185,7 +215,7 @@ class PipelineEvaluator(MLLifecycle):
         categorical_columns_wo_sensitive_attrs = [col for col in data_loader.categorical_columns if col not in self.dataset_sensitive_attrs]
 
         # Read X_train_val set from S3 as CSV
-        save_sets_dir_path = f'{self.exp_config_name}/{stage_name}_stage/{self.dataset_name}/{preprocessor_name}'
+        save_sets_dir_path = f'{S3Folder.experiments.value}/{self.exp_config_name}/{S3Folder.intermediate_state.value}/{stage_name}_stage/{self.dataset_name}/{preprocessor_name}'
         train_set_filename = f'preprocessed_{self.exp_config_name}_{self.dataset_name}_{preprocessor_name}_X_train_val.csv'
         X_train_val_imputed_wo_sensitive_attrs = self._s3_client.read_csv(key=f'{save_sets_dir_path}/{train_set_filename}',
                                                                           index=True)

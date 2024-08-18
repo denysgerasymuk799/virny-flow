@@ -115,7 +115,7 @@ class DatabaseClient:
         ready_tasks_count = None
         if stage_id != STAGE_NAME_TO_STAGE_ID[StageName.model_evaluation.value]:
             ready_tasks_count = await self.update_query(collection_name=EXP_PROGRESS_TRACKING_TABLE,
-                                                        condition={'exp_config_name': exp_config_name,
+                                                        condition={"exp_config_name": exp_config_name,
                                                                    "stage_id": stage_id + 1,
                                                                    "task_name": {"$regex": f'^{task_name}'}},
                                                         update_val_dct={"task_status": TaskStatus.READY.value,
