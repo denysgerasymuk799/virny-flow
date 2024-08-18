@@ -6,7 +6,7 @@ import pandas as pd
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-from virny_flow.configs.constants import EXP_PROGRESS_TRACKING_COLLECTION_NAME
+from virny_flow.configs.constants import EXP_PROGRESS_TRACKING_COLLECTION_NAME, STAGE_SEPARATOR
 
 
 def get_secrets_path(secrets_file_name: str):
@@ -74,13 +74,18 @@ class DatabaseClient:
         metric_df.columns = new_column_names
         return metric_df
 
-    def read_tasks_by_prefix(self, exp_config_name: str, prefix: str):
+    def read_task_names_by_prefix(self, exp_config_name: str, prefix: str):
         collection_name = EXP_PROGRESS_TRACKING_COLLECTION_NAME
         query = {"exp_config_name": exp_config_name, "task_name": {"$regex": f'^{prefix}'}}
         records = self.execute_read_query(query=query,
                                           collection_name=collection_name)
         task_names_with_prefix = [record['task_name'] for record in records]
         return task_names_with_prefix
+
+    def read_pipeline_names_by_prefix(self, exp_config_name: str, prefix: str):
+        task_names_with_prefix = self.read_task_names_by_prefix(exp_config_name=exp_config_name, prefix=prefix)
+        pipeline_names_with_prefix = [task_name for task_name in task_names_with_prefix if task_name.count(STAGE_SEPARATOR) == 2]
+        return pipeline_names_with_prefix
 
     def get_db_writer(self, collection_name: str):
         collection_obj = self._get_collection(collection_name)

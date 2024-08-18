@@ -129,9 +129,8 @@ class PipelineEvaluator(MLLifecycle):
 
     def _save_artifacts_to_s3(self, preprocessor_name: str, preprocessor, preprocessor_params_dct: dict):
         save_sets_dir_path = f'{S3Folder.experiments.value}/{self.exp_config_name}/{S3Folder.artifacts.value}'
-        task_names_with_prefix = self._db.read_tasks_by_prefix(exp_config_name=self.exp_config_name,
-                                                               prefix=self.task_name)
-        pipeline_names_with_prefix = [task_name for task_name in task_names_with_prefix if task_name.count(STAGE_SEPARATOR) == 2]
+        pipeline_names_with_prefix = self._db.read_pipeline_names_by_prefix(exp_config_name=self.exp_config_name,
+                                                                            prefix=self.task_name)
 
         # Write artifacts to each related pipeline in S3
         for pipeline_name in pipeline_names_with_prefix:
@@ -144,6 +143,24 @@ class PipelineEvaluator(MLLifecycle):
             self._s3_client.write_json(data=preprocessor_params_dct, key=f'{save_sets_dir_path}/{pipeline_name}/{preprocessor_params_filename}')
 
         self._logger.info(f"Artifacts for {preprocessor_name} were saved in S3")
+
+    def _save_virny_bootstrap_to_s3(self, bootstrap: list):
+        save_sets_dir_path = f'{S3Folder.experiments.value}/{self.exp_config_name}/{S3Folder.artifacts.value}'
+        pipeline_names_with_prefix = self._db.read_pipeline_names_by_prefix(exp_config_name=self.exp_config_name,
+                                                                            prefix=self.task_name)
+
+        # Write artifacts to each related pipeline in S3
+        for pipeline_name in pipeline_names_with_prefix:
+            # Write model to S3
+            bootstrap_filename = 'fitted_model_bootstrap.pkl'
+            self._s3_client.write_pickle(obj=bootstrap,
+                                         key=f'{save_sets_dir_path}/{pipeline_name}/{bootstrap_filename}')
+            # Write model params to S3
+            model_params_filename = 'model_params.json'
+            self._s3_client.write_json(data=bootstrap[0]["model_obj"].get_params(),
+                                       key=f'{save_sets_dir_path}/{pipeline_name}/{model_params_filename}')
+
+        self._logger.info("Artifacts for the model bootstrap were saved in S3")
 
     def run_fairness_intervention_stage(self, init_data_loader, experiment_seed: int, null_imputer_name: str,
                                         fairness_intervention_name: str, tune_fairness_interventions: bool,
@@ -283,12 +300,15 @@ class PipelineEvaluator(MLLifecycle):
                                              fairness_intervention_name=fairness_intervention_name)
         # Compute metrics for tuned models
         self.virny_config.random_state = experiment_seed  # Set random state for the metric computation with Virny
-        compute_metrics_with_db_writer(dataset=main_base_flow_dataset,
-                                       config=self.virny_config,
-                                       models_config=models_config,
-                                       custom_tbl_fields_dct=custom_table_fields_dct,
-                                       db_writer_func=self._db.get_db_writer(collection_name=EXP_COLLECTION_NAME),
-                                       notebook_logs_stdout=False,
-                                       verbose=0)
-        print(f'Metric computation for {null_imputer_name}&{fairness_intervention_name}&{model_name} was finished\n',
-              flush=True)
+        _, models_fitted_bootstraps_dct = compute_metrics_with_db_writer(dataset=main_base_flow_dataset,
+                                                                         config=self.virny_config,
+                                                                         models_config=models_config,
+                                                                         custom_tbl_fields_dct=custom_table_fields_dct,
+                                                                         db_writer_func=self._db.get_db_writer(collection_name=EXP_COLLECTION_NAME),
+                                                                         notebook_logs_stdout=False,
+                                                                         return_fitted_bootstrap=True,
+                                                                         verbose=0)
+        print(f'Metric computation for {null_imputer_name}&{fairness_intervention_name}&{model_name} was finished\n', flush=True)
+
+        # Save the fitted bootstrap in S3
+        self._save_virny_bootstrap_to_s3(bootstrap=models_fitted_bootstraps_dct[model_name])
