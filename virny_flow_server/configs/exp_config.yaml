@@ -3,6 +3,5 @@ dataset: "german"
 sensitive_attrs_for_intervention: ["sex"]
 null_imputers: ["median-mode", "median-dummy"]
 fairness_interventions: ["DIR"]
-#models: ["lr_clf", "rf_clf"]
-models: ["lr_clf"]
+models: ["lr_clf", "rf_clf"]
 random_state: 42
