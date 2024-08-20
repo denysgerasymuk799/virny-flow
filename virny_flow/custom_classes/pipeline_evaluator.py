@@ -259,28 +259,32 @@ class PipelineEvaluator(MLLifecycle):
                                              null_imputer_name=null_imputer_name,
                                              fairness_intervention_name=fairness_intervention_name)
         
+        sensitive_attribute = f"{self.exp_config.sensitive_attrs_for_intervention[0]}_binary"
+        priveleged_groups = [{sensitive_attribute: 1}]
+        unprivileged_groups = [{sensitive_attribute: 0}]
         if fairness_intervention_name == FairnessIntervention.EOP.value:
-            postprocessor = get_eq_odds_postprocessor(privileged_groups=[{self.virny_config.sensitive_attribute: 1}],
-                                                      unprivileged_groups=[{self.virny_config.sensitive_attribute: 0}],
+            postprocessor = get_eq_odds_postprocessor(privileged_groups=priveleged_groups,
+                                                      unprivileged_groups=unprivileged_groups,
                                                       seed=experiment_seed)
-            self.virny_config['postprocessing_sensitive_attribute'] = self.exp_config.sensitive_attrs_for_intervention
+            self.virny_config['postprocessing_sensitive_attribute'] = sensitive_attribute
         elif fairness_intervention_name == FairnessIntervention.ROC.value:
             postprocessor_configs = self.fairness_intervention_config[FairnessIntervention.ROC.value]
-            postprocessor = get_reject_option_classification_postprocessor(privileged_groups=[{self.virny_config.sensitive_attribute: 1}],
-                                                                           unprivileged_groups=[{self.virny_config.sensitive_attribute: 0}],
+            postprocessor = get_reject_option_classification_postprocessor(privileged_groups=priveleged_groups,
+                                                                           unprivileged_groups=unprivileged_groups,
                                                                            postprocessor_configs=postprocessor_configs)
-            self.virny_config['postprocessing_sensitive_attribute'] = self.exp_config.sensitive_attrs_for_intervention
+            self.virny_config['postprocessing_sensitive_attribute'] = sensitive_attribute
         else:
             postprocessor = None
             if fairness_intervention_name == FairnessIntervention.EGR.value:
-                models_config = get_exponentiated_gradient_reduction_wrapper(inprocessor_configs=self.fairness_intervention_config[FairnessIntervention.EGR.value])
+                models_config = get_exponentiated_gradient_reduction_wrapper(inprocessor_configs=self.fairness_intervention_config[FairnessIntervention.EGR.value],
+                                                                             sensitive_attr_for_intervention=f"{self.exp_config.sensitive_attrs_for_intervention[0]}_binary")
             elif fairness_intervention_name == FairnessIntervention.AD.value:
-                models_config = get_adversarial_debiasing_wrapper_config(privileged_groups=[{self.virny_config.sensitive_attribute: 1}],
-                                                                     unprivileged_groups=[{self.virny_config.sensitive_attribute: 0}],
-                                                                     inprocessor_configs=self.fairness_intervention_config[FairnessIntervention.AD.value])
+                models_config = get_adversarial_debiasing_wrapper_config(privileged_groups=priveleged_groups,
+                                                                     unprivileged_groups=unprivileged_groups,
+                                                                     inprocessor_configs=self.fairness_intervention_config[FairnessIntervention.AD.value],
+                                                                     sensitive_attr_for_intervention=sensitive_attribute)
         
         # Compute metrics for tuned models
-        self._logger.info(f"virny config: {self.virny_config}")
         self.virny_config.random_state = experiment_seed  # Set random state for the metric computation with Virny
         compute_metrics_with_db_writer(dataset=main_base_flow_dataset,
                                        config=self.virny_config,
