@@ -45,7 +45,8 @@ def remove_disparate_impact(init_base_flow_dataset, repair_level, sensitive_attr
     base_flow_dataset.X_train_val = train_repaired_df.drop([base_flow_dataset.target, sensitive_attribute], axis=1)
     base_flow_dataset.X_test = test_repaired_df.drop([base_flow_dataset.target, sensitive_attribute], axis=1)
 
-    return base_flow_dataset
+    return base_flow_dataset, di
+
 
 def apply_learning_fair_representations(init_base_flow_dataset, intervention_options, sensitive_attribute):
     """
@@ -101,4 +102,4 @@ def apply_learning_fair_representations(init_base_flow_dataset, intervention_opt
     base_flow_dataset.X_train_val = train_repaired_df.drop([base_flow_dataset.target, sensitive_attribute], axis=1)
     base_flow_dataset.X_test = test_repaired_df.drop([base_flow_dataset.target, sensitive_attribute], axis=1)
 
-    return base_flow_dataset
+    return base_flow_dataset, lfr_model

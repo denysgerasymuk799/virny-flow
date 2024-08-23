@@ -2,6 +2,7 @@ import copy
 import pandas as pd
 from sklearn.impute import SimpleImputer
 
+from virny_flow.configs.structs import MixedImputer
 from virny_flow.null_imputers.automl_imputer import AutoMLImputer
 from virny_flow.null_imputers.missforest_imputer import MissForestImputer
 from virny_flow.null_imputers.kmeans_imputer import KMeansImputer
@@ -36,26 +37,32 @@ def impute_with_deletion(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_ls
 def impute_with_simple_imputer(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: list,
                                numeric_columns_with_nulls: list, categorical_columns_with_nulls: list,
                                hyperparams: dict, **kwargs):
+    mixed_imputer = MixedImputer(num_imputer=None, cat_imputer=None)
+
     X_train_imputed = copy.deepcopy(X_train_with_nulls)
     X_tests_imputed_lst = list(map(lambda X_test_with_nulls: copy.deepcopy(X_test_with_nulls), X_tests_with_nulls_lst))
 
     # Impute numerical columns
     if X_train_imputed[numeric_columns_with_nulls].isnull().values.any():
-        num_imputer = SimpleImputer(strategy=kwargs['num'])
-        X_train_imputed[numeric_columns_with_nulls] = num_imputer.fit_transform(X_train_imputed[numeric_columns_with_nulls])
+        mixed_imputer.num_imputer = SimpleImputer(strategy=kwargs['num'])
+        X_train_imputed[numeric_columns_with_nulls] =\
+            mixed_imputer.num_imputer.fit_transform(X_train_imputed[numeric_columns_with_nulls])
         for i in range(len(X_tests_imputed_lst)):
-            X_tests_imputed_lst[i][numeric_columns_with_nulls] = num_imputer.transform(X_tests_imputed_lst[i][numeric_columns_with_nulls])
+            X_tests_imputed_lst[i][numeric_columns_with_nulls] =\
+                mixed_imputer.num_imputer.transform(X_tests_imputed_lst[i][numeric_columns_with_nulls])
 
     # Impute categorical columns
     if X_train_imputed[categorical_columns_with_nulls].isnull().values.any():
-        cat_imputer = SimpleImputer(strategy=kwargs['cat'], fill_value='missing') \
+        mixed_imputer.cat_imputer = SimpleImputer(strategy=kwargs['cat'], fill_value='missing') \
             if kwargs['cat'] == 'constant' else SimpleImputer(strategy=kwargs['cat'])
-        X_train_imputed[categorical_columns_with_nulls] = cat_imputer.fit_transform(X_train_imputed[categorical_columns_with_nulls])
+        X_train_imputed[categorical_columns_with_nulls] =\
+            mixed_imputer.cat_imputer.fit_transform(X_train_imputed[categorical_columns_with_nulls])
         for i in range(len(X_tests_imputed_lst)):
-            X_tests_imputed_lst[i][categorical_columns_with_nulls] = cat_imputer.transform(X_tests_imputed_lst[i][categorical_columns_with_nulls])
+            X_tests_imputed_lst[i][categorical_columns_with_nulls] =\
+                mixed_imputer.cat_imputer.transform(X_tests_imputed_lst[i][categorical_columns_with_nulls])
 
-    null_imputer_params_dct = None
-    return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct
+    null_imputer_params_dct = {'num_imputer_strategy': kwargs['num'], 'cat_imputer_strategy': kwargs['cat']}
+    return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct, mixed_imputer
 
 
 def impute_with_automl(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: list,

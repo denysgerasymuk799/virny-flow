@@ -7,7 +7,7 @@ class AbstractErrorInjector(metaclass=ABCMeta):
         self.seed = seed
 
     @abstractmethod
-    def fit(self, df, target_column: str = None):
+    def fit(self, df: pd.DataFrame, columns_with_nulls: list, null_percentage: float, condition: str = None):
         pass
 
     @abstractmethod
@@ -15,5 +15,5 @@ class AbstractErrorInjector(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def fit_transform(self, df, target_column: str = None):
+    def fit_transform(self, df: pd.DataFrame, columns_with_nulls: list, null_percentage: float, condition: str = None):
         pass
