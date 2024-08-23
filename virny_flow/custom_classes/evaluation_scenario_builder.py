@@ -116,6 +116,7 @@ class EvaluationScenarioBuilder(MLLifecycle):
             X_test = self._apply_fair_preprocessor(X_test=X_test,
                                                    y_test=y_test,
                                                    target_column=data_loader.target,
+                                                   fairness_intervention_name=fairness_intervention_name,
                                                    fair_preprocessor=fair_preprocessor,
                                                    sensitive_attr_for_intervention=binary_sensitive_attr_for_intervention)
 
@@ -205,8 +206,8 @@ class EvaluationScenarioBuilder(MLLifecycle):
 
         return X_test
 
-    def _apply_fair_preprocessor(self, X_test: pd.DataFrame, y_test: pd.DataFrame, target_column: str,
-                                 fair_preprocessor, sensitive_attr_for_intervention: str):
+    def _apply_fair_preprocessor(self, X_test: pd.DataFrame, y_test: pd.DataFrame, target_column: str, fair_preprocessor,
+                                 fairness_intervention_name: str, sensitive_attr_for_intervention: str):
         test_df = X_test
         test_df[target_column] = y_test
         test_binary_dataset = BinaryLabelDataset(df=test_df,
@@ -218,7 +219,11 @@ class EvaluationScenarioBuilder(MLLifecycle):
         # Set labels (aka y_test) to zeros since we do not know labels during inference
         test_binary_dataset.labels = np.zeros(shape=np.shape(test_binary_dataset.labels))
 
-        test_repaired_df , _ = fair_preprocessor.fit_transform(test_binary_dataset).convert_to_dataframe()
+        if fairness_intervention_name == FairnessIntervention.DIR.value:
+            test_repaired_df , _ = fair_preprocessor.fit_transform(test_binary_dataset).convert_to_dataframe()
+        else:
+            test_repaired_df , _ = fair_preprocessor.transform(test_binary_dataset).convert_to_dataframe()
+
         test_repaired_df.index = test_repaired_df.index.astype(dtype='int64')
         X_test = test_repaired_df.drop([target_column, sensitive_attr_for_intervention], axis=1)
 
