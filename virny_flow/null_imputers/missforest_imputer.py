@@ -298,8 +298,7 @@ class MissForestImputer(BaseEstimator, AbstractNullImputer):
                             scoring="neg_root_mean_squared_error",
                             n_jobs=self.n_jobs,
                             cv=3, verbose=self.verbose)
-        
-        
+
     def _miss_forest(self, Ximp, mask):
         """The missForest algorithm"""
 

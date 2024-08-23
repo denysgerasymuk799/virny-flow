@@ -3,13 +3,45 @@ from enum import Enum
 
 EXPERIMENT_RUN_SEEDS = [100 * i for i in range(1, 11)]
 NUM_FOLDS_FOR_TUNING = 3
-EXP_COLLECTION_NAME = 'exp_pipeline_metrics'
-MODEL_HYPER_PARAMS_COLLECTION_NAME = 'tuned_model_hyper_params'
-IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME = 'imputation_performance_metrics'
 NO_READY_TASK = 'NO_READY_TASK'
 FINISH_EXECUTION = 'FINISH_EXECUTION'
 STAGE_SEPARATOR = '&'
 NO_FAIRNESS_INTERVENTION = 'NO_FAIRNESS_INTERVENTION'
+
+# Table names
+EXP_PROGRESS_TRACKING_COLLECTION_NAME = 'exp_progress_tracking'
+EXP_COLLECTION_NAME = 'exp_pipeline_metrics'
+MODEL_HYPER_PARAMS_COLLECTION_NAME = 'tuned_model_hyper_params'
+IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME = 'imputation_performance_metrics'
+
+
+# ====================================================================
+# S3 Folders
+# ====================================================================
+class S3Folder(Enum):
+    virny_flow = 'virny_flow'  # root dir
+    experiments = 'experiments'  # virny_flow/experiments/
+    intermediate_state = 'intermediate_state'  # virny_flow/experiments/<EXP_CONFIG_NAME>/intermediate_state/
+    artifacts = 'artifacts'  # virny_flow/experiments/<EXP_CONFIG_NAME>/artifacts/
+    evaluation_scenarios = 'evaluation_scenarios'  # virny_flow/experiments/<EXP_CONFIG_NAME>/evaluation_scenarios/
+    ml_pipeline_registry = 'ml_pipeline_registry'  # virny_flow/ml_pipeline_registry/
+
+    def __str__(self):
+        return self.value
+
+
+# ====================================================================
+# Error Types
+# ====================================================================
+class ErrorType(Enum):
+    missing_value = 'missing_value'
+
+    def __str__(self):
+        return self.value
+
+    @classmethod
+    def has_value(cls, item):
+        return item in [v.value for v in cls]
 
 
 # ====================================================================
