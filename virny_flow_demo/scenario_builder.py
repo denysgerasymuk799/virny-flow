@@ -7,7 +7,8 @@ from virny_flow_demo.configs.datasets_config import DATASET_CONFIG
 
 if __name__ == '__main__':
     # Read an experimental config
-    exp_config_yaml_path = os.path.join('.', 'configs', 'exp_config.yaml')
+    # exp_config_yaml_path = os.path.join('.', 'configs', 'exp_config.yaml')
+    exp_config_yaml_path = os.path.join('virny_flow_demo', 'configs', 'exp_config.yaml')
     exp_config = create_config_obj(exp_config_yaml_path=exp_config_yaml_path)
 
     evaluation_scenario = [

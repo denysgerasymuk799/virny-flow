@@ -35,7 +35,8 @@ def read_model_metrics_from_s3(exp_config, evaluation_scenario_name: str):
 
 if __name__ == '__main__':
     # Read an experimental config
-    exp_config_yaml_path = os.path.join('.', 'configs', 'exp_config.yaml')
+    # exp_config_yaml_path = os.path.join('.', 'configs', 'exp_config.yaml')
+    exp_config_yaml_path = os.path.join('virny_flow_demo', 'configs', 'exp_config.yaml')
     exp_config = create_config_obj(exp_config_yaml_path=exp_config_yaml_path)
 
     evaluation_scenario_name = 'test_scenario'
