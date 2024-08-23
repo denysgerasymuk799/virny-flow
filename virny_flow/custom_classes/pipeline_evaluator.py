@@ -7,7 +7,9 @@ from virny.user_interfaces.multiple_models_with_db_writer_api import compute_met
 from virny_flow.custom_classes.ml_lifecycle import MLLifecycle
 from virny_flow.utils.pipeline_utils import get_dis_group_condition
 from virny_flow.preprocessing import preprocess_base_flow_dataset
-from virny_flow.fairness_interventions.preprocessors import remove_disparate_impact
+from virny_flow.fairness_interventions.preprocessors import remove_disparate_impact, apply_learning_fair_representations
+from virny_flow.fairness_interventions.postprocessors import get_eq_odds_postprocessor, get_reject_option_classification_postprocessor
+from virny_flow.fairness_interventions.inprocessors import get_adversarial_debiasing_wrapper_config, get_exponentiated_gradient_reduction_wrapper
 from virny_flow.utils.common_helpers import generate_guid, create_base_flow_dataset
 from virny_flow.configs.constants import (EXP_COLLECTION_NAME, ErrorRepairMethod, STAGE_SEPARATOR,
                                           NO_FAIRNESS_INTERVENTION, FairnessIntervention, S3Folder)
@@ -166,9 +168,17 @@ class PipelineEvaluator(MLLifecycle):
                                         repair_level=self.fairness_intervention_config[FairnessIntervention.DIR.value]["repair_level"],
                                         sensitive_attribute=binary_sensitive_attr_for_intervention)
             fair_preprocessor_params_dct = {"repair_level": self.fairness_intervention_config[FairnessIntervention.DIR.value]["repair_level"]}
-            self._save_artifacts_to_s3(preprocessor_name='fair_preprocessor',
-                                       preprocessor=fair_preprocessor,
-                                       preprocessor_params_dct=fair_preprocessor_params_dct)
+        
+        elif fairness_intervention_name == FairnessIntervention.LFR.value:
+            preprocessed_base_flow_dataset, fair_preprocessor =\
+                apply_learning_fair_representations(preprocessed_base_flow_dataset,
+                                                    intervention_options=self.fairness_intervention_config[FairnessIntervention.LFR.value],
+                                                    sensitive_attribute=binary_sensitive_attr_for_intervention)
+            fair_preprocessor_params_dct = {"repair_level": self.fairness_intervention_config[FairnessIntervention.LFR.value]["repair_level"]}
+            
+        self._save_artifacts_to_s3(preprocessor_name='fair_preprocessor',
+                                   preprocessor=fair_preprocessor,
+                                   preprocessor_params_dct=fair_preprocessor_params_dct)
 
         if save_preprocessed_datasets:
             column_transformer_params = {"string_params": str(column_transformer.get_params())}
@@ -335,3 +345,76 @@ class PipelineEvaluator(MLLifecycle):
                                                           categorical_columns_wo_sensitive_attrs=categorical_columns_wo_sensitive_attrs)
 
         return main_base_flow_dataset
+
+    def run_model_evaluation_stage(self, init_data_loader, experiment_seed: int, null_imputer_name: str,
+                                   fairness_intervention_name: str, model_name: str):
+        data_loader = copy.deepcopy(init_data_loader)
+
+        evaluation_scenario = None
+        custom_table_fields_dct = dict()
+        custom_table_fields_dct['session_uuid'] = self._session_uuid
+        custom_table_fields_dct['dataset_split_seed'] = experiment_seed
+        custom_table_fields_dct['model_init_seed'] = experiment_seed
+        custom_table_fields_dct['experiment_seed'] = experiment_seed
+        custom_table_fields_dct['exp_config_name'] = self.exp_config_name
+        custom_table_fields_dct['evaluation_scenario'] = evaluation_scenario
+        custom_table_fields_dct['null_imputer_name'] = null_imputer_name
+        custom_table_fields_dct['fairness_intervention_name'] = fairness_intervention_name
+
+        # Create exp_pipeline_guid to define a row level of granularity.
+        # concat(exp_pipeline_guid, model_name, subgroup, metric) can be used to check duplicates of results
+        # for the same experimental pipeline.
+        custom_table_fields_dct['exp_pipeline_guid'] = (
+            generate_guid(ordered_hierarchy_lst=[self.exp_config_name, evaluation_scenario, experiment_seed,
+                                                 self.dataset_name, null_imputer_name, fairness_intervention_name]))
+
+        # Load fairness-enhanced datasets
+        main_base_flow_dataset = self._load_preprocessed_train_test_sets(data_loader=data_loader,
+                                                                         stage_name="fairness_intervention",
+                                                                         preprocessor_name=fairness_intervention_name,
+                                                                         experiment_seed=experiment_seed)
+        # Tune ML models
+        models_config = self._tune_ML_models(model_names=[model_name],
+                                             base_flow_dataset=main_base_flow_dataset,
+                                             evaluation_scenario=evaluation_scenario,
+                                             experiment_seed=experiment_seed,
+                                             null_imputer_name=null_imputer_name,
+                                             fairness_intervention_name=fairness_intervention_name)
+        
+        sensitive_attribute = f"{self.exp_config.sensitive_attrs_for_intervention[0]}_binary"
+        priveleged_groups = [{sensitive_attribute: 1}]
+        unprivileged_groups = [{sensitive_attribute: 0}]
+        if fairness_intervention_name == FairnessIntervention.EOP.value:
+            postprocessor = get_eq_odds_postprocessor(privileged_groups=priveleged_groups,
+                                                      unprivileged_groups=unprivileged_groups,
+                                                      seed=experiment_seed)
+            self.virny_config['postprocessing_sensitive_attribute'] = sensitive_attribute
+        elif fairness_intervention_name == FairnessIntervention.ROC.value:
+            postprocessor_configs = self.fairness_intervention_config[FairnessIntervention.ROC.value]
+            postprocessor = get_reject_option_classification_postprocessor(privileged_groups=priveleged_groups,
+                                                                           unprivileged_groups=unprivileged_groups,
+                                                                           postprocessor_configs=postprocessor_configs)
+            self.virny_config['postprocessing_sensitive_attribute'] = sensitive_attribute
+        else:
+            postprocessor = None
+            if fairness_intervention_name == FairnessIntervention.EGR.value:
+                models_config = get_exponentiated_gradient_reduction_wrapper(inprocessor_configs=self.fairness_intervention_config[FairnessIntervention.EGR.value],
+                                                                             sensitive_attr_for_intervention=f"{self.exp_config.sensitive_attrs_for_intervention[0]}_binary")
+            elif fairness_intervention_name == FairnessIntervention.AD.value:
+                models_config = get_adversarial_debiasing_wrapper_config(privileged_groups=priveleged_groups,
+                                                                     unprivileged_groups=unprivileged_groups,
+                                                                     inprocessor_configs=self.fairness_intervention_config[FairnessIntervention.AD.value],
+                                                                     sensitive_attr_for_intervention=sensitive_attribute)
+        
+        # Compute metrics for tuned models
+        self.virny_config.random_state = experiment_seed  # Set random state for the metric computation with Virny
+        compute_metrics_with_db_writer(dataset=main_base_flow_dataset,
+                                       config=self.virny_config,
+                                       models_config=models_config,
+                                       custom_tbl_fields_dct=custom_table_fields_dct,
+                                       db_writer_func=self._db.get_db_writer(collection_name=EXP_COLLECTION_NAME),
+                                       postprocessor=postprocessor,
+                                       notebook_logs_stdout=False,
+                                       verbose=0)
+        print(f'Metric computation for {null_imputer_name}&{fairness_intervention_name}&{model_name} was finished\n',
+              flush=True)
