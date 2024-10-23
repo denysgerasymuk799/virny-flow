@@ -1,4 +1,4 @@
-virny==0.5.0
+virny==0.6.0
 autokeras==1.0.20
 tensorflow==2.17.0
 kmodes==0.12.2
@@ -11,7 +11,7 @@ tqdm~=4.64.1
 sklearn-utils
 seaborn~=0.12.1
 fairlearn~=0.9.0
-aif360~=0.5.0
+aif360~=0.6.1
 BlackBoxAuditing~=0.1.54
 impyute~=0.0.8
 pymongo~=4.8.0

@@ -1,0 +1,6 @@
+
+dataset_name: Diabetes
+bootstrap_fraction: 0.8
+random_state: 42
+n_estimators: 2
+sensitive_attributes_dct: {'Gender': 'Female',  'Age': 'less than 40', 'Gender & Age': None}
