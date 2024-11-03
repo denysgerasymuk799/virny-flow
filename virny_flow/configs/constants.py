@@ -8,11 +8,47 @@ FINISH_EXECUTION = 'FINISH_EXECUTION'
 STAGE_SEPARATOR = '&'
 NO_FAIRNESS_INTERVENTION = 'NO_FAIRNESS_INTERVENTION'
 
-# Table names
+# ====================================================================
+# MongoDB Constants
+# ====================================================================
+TASK_QUEUE_TABLE = 'task_queue'
+LOGICAL_PIPELINE_SCORES_TABLE = 'logical_pipeline_scores'
+
 EXP_PROGRESS_TRACKING_COLLECTION_NAME = 'exp_progress_tracking'
 EXP_COLLECTION_NAME = 'exp_pipeline_metrics'
 MODEL_HYPER_PARAMS_COLLECTION_NAME = 'tuned_model_hyper_params'
 IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME = 'imputation_performance_metrics'
+
+
+# ====================================================================
+# Stage Names
+# ====================================================================
+class StageName(Enum):
+    null_imputation = "null_imputation"
+    fairness_intervention = "fairness_intervention"
+    model_evaluation = "model_evaluation"
+
+    def __str__(self):
+        return self.value
+
+
+STAGE_NAME_TO_STAGE_ID = {
+    StageName.null_imputation.value: 1,
+    StageName.fairness_intervention.value: 2,
+    StageName.model_evaluation.value: 3,
+}
+
+# ====================================================================
+# Task Statuses
+# ====================================================================
+class TaskStatus(Enum):
+    BLOCKED = "BLOCKED"
+    READY = "READY"
+    ASSIGNED = "ASSIGNED"
+    DONE = "DONE"
+
+    def __str__(self):
+        return self.value
 
 
 # ====================================================================
