@@ -13,7 +13,7 @@ from sklearn.base import is_classifier, clone
 from sklearn.model_selection._split import check_cv
 from sklearn.model_selection._validation import (_insert_error_scores,  _warn_or_raise_about_fit_failures,
                                                  _score, _num_samples)
-from sklearn.utils.validation import indexable, _check_fit_params
+from sklearn.utils.validation import indexable
 from sklearn.utils.metaestimators import _safe_split
 from sklearn.utils.parallel import delayed, Parallel
 from sklearn.metrics._scorer import _check_multimetric_scoring
@@ -153,7 +153,6 @@ def _fit_and_score(
 
     # Adjust length of sample weights
     fit_params = fit_params if fit_params is not None else {}
-    fit_params = _check_fit_params(X, fit_params, train)
 
     if parameters is not None:
         # clone after setting parameters in case any parameters
@@ -295,7 +294,6 @@ class GridSearchCVWithEarlyStopping(GridSearchCV):
             refit_metric = self.refit
 
         X, y, groups = indexable(X, y, groups)
-        fit_params = _check_fit_params(X, fit_params)
 
         cv_orig = check_cv(self.cv, y, classifier=is_classifier(estimator))
         n_splits = cv_orig.get_n_splits(X, y, groups)

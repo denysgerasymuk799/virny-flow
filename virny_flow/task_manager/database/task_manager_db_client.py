@@ -1,5 +1,4 @@
 import os
-import pathlib
 import certifi
 import motor.motor_asyncio
 
@@ -12,7 +11,7 @@ from virny_flow.configs.constants import (EXP_PROGRESS_TRACKING_TABLE, FINISH_EX
 
 
 class TaskManagerDBClient:
-    def __init__(self, secrets_path: str = pathlib.Path(__file__).parent.parent.joinpath( 'configs', 'secrets.env')):
+    def __init__(self, secrets_path: str):
         load_dotenv(secrets_path, override=True)  # Take environment variables from .env
 
         # Provide the mongodb atlas url to connect python to mongodb using pymongo

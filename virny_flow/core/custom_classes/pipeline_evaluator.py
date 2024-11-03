@@ -274,6 +274,8 @@ class PipelineEvaluator(MLLifecycle):
 
         # Write X_train_val to S3 as a CSV
         train_set_filename = f'preprocessed_{self.exp_config_name}_{self.dataset_name}_{preprocessor_name}_X_train_val.csv'
+        print("X_train_val.shape:", X_train_val.shape)
+        print("X_train_val.head():", X_train_val.head())
         self._s3_client.write_csv(X_train_val, f'{save_sets_dir_path}/{train_set_filename}', index=True)
 
         # Save X_test set in S3

@@ -4,7 +4,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 def get_simple_preprocessor(base_flow_dataset):
     return ColumnTransformer(transformers=[
-        ('cat', OneHotEncoder(categories='auto', handle_unknown='ignore', sparse=False), base_flow_dataset.categorical_columns),
+        ('cat', OneHotEncoder(categories='auto', handle_unknown='ignore', sparse_output=False), base_flow_dataset.categorical_columns),
         ('num', StandardScaler(), base_flow_dataset.numerical_columns),
     ])
 

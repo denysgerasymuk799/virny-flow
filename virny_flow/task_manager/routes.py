@@ -1,9 +1,8 @@
-from contextlib import asynccontextmanager
 from fastapi import FastAPI, status, Query
 from fastapi.responses import JSONResponse
 
 from .database.task_manager_db_client import TaskManagerDBClient
-from domain_logic.initial_configuration import create_initial_config_state
+from .domain_logic.initial_configuration import create_execution_plan
 
 
 cors = {
@@ -18,16 +17,16 @@ def register_routes(app: FastAPI, db_client: TaskManagerDBClient, logger):
     async def options():
         return JSONResponse(status_code=status.HTTP_200_OK, headers=cors, content=None)
 
-    @asynccontextmanager
-    async def lifespan(app: FastAPI):
-        # Startup actions
+    @app.on_event("startup")
+    async def startup_event():
         print("Starting up...")
         db_client.connect()
-        await create_initial_config_state(db_client)
 
-        yield  # Control passes to the application here
+        # Create an optimized execution plan
+        await create_execution_plan(db_client)
 
-        # Shutdown actions
+    @app.on_event("shutdown")
+    def shutdown_event():
         print("Shutting down...")
         db_client.close()
 

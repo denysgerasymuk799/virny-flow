@@ -14,6 +14,7 @@ NO_FAIRNESS_INTERVENTION = 'NO_FAIRNESS_INTERVENTION'
 TASK_QUEUE_TABLE = 'task_queue'
 LOGICAL_PIPELINE_SCORES_TABLE = 'logical_pipeline_scores'
 
+EXP_PROGRESS_TRACKING_TABLE = 'exp_progress_tracking'
 EXP_PROGRESS_TRACKING_COLLECTION_NAME = 'exp_progress_tracking'
 EXP_COLLECTION_NAME = 'exp_pipeline_metrics'
 MODEL_HYPER_PARAMS_COLLECTION_NAME = 'tuned_model_hyper_params'
