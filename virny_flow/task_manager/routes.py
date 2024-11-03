@@ -2,8 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, status, Query
 from fastapi.responses import JSONResponse
 
-from database.database_client import DatabaseClient
-from domain_logic.custom_logger import logger
+from .database.task_manager_db_client import TaskManagerDBClient
 from domain_logic.initial_configuration import create_initial_config_state
 
 
@@ -14,7 +13,7 @@ cors = {
     'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, HEAD, OPTIONS',
 }
 
-def register_routes(app: FastAPI, db_client: DatabaseClient):
+def register_routes(app: FastAPI, db_client: TaskManagerDBClient, logger):
     @app.options("/{full_path:path}")
     async def options():
         return JSONResponse(status_code=status.HTTP_200_OK, headers=cors, content=None)
