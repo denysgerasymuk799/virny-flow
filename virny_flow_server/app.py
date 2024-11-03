@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 
 from init_config import app, db_client, cors
 from domain_logic.custom_logger import logger
-from domain_logic.execution_plan import create_execution_plan
+from domain_logic.initial_configuration import create_initial_config_state
 
 
 @app.options("/{full_path:path}")
@@ -16,8 +16,8 @@ async def startup_event():
     print("Starting up...")
     db_client.connect()
 
-    # Create an optimized execution plan
-    await create_execution_plan(db_client)
+    # Create an initial state based on the experimental config
+    await create_initial_config_state(db_client)
 
 
 @app.on_event("shutdown")

@@ -1,11 +1,16 @@
 from enum import Enum
 
 
-EXP_PROGRESS_TRACKING_TABLE = 'exp_progress_tracking'
 NO_READY_TASK = 'NO_READY_TASK'
 FINISH_EXECUTION = 'FINISH_EXECUTION'
 STAGE_SEPARATOR = '&'
 NO_FAIRNESS_INTERVENTION = 'NO_FAIRNESS_INTERVENTION'
+
+# ====================================================================
+# MongoDB Constants
+# ====================================================================
+TASK_QUEUE_TABLE = 'task_queue'
+LOGICAL_PIPELINE_SCORES_TABLE = 'logical_pipeline_scores'
 
 
 # ====================================================================
