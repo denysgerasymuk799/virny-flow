@@ -1,5 +1,5 @@
 from typing import List
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from sklearn.impute import SimpleImputer
 from openbox.utils.history import History
 
@@ -36,11 +36,12 @@ class BOAdvisorConfig:
 
 @dataclass
 class LogicalPipeline:
-    logical_pipeline_id: int
+    logical_pipeline_uuid: str
     logical_pipeline_name: str
     components: dict
-    score: float
     risk_factor: float
+    num_trials: int
+    score: float
     pipeline_quality_mean: float
     pipeline_quality_std: float
     pipeline_execution_cost: float
@@ -51,17 +52,17 @@ class LogicalPipeline:
 
 @dataclass
 class PhysicalPipeline:
-    physical_pipeline_id: int
-    logical_pipeline_id: int
+    physical_pipeline_uuid: str
+    logical_pipeline_uuid: str
     logical_pipeline_name: str
     null_imputer_params: dict
     fairness_intervention_params: dict
     model_params: dict
-    preprocessing: str = 'cat: OneHotEncoder, num: StandardScaler'
+    preprocessing: dict = field(default_factory=lambda: {'cat': 'OneHotEncoder', 'num': 'StandardScaler'})
 
 
 @dataclass
 class Task:
-    task_id: int
+    task_uuid: str
     physical_pipeline: PhysicalPipeline
     task_status: TaskStatus

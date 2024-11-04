@@ -1,8 +1,9 @@
+import uuid
 from munch import DefaultMunch
 from dataclasses import asdict
 from datetime import datetime, timezone
 
-from .bayesian_optimization import get_first_tasks_for_lp
+from .bayesian_optimization import select_next_logical_pipeline, select_next_physical_pipelines
 from ..database.task_manager_db_client import TaskManagerDBClient
 from virny_flow.configs.structs import BOAdvisorConfig, LogicalPipeline
 from virny_flow.configs.constants import (StageName, STAGE_SEPARATOR, NO_FAIRNESS_INTERVENTION,
@@ -35,17 +36,18 @@ async def create_init_state_for_config(exp_config: DefaultMunch, lp_to_advisor: 
     # Step 2: Init all logical pipelines with default values in the database
     datetime_now = datetime.now(timezone.utc)
     logical_pipeline_objs = [
-        LogicalPipeline(logical_pipeline_id=idx + 1,
+        LogicalPipeline(logical_pipeline_uuid=str(uuid.uuid4()),
                         logical_pipeline_name=logical_pipeline['name'],
                         components=logical_pipeline['components'],
                         risk_factor=exp_config.risk_factor,
-                        score=None,
-                        pipeline_quality_mean=None,
-                        pipeline_quality_std=None,
-                        pipeline_execution_cost=None,
-                        norm_pipeline_quality_mean=None,
-                        norm_pipeline_quality_std=None,
-                        norm_pipeline_execution_cost=None)
+                        num_trials=0,
+                        score=0.0,
+                        pipeline_quality_mean=0.0,
+                        pipeline_quality_std=0.0,
+                        pipeline_execution_cost=0.0,
+                        norm_pipeline_quality_mean=0.0,
+                        norm_pipeline_quality_std=0.0,
+                        norm_pipeline_execution_cost=0.0)
         for idx, logical_pipeline in enumerate(logical_pipelines)]
     logical_pipeline_records = [asdict(logical_pipeline_obj) for logical_pipeline_obj in logical_pipeline_objs]
     await db_client.write_records_into_db(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
@@ -58,10 +60,18 @@ async def create_init_state_for_config(exp_config: DefaultMunch, lp_to_advisor: 
                                           })
 
     # Step 3: Get tasks for the first logical pipeline using MO-BO
-    init_tasks = get_first_tasks_for_lp(logical_pipeline=logical_pipeline_objs[0],
-                                        lp_to_advisor=lp_to_advisor,
-                                        bo_advisor_config=bo_advisor_config,
-                                        num_pp_candidates=exp_config.num_pp_candidates)
+    next_logical_pipeline = select_next_logical_pipeline(logical_pipelines=logical_pipeline_objs,
+                                                         exploration_factor=exp_config.exploration_factor,
+                                                         max_trials=exp_config.max_trials)
+    init_tasks = select_next_physical_pipelines(logical_pipeline=next_logical_pipeline,
+                                                lp_to_advisor=lp_to_advisor,
+                                                bo_advisor_config=bo_advisor_config,
+                                                num_pp_candidates=exp_config.num_pp_candidates)
+    # Update the number of trials for the selected logical pipeline
+    await db_client.increment_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
+                                    condition={"exp_config_name": exp_config.exp_config_name,
+                                               "logical_pipeline_uuid": next_logical_pipeline.logical_pipeline_uuid},
+                                    increment_val_dct={"num_trials": exp_config.num_pp_candidates})
 
     # Step 4: Add the initial tasks to the Task Queue
     init_task_records = [asdict(task) for task in init_tasks]

@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from datetime import datetime, timezone
 
 from virny_flow.configs.constants import (EXP_PROGRESS_TRACKING_TABLE, FINISH_EXECUTION, NO_READY_TASK,
-                                          TaskStatus, StageName)
+                                          TaskStatus, StageName, EXP_CONFIG_HISTORY_TABLE)
 
 
 class TaskManagerDBClient:
@@ -32,7 +32,7 @@ class TaskManagerDBClient:
         return self.client[self.db_name][collection_name]
 
     async def check_record_exists(self, query: dict):
-        collection = self._get_collection(collection_name=EXP_PROGRESS_TRACKING_TABLE)
+        collection = self._get_collection(collection_name=EXP_CONFIG_HISTORY_TABLE)
         query['deletion_flag'] = False
         return await collection.find_one(query) is not None
 
@@ -60,6 +60,18 @@ class TaskManagerDBClient:
         result = await collection.update_many(
             condition,  # Filter to match the document
             {"$set": update_val_dct}  # Update operation
+        )
+        print(f"Matched {result.matched_count} document(s) and modified {result.modified_count} document(s).")
+        return result.modified_count
+
+    async def increment_query(self, collection_name: str, condition: dict, increment_val_dct: dict):
+        collection = self._get_collection(collection_name)
+        condition['deletion_flag'] = False
+
+        # Update many documents
+        result = await collection.update_many(
+            condition,  # Filter to match the document
+            {"$inc": increment_val_dct}  # Update operation
         )
         print(f"Matched {result.matched_count} document(s) and modified {result.modified_count} document(s).")
         return result.modified_count
