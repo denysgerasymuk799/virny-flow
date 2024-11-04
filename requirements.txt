@@ -22,3 +22,4 @@ fastapi>=0.112.0
 uvicorn>=0.30.5
 motor>=3.5.1
 python-dotenv>=1.0.1
+openbox~=0.8.4

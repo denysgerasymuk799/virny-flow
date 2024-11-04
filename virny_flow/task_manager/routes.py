@@ -1,8 +1,10 @@
 from fastapi import FastAPI, status, Query
 from fastapi.responses import JSONResponse
+from munch import DefaultMunch
 
 from .database.task_manager_db_client import TaskManagerDBClient
-from .domain_logic.initial_configuration import create_execution_plan
+from .domain_logic.initial_configuration import create_init_state_for_config
+from virny_flow.configs.structs import BOAdvisorConfig
 
 
 cors = {
@@ -12,7 +14,8 @@ cors = {
     'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, HEAD, OPTIONS',
 }
 
-def register_routes(app: FastAPI, db_client: TaskManagerDBClient, logger):
+def register_routes(app: FastAPI, exp_config: DefaultMunch, db_client: TaskManagerDBClient,
+                    lp_to_advisor: dict, bo_advisor_config: BOAdvisorConfig, logger):
     @app.options("/{full_path:path}")
     async def options():
         return JSONResponse(status_code=status.HTTP_200_OK, headers=cors, content=None)
@@ -23,7 +26,10 @@ def register_routes(app: FastAPI, db_client: TaskManagerDBClient, logger):
         db_client.connect()
 
         # Create an optimized execution plan
-        await create_execution_plan(db_client)
+        await create_init_state_for_config(exp_config=exp_config,
+                                           lp_to_advisor=lp_to_advisor,
+                                           bo_advisor_config=bo_advisor_config,
+                                           db_client=db_client)
 
     @app.on_event("shutdown")
     def shutdown_event():

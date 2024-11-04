@@ -1,10 +1,15 @@
-exp_config_name: "german_experiments2"
+exp_config_name: "german_experiments"
 dataset: "german"
 sensitive_attrs_for_intervention: ["sex"]
-null_imputers: ["median-mode", "median-dummy"]
+#null_imputers: ["median-mode", "median-dummy"]
+null_imputers: ["miss_forest"]
 fairness_interventions: ["DIR"]
 #models: ["lr_clf", "rf_clf"]
 models: ["lr_clf"]
+max_trials: 10
+num_pp_candidates: 10
+exploration_factor: 0.5
+risk_factor: 0.5
 random_state: 42
 secrets_path: "/Users/denys_herasymuk/Research/NYU/VirnyFlow_Project/Code/virny-flow/virny_flow_demo/configs/secrets.env"
 #secrets_path: "./configs/secrets.env"

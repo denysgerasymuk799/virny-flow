@@ -11,8 +11,10 @@ NO_FAIRNESS_INTERVENTION = 'NO_FAIRNESS_INTERVENTION'
 # ====================================================================
 # MongoDB Constants
 # ====================================================================
-TASK_QUEUE_TABLE = 'task_queue'
 LOGICAL_PIPELINE_SCORES_TABLE = 'logical_pipeline_scores'
+PHYSICAL_PIPELINE_METRICS_TABLE = 'physical_pipeline_metrics'
+TASK_QUEUE_TABLE = 'task_queue'
+EXP_CONFIG_HISTORY_TABLE = 'exp_config_history'
 
 EXP_PROGRESS_TRACKING_TABLE = 'exp_progress_tracking'
 EXP_PROGRESS_TRACKING_COLLECTION_NAME = 'exp_progress_tracking'
@@ -33,18 +35,11 @@ class StageName(Enum):
         return self.value
 
 
-STAGE_NAME_TO_STAGE_ID = {
-    StageName.null_imputation.value: 1,
-    StageName.fairness_intervention.value: 2,
-    StageName.model_evaluation.value: 3,
-}
-
 # ====================================================================
 # Task Statuses
 # ====================================================================
 class TaskStatus(Enum):
-    BLOCKED = "BLOCKED"
-    READY = "READY"
+    WAITING = "WAITING"
     ASSIGNED = "ASSIGNED"
     DONE = "DONE"
 

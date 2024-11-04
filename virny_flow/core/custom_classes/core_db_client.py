@@ -55,7 +55,7 @@ class CoreDBClient:
 
         # Rename Pandas columns to lower case
         df.columns = df.columns.str.lower()
-        df['tag'] = 'OK'
+        df['deletion_flag'] = False
 
         self.execute_write_query(df.to_dict('records'), collection_name)
         print('Dataframe is successfully written into the database')

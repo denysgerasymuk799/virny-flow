@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from datetime import datetime, timezone
 
 from virny_flow.configs.constants import (EXP_PROGRESS_TRACKING_TABLE, FINISH_EXECUTION, NO_READY_TASK,
-                                          TaskStatus, STAGE_NAME_TO_STAGE_ID, StageName)
+                                          TaskStatus, StageName)
 
 
 class TaskManagerDBClient:
@@ -33,7 +33,7 @@ class TaskManagerDBClient:
 
     async def check_record_exists(self, query: dict):
         collection = self._get_collection(collection_name=EXP_PROGRESS_TRACKING_TABLE)
-        query['tag'] = 'OK'
+        query['deletion_flag'] = False
         return await collection.find_one(query) is not None
 
     async def execute_write_query(self, records, collection_name):
@@ -54,7 +54,7 @@ class TaskManagerDBClient:
 
     async def update_query(self, collection_name: str, condition: dict, update_val_dct: dict):
         collection = self._get_collection(collection_name)
-        condition['tag'] = 'OK'
+        condition['deletion_flag'] = False
 
         # Update many documents
         result = await collection.update_many(
@@ -66,12 +66,12 @@ class TaskManagerDBClient:
 
     async def read_one_query(self, collection_name: str, query: dict, sort_param: list = None):
         collection = self._get_collection(collection_name)
-        query['tag'] = 'OK'
+        query['deletion_flag'] = False
         return await collection.find_one(query, sort=sort_param)
 
     async def count_query(self, collection_name: str, condition: dict):
         collection = self._get_collection(collection_name)
-        condition['tag'] = 'OK'
+        condition['deletion_flag'] = False
         return await collection.count_documents(condition)
 
     async def write_records_into_db(self, collection_name: str, records: list, static_values_dct: dict):

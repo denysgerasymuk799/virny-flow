@@ -53,7 +53,7 @@ def validate_config(exp_config_obj):
     return True
 
 
-def create_config_obj(config_yaml_path: str):
+def create_exp_config_obj(config_yaml_path: str):
     """
     Return a config object created based on a config yaml file.
 

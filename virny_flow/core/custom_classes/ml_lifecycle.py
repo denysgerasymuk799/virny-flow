@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from sklearn.model_selection import train_test_split
 from virny.utils.custom_initializers import create_config_obj
 
-from virny_flow.configs.component_configs import NULL_IMPUTERS_CONFIG
+from virny_flow.configs.component_configs import NULL_IMPUTER_CONFIG
 from virny_flow.configs.constants import MODEL_HYPER_PARAMS_COLLECTION_NAME, NUM_FOLDS_FOR_TUNING, ErrorRepairMethod
 from virny_flow.core.utils.custom_logger import get_logger
 from virny_flow.core.utils.model_tuning_utils import tune_ML_models
@@ -93,13 +93,13 @@ class MLLifecycle:
 
     def _impute_nulls(self, X_train_with_nulls, X_tests_with_nulls_lst, null_imputer_name, evaluation_scenario,
                       experiment_seed, numerical_columns, categorical_columns, tune_imputers):
-        if not is_in_enum(null_imputer_name, ErrorRepairMethod) or null_imputer_name not in NULL_IMPUTERS_CONFIG.keys():
+        if not is_in_enum(null_imputer_name, ErrorRepairMethod) or null_imputer_name not in NULL_IMPUTER_CONFIG.keys():
             raise ValueError(f'{null_imputer_name} null imputer is not implemented')
 
-        # Use a method, kwargs, and hyperparams from NULL_IMPUTERS_CONFIG
+        # Use a method, kwargs, and hyperparams from NULL_IMPUTER_CONFIG
         hyperparams = None
-        imputation_method = NULL_IMPUTERS_CONFIG[null_imputer_name]["method"]
-        imputation_kwargs = NULL_IMPUTERS_CONFIG[null_imputer_name]["kwargs"]
+        imputation_method = NULL_IMPUTER_CONFIG[null_imputer_name]["method"]
+        imputation_kwargs = NULL_IMPUTER_CONFIG[null_imputer_name]["default_kwargs"]
         imputation_kwargs.update({'experiment_seed': experiment_seed})
         imputation_kwargs.update({'dataset_name': self.dataset_name})
 
