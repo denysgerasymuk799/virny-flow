@@ -11,7 +11,7 @@ class Worker:
         self.address = address.rstrip('/')
         self._logger = get_logger(logger_name="worker")
 
-    def request_with_retries(self, url, params, header, request_type):
+    def request_with_retries(self, url, params, header, request_type, body=None):
         """
         Make a request call with retries to avoid network errors
         """
@@ -21,7 +21,7 @@ class Worker:
         n_retries = 3
         for n_retry in range(n_retries):
             try:
-                response = requests.post(url=url, params=params, headers=header) if request_type == 'POST' \
+                response = requests.post(url=url, params=params, json=body, headers=header) if request_type == 'POST' \
                     else requests.get(url=url, params=params, headers=header)
                 if response.status_code == 400:
                     self._logger.error(f'Function request_with_retries(), number of request {n_retry + 1}, '
@@ -65,10 +65,10 @@ class Worker:
             "task_uuid": task_uuid,
             "logical_pipeline_uuid": logical_pipeline_uuid,
             "logical_pipeline_name": logical_pipeline_name,
-            "observation": observation,
         }
         response = self.request_with_retries(url=f'{self.address}/complete_worker_task',
                                              params=params,
+                                             body=observation.to_dict(),
                                              header=None,
                                              request_type='POST')
 

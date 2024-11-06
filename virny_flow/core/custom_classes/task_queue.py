@@ -37,7 +37,7 @@ class TaskQueue:
         # Create an index to ensure atomic dequeue operation.
         # Note, if an index with the same fields and options already exists,
         # MongoDB will skip re-creating it automatically.
-        self.collection.create_index([("status", ASCENDING), ("_id", ASCENDING)])
+        self.collection.create_index([("task_status", ASCENDING), ("_id", ASCENDING)])
 
     async def has_space_for_next_lp(self, exp_config_name: str, num_pp_candidates: int):
         task_count = await self.collection.count_documents({
@@ -50,7 +50,7 @@ class TaskQueue:
     async def enqueue(self, task: Task):
         """Add an item to the queue."""
         task_record = asdict(task)
-        task_record["status"] = TaskStatus.WAITING.value
+        task_record["task_status"] = TaskStatus.WAITING.value
         task_record["deletion_flag"] = False
 
         datetime_now = datetime.now(timezone.utc)
@@ -64,8 +64,8 @@ class TaskQueue:
         """Remove a task from the queue."""
         # Find and update the first waiting item to processing status
         task = await self.collection.find_one_and_update(
-            {"exp_config_name": exp_config_name, "status": TaskStatus.WAITING.value, "deletion_flag": False},
-            {"$set": {"status": TaskStatus.ASSIGNED.value,
+            {"exp_config_name": exp_config_name, "task_status": TaskStatus.WAITING.value, "deletion_flag": False},
+            {"$set": {"task_status": TaskStatus.ASSIGNED.value,
                       "update_datetime": datetime.now(timezone.utc)}},
             sort=[("_id", ASCENDING)]
         )
@@ -81,7 +81,7 @@ class TaskQueue:
         """Mark a task as completed."""
         done_tasks_count = await self.collection.update_one(
             {"exp_config_name": exp_config_name, "task_uuid": task_uuid},
-            {"$set": {"status": TaskStatus.DONE.value,
+            {"$set": {"task_status": TaskStatus.DONE.value,
                       "update_datetime": datetime.now(timezone.utc)}}
         )
         print(f"Completed task with UUID: {task_uuid}")

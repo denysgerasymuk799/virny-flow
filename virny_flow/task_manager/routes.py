@@ -1,12 +1,11 @@
 import asyncio
-from fastapi import FastAPI, status, Query
+from fastapi import FastAPI, status, Query, Body
 from fastapi.responses import JSONResponse
 from munch import DefaultMunch
-from openbox.utils.history import Observation
 
 from .database.task_manager_db_client import TaskManagerDBClient
-from .domain_logic.initial_configuration import add_new_tasks
-from .domain_logic.initial_configuration import create_init_state_for_config
+from .domain_logic.pydantic_models import ObservationModel
+from .domain_logic.initial_configuration import add_new_tasks, create_init_state_for_config
 from virny_flow.configs.constants import LOGICAL_PIPELINE_SCORES_TABLE
 from virny_flow.configs.structs import BOAdvisorConfig
 from virny_flow.core.custom_classes.task_queue import TaskQueue
@@ -56,7 +55,7 @@ def register_routes(app: FastAPI, exp_config: DefaultMunch, task_queue: TaskQueu
 
     @app.post("/complete_worker_task", response_class=JSONResponse)
     async def complete_worker_task(exp_config_name: str = Query(), task_uuid: str = Query(), logical_pipeline_uuid: str = Query(),
-                                   logical_pipeline_name: str = Query(), observation: Observation = Query()):
+                                   logical_pipeline_name: str = Query(), observation: ObservationModel = Body()):
         # Update the number of trials for the logical pipeline
         await db_client.increment_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
                                         condition={"exp_config_name": exp_config_name,

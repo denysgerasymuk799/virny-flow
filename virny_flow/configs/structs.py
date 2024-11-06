@@ -79,7 +79,6 @@ class Task:
     exp_config_name: str
     physical_pipeline: PhysicalPipeline
     objectives: list
-    task_status: TaskStatus
 
     @classmethod
     def from_dict(cls, data: dict):

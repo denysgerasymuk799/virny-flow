@@ -5,7 +5,7 @@ import motor.motor_asyncio
 from bson.objectid import ObjectId
 from dotenv import load_dotenv
 
-from virny_flow.configs.constants import EXP_CONFIG_HISTORY_TABLE, LOGICAL_PIPELINE_SCORES_TABLE
+from virny_flow.configs.constants import EXP_CONFIG_HISTORY_TABLE
 
 
 class TaskManagerDBClient:
@@ -79,10 +79,19 @@ class TaskManagerDBClient:
         query['deletion_flag'] = False
         return await collection.find_one(query, sort=sort_param)
 
-    async def read_query(self, collection_name: str, query: dict, sort_param: list = None):
+    async def find_many_documents(self, collection_name: str, query: dict, sort_param: list = None):
         collection = self._get_collection(collection_name)
+        cursor = collection.find(query, sort=sort_param)
+        documents = []
+        async for document in cursor:
+            documents.append(document)
+        return documents
+
+    async def read_query(self, collection_name: str, query: dict, sort_param: list = None):
         query['deletion_flag'] = False
-        return await collection.find_many(query, sort=sort_param)
+        return await self.find_many_documents(collection_name=collection_name,
+                                              query=query,
+                                              sort_param=sort_param)
 
     async def count_query(self, collection_name: str, condition: dict):
         collection = self._get_collection(collection_name)
