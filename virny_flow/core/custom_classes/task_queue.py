@@ -39,13 +39,13 @@ class TaskQueue:
         # MongoDB will skip re-creating it automatically.
         self.collection.create_index([("task_status", ASCENDING), ("_id", ASCENDING)])
 
-    async def has_space_for_next_lp(self, exp_config_name: str, num_pp_candidates: int):
+    async def has_space_for_next_lp(self, exp_config_name: str, num_workers: int):
         task_count = await self.collection.count_documents({
             "exp_config_name": exp_config_name,
             "task_status": { "$in": [TaskStatus.WAITING.value, TaskStatus.ASSIGNED.value] },
             "deletion_flag": False,
         })
-        return task_count <= self.max_queue_size - num_pp_candidates
+        return task_count <= self.max_queue_size - num_workers
 
     async def enqueue(self, task: Task):
         """Add an item to the queue."""
@@ -81,13 +81,13 @@ class TaskQueue:
 
     async def complete_task(self, exp_config_name: str, task_uuid: str):
         """Mark a task as completed."""
-        done_tasks_count = await self.collection.update_one(
+        resp = await self.collection.update_one(
             {"exp_config_name": exp_config_name, "task_uuid": task_uuid},
             {"$set": {"task_status": TaskStatus.DONE.value,
                       "update_datetime": datetime.now(timezone.utc)}}
         )
         print(f"Completed task with UUID: {task_uuid}")
-        return done_tasks_count
+        return resp.modified_count
 
     def close(self):
         self.client.close()

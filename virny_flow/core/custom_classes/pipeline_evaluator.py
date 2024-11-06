@@ -76,7 +76,6 @@ class PipelineEvaluator(MLLifecycle):
                                              sensitive_attributes_dct=self.virny_config.sensitive_attributes_dct)
         print("result_losses:", result_losses)
         objectives, constraints, extra_info = parse_result(result_losses)
-        print("objectives:", objectives)
         observation = Observation(
             config=task.physical_pipeline.suggestion,
             objectives=objectives,

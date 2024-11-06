@@ -27,13 +27,14 @@ def worker_interface(exp_config: DefaultMunch, virny_flow_address: str, dataset_
 
     # Infinite while loop for task execution
     while True:
-        task = Task.from_dict(task_dct)
-        if task.task_uuid == NO_TASKS:
+        if task_dct["task_uuid"] == NO_TASKS:
             # Shutdown the worker to know when all job is done.
             # Can be useful when the job sends you an email when it is done.
             print('Queue is empty. Shutting down the worker...', flush=True)
             return
         else:
+            task = Task.from_dict(task_dct)
+
             # Use PipelineEvaluator to execute the task
             observation = pipeline_evaluator.execute_task(task=task, seed=exp_config.random_state)
             if observation:

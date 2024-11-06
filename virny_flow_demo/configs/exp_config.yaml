@@ -9,7 +9,7 @@ models: ["lr_clf"]
 ref_point: [0.15, 0.15]
 objectives:
   - { name: "objective_1", metric: "F1", group: "overall" }
-  - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "sex&age" }
+  - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "sex" }
 
 max_trials: 10
 num_workers: 4

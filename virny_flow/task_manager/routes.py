@@ -66,9 +66,6 @@ def register_routes(app: FastAPI, exp_config: DefaultMunch, task_queue: TaskQueu
         observation = Observation.from_dict(data["observation"],
                                             config_space=lp_to_advisor[logical_pipeline_name]["config_space"])
 
-        print("exp_config_name:", exp_config_name)
-        print("task_uuid:", task_uuid)
-
         # Update the number of trials for the logical pipeline
         await db_client.increment_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
                                         condition={"exp_config_name": exp_config_name,

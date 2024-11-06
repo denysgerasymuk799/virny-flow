@@ -16,7 +16,7 @@ async def add_new_tasks(exp_config: DefaultMunch, lp_to_advisor: dict, bo_adviso
                         db_client: TaskManagerDBClient, task_queue: TaskQueue):
     while True:
         if not await task_queue.has_space_for_next_lp(exp_config_name=exp_config.exp_config_name,
-                                                      num_pp_candidates=exp_config.num_pp_candidates):
+                                                      num_workers=exp_config.num_workers):
             print("Wait until the queue has enough space for next pp candidates...")
             time.sleep(10)
             continue

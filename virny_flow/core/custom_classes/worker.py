@@ -68,7 +68,6 @@ class Worker:
             "logical_pipeline_name": logical_pipeline_name,
             "observation": observation_to_dict(observation),
         }
-        print('New observation:\n', observation_to_dict(observation))
         response = self.request_with_retries(url=f'{self.address}/complete_worker_task',
                                              params=params,
                                              header=None,
