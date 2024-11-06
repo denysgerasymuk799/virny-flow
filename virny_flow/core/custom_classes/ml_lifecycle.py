@@ -115,7 +115,7 @@ class MLLifecycle:
                            .joinpath('null_imputation_stage')
                            .joinpath(null_imputer_name)
                            .joinpath(self.dataset_name))
-            X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct, null_imputer = (
+            X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct = (
                 imputation_method(X_train_with_nulls=X_train_with_nulls,
                                   X_tests_with_nulls_lst=X_tests_with_nulls_lst,
                                   numeric_columns_with_nulls=train_numerical_null_columns,
@@ -137,7 +137,7 @@ class MLLifecycle:
                            .joinpath(self.dataset_name))
 
             imputation_kwargs.update({'directory': output_path})
-            X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct, null_imputer = (
+            X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct = (
                 imputation_method(X_train_with_nulls=X_train_with_nulls,
                                   X_tests_with_nulls_lst=X_tests_with_nulls_lst,
                                   numeric_columns_with_nulls=train_numerical_null_columns,
@@ -148,7 +148,7 @@ class MLLifecycle:
             shutil.rmtree(output_path)
 
         else:
-            X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct, null_imputer = (
+            X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct = (
                 imputation_method(X_train_with_nulls=X_train_with_nulls,
                                   X_tests_with_nulls_lst=X_tests_with_nulls_lst,
                                   numeric_columns_with_nulls=train_numerical_null_columns,
@@ -160,4 +160,4 @@ class MLLifecycle:
         imputation_runtime = (imputation_end_time - imputation_start_time).total_seconds() / 60.0
         self._logger.info('Nulls are successfully imputed')
 
-        return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct, null_imputer, imputation_runtime
+        return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct, imputation_runtime

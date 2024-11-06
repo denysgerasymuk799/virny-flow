@@ -88,6 +88,10 @@ def select_next_logical_pipeline(logical_pipelines, exploration_factor: float):
     return selected_pipeline
 
 
+def parse_config_space(config_space):
+    return {k: ("None" if v is None else v) for k, v in config_space.items()}
+
+
 def get_suggestion(config_advisor: AsyncBatchAdvisor):
     suggestion = config_advisor.get_suggestion()
     component_params = suggestion.get_dictionary()
@@ -105,6 +109,7 @@ def get_objective_losses(metrics_dct: dict, objectives: list, model_name: str, s
     # OpenBox minimizes the objective
     losses = []
     for objective in objectives:
+        print("objective:", objective)
         metric, group = objective['metric'], objective['group']
         if group == "overall":
             metric_value = model_overall_metrics_df[model_overall_metrics_df.Metric == metric][group].values[0]
@@ -166,14 +171,15 @@ def get_config_advisor(logical_pipeline, bo_advisor_config):
                                        random_state = bo_advisor_config.random_state,
                                        logger_kwargs=_logger_kwargs)
 
-    return config_advisor
+    return config_advisor, config_space
 
 
 def select_next_physical_pipelines(logical_pipeline: LogicalPipeline, lp_to_advisor: dict,
                                    bo_advisor_config: BOAdvisorConfig, exp_config: DefaultMunch):
-    config_advisor = lp_to_advisor[logical_pipeline.logical_pipeline_name] \
-        if lp_to_advisor.get(logical_pipeline.logical_pipeline_name, None) is not None \
-        else get_config_advisor(logical_pipeline, bo_advisor_config)
+    config_advisor, config_space = (
+        (lp_to_advisor[logical_pipeline.logical_pipeline_name]["config_advisor"], lp_to_advisor[logical_pipeline.logical_pipeline_name]["config_space"])
+            if lp_to_advisor.get(logical_pipeline.logical_pipeline_name, None) is not None
+            else get_config_advisor(logical_pipeline, bo_advisor_config))
 
     # Create physical pipelines based on MO-BO suggestions
     physical_pipelines = []
@@ -198,6 +204,6 @@ def select_next_physical_pipelines(logical_pipeline: LogicalPipeline, lp_to_advi
                       objectives=exp_config.objectives,
                       physical_pipeline=physical_pipeline)
                  for physical_pipeline in physical_pipelines]
-    lp_to_advisor[logical_pipeline.logical_pipeline_name] = config_advisor
+    lp_to_advisor[logical_pipeline.logical_pipeline_name] = {"config_advisor": config_advisor, "config_space": config_space}
 
     return new_tasks

@@ -63,7 +63,7 @@ def impute_with_simple_imputer(X_train_with_nulls: pd.DataFrame, X_tests_with_nu
                 mixed_imputer.cat_imputer.transform(X_tests_imputed_lst[i][categorical_columns_with_nulls])
 
     null_imputer_params_dct = {'num_imputer_strategy': kwargs['num'], 'cat_imputer_strategy': kwargs['cat']}
-    return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct, mixed_imputer
+    return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct
 
 
 def impute_with_automl(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: list,

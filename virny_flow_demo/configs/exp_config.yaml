@@ -6,9 +6,10 @@ null_imputers: ["miss_forest"]
 fairness_interventions: ["DIR"]
 #models: ["lr_clf", "rf_clf"]
 models: ["lr_clf"]
+ref_point: [0.15, 0.15]
 objectives:
-  objective_1: {metric: "F1", group: "overall"}
-  objective_2: {metric: "Equalized_Odds_TPR", group: "Gender&Age"}
+  - { name: "objective_1", metric: "F1", group: "overall" }
+  - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "sex&age" }
 
 max_trials: 10
 num_workers: 4

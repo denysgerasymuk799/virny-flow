@@ -26,7 +26,7 @@ def generate_base64_hash(length=8):
     return random_hash[:length]
 
 
-def create_config_obj(exp_config_yaml_path: str):
+def create_exp_config_obj(exp_config_yaml_path: str):
     """
     Return a config object created based on a exp config yaml file.
 
@@ -40,6 +40,7 @@ def create_config_obj(exp_config_yaml_path: str):
         config_dct = yaml.load(f, Loader=yaml.FullLoader)
 
     config_obj = DefaultMunch.fromDict(config_dct)
+    config_obj.objectives = [dict(obj) for obj in config_obj.objectives]
 
     return config_obj
 

@@ -4,6 +4,19 @@ import pandas as pd
 from .dataframe_utils import encode_cat, decode_cat, encode_cat_with_existing_encoder
 
 
+def observation_to_dict(observation):
+    data = {
+        'config': observation.config,
+        'objectives': observation.objectives,
+        'constraints': observation.constraints,
+        'trial_state': observation.trial_state,
+        'elapsed_time': observation.elapsed_time,
+        'create_time': observation.create_time.isoformat(),
+        'extra_info': observation.extra_info,
+    }
+    return data
+
+
 def get_df_condition(df: pd.DataFrame, col: str, dis, include_dis: bool):
     if isinstance(dis, list):
         return df[col].isin(dis) if include_dis else ~df[col].isin(dis)

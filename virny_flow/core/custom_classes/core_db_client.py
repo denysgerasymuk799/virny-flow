@@ -74,11 +74,6 @@ class CoreDBClient:
         metric_df.columns = new_column_names
         return metric_df
 
-    def read_pipeline_names_by_prefix(self, exp_config_name: str, prefix: str):
-        task_names_with_prefix = self.read_task_names_by_prefix(exp_config_name=exp_config_name, prefix=prefix)
-        pipeline_names_with_prefix = [task_name for task_name in task_names_with_prefix if task_name.count(STAGE_SEPARATOR) == 2]
-        return pipeline_names_with_prefix
-
     def get_db_writer(self, collection_name: str):
         collection_obj = self._get_collection(collection_name)
 

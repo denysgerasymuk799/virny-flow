@@ -72,6 +72,15 @@ class PhysicalPipeline:
     model_params: dict
     preprocessing: dict = field(default_factory=lambda: {'cat': 'OneHotEncoder', 'num': 'StandardScaler'})
 
+    @classmethod
+    def from_dict(cls, data: dict):
+        # Get the set of field names defined in the dataclass
+        valid_fields = {f.name for f in fields(cls)}
+        # Filter the input dictionary to only include keys that are valid fields
+        filtered_data = {k: v for k, v in data.items() if k in valid_fields}
+        # Return an instance of the dataclass initialized with the filtered data
+        return cls(**filtered_data)
+
 
 @dataclass
 class Task:
@@ -86,5 +95,7 @@ class Task:
         valid_fields = {f.name for f in fields(cls)}
         # Filter the input dictionary to only include keys that are valid fields
         filtered_data = {k: v for k, v in data.items() if k in valid_fields}
+        filtered_data["physical_pipeline"] = PhysicalPipeline.from_dict(filtered_data["physical_pipeline"])
+
         # Return an instance of the dataclass initialized with the filtered data
         return cls(**filtered_data)

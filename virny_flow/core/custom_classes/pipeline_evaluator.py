@@ -33,7 +33,7 @@ class PipelineEvaluator(MLLifecycle):
                          dataset_name=exp_config.dataset,
                          secrets_path=exp_config.secrets_path,
                          dataset_config=dataset_config,
-                         model_params_for_tuning=models_config)
+                         models_config=models_config)
 
         self.exp_config = exp_config
         self.null_imputation_config = null_imputation_config
@@ -55,6 +55,7 @@ class PipelineEvaluator(MLLifecycle):
                                                                 null_imputer_params=null_imputer_params)
         # Apply pre-processing fairness intervention if defined
         preprocessed_base_flow_dataset = self.run_fairness_intervention_stage(main_base_flow_dataset=main_base_flow_dataset,
+                                                                              init_data_loader=self.init_data_loader,
                                                                               experiment_seed=seed,
                                                                               fairness_intervention_name=fairness_intervention_name,
                                                                               fairness_intervention_params=fairness_intervention_params)
@@ -73,7 +74,9 @@ class PipelineEvaluator(MLLifecycle):
                                              objectives=task.objectives,
                                              model_name=model_name,
                                              sensitive_attributes_dct=self.virny_config.sensitive_attributes_dct)
+        print("result_losses:", result_losses)
         objectives, constraints, extra_info = parse_result(result_losses)
+        print("objectives:", objectives)
         observation = Observation(
             config=task.physical_pipeline.suggestion,
             objectives=objectives,
@@ -107,8 +110,9 @@ class PipelineEvaluator(MLLifecycle):
                                                                                 data_loader=data_loader)
 
         # Impute nulls
-        (X_train_val_imputed_wo_sensitive_attrs, X_tests_imputed_wo_sensitive_attrs_lst,
-         null_imputer_params_dct, null_imputer,
+        (X_train_val_imputed_wo_sensitive_attrs,
+         X_tests_imputed_wo_sensitive_attrs_lst,
+         null_imputer_params_dct,
          imputation_runtime) = self._impute_nulls(X_train_with_nulls=X_train_val_with_nulls_wo_sensitive_attrs,
                                                   X_tests_with_nulls_lst=X_tests_with_nulls_wo_sensitive_attrs_lst,
                                                   null_imputer_name=null_imputer_name,
@@ -130,9 +134,9 @@ class PipelineEvaluator(MLLifecycle):
 
         return main_base_flow_dataset
 
-    def run_fairness_intervention_stage(self, main_base_flow_dataset, experiment_seed: int,
+    def run_fairness_intervention_stage(self, main_base_flow_dataset, init_data_loader, experiment_seed: int,
                                         fairness_intervention_name: str, fairness_intervention_params: dict):
-        data_loader = main_base_flow_dataset.data_loader
+        data_loader = copy.deepcopy(init_data_loader)
 
         # Preprocess the dataset using the pre-defined preprocessor
         preprocessed_base_flow_dataset, column_transformer = preprocess_base_flow_dataset(main_base_flow_dataset)

@@ -16,6 +16,8 @@ class TaskManager:
         self.port = port
         self.exp_config = exp_config
         self.bo_advisor_config = bo_advisor_config
+        self.bo_advisor_config.ref_point = exp_config.ref_point
+        self.bo_advisor_config.num_objectives = len(exp_config.objectives)
 
         self.app = FastAPI()
         self.db_client = TaskManagerDBClient(secrets_path)

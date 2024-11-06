@@ -72,6 +72,8 @@ class TaskQueue:
         if task:
             print(f"Dequeued task with UUID: {task['task_uuid']}")
             task["_id"] = str(task["_id"])
+            task["create_datetime"] = str(task["create_datetime"])
+            task["update_datetime"] = str(task["update_datetime"])
             return task
         else:
             print("Queue is empty.")

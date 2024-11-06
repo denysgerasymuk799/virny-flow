@@ -110,7 +110,7 @@ def get_models_params_for_tuning(models_tuning_seed):
             'model': LogisticRegression,
             'default_kwargs': {'random_state': models_tuning_seed, 'max_iter': 1000},
             'config_space': {
-                'model__penalty': CategoricalHyperparameter("model__penalty", ['l1', 'l2']),
+                'model__penalty': CategoricalHyperparameter("model__penalty", ['l2', 'None']),
                 'model__C': CategoricalHyperparameter("model__C", [0.001, 0.01, 0.1, 1]),
                 'model__solver': CategoricalHyperparameter("model__solver", ['newton-cg', 'lbfgs', 'sag', 'saga']),
             }
