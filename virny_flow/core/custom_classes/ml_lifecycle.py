@@ -3,15 +3,14 @@ import shutil
 import pathlib
 import pandas as pd
 
-from datetime import datetime, timezone
+from datetime import datetime
 from sklearn.model_selection import train_test_split
 from virny.utils.custom_initializers import create_config_obj
 
-from virny_flow.configs.component_configs import NULL_IMPUTER_CONFIG
-from virny_flow.configs.constants import MODEL_HYPER_PARAMS_COLLECTION_NAME, NUM_FOLDS_FOR_TUNING, ErrorRepairMethod
+from virny_flow.configs.component_configs import NULL_IMPUTATION_CONFIG
+from virny_flow.configs.constants import NUM_FOLDS_FOR_TUNING, ErrorRepairMethod
 from virny_flow.core.utils.custom_logger import get_logger
-from virny_flow.core.utils.model_tuning_utils import tune_ML_models
-from virny_flow.core.utils.common_helpers import generate_guid, create_base_flow_dataset
+from virny_flow.core.utils.common_helpers import create_base_flow_dataset
 from virny_flow.core.validation import is_in_enum
 
 from .core_db_client import CoreDBClient
@@ -23,13 +22,13 @@ class MLLifecycle:
     Class encapsulates all required ML lifecycle steps to run different experiments
     """
     def __init__(self, exp_config_name: str, dataset_name: str, secrets_path: str,
-                 dataset_config: dict, model_params_for_tuning: dict):
+                 dataset_config: dict, models_config: dict):
         """
         Constructor defining default variables
         """
         self.exp_config_name = exp_config_name
         self.dataset_name = dataset_name
-        self.model_params_for_tuning = model_params_for_tuning
+        self.models_config = models_config
 
         self.num_folds_for_tuning = NUM_FOLDS_FOR_TUNING
         self.test_set_fraction = dataset_config[dataset_name]['test_set_fraction']
@@ -91,15 +90,16 @@ class MLLifecycle:
 
         return base_flow_dataset
 
-    def _impute_nulls(self, X_train_with_nulls, X_tests_with_nulls_lst, null_imputer_name, evaluation_scenario,
-                      experiment_seed, numerical_columns, categorical_columns, tune_imputers):
-        if not is_in_enum(null_imputer_name, ErrorRepairMethod) or null_imputer_name not in NULL_IMPUTER_CONFIG.keys():
+    def _impute_nulls(self, X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: list,
+                      null_imputer_name: str, null_imputer_params: dict, experiment_seed: int,
+                      numerical_columns: list, categorical_columns: list):
+        if not is_in_enum(null_imputer_name, ErrorRepairMethod) or null_imputer_name not in NULL_IMPUTATION_CONFIG.keys():
             raise ValueError(f'{null_imputer_name} null imputer is not implemented')
 
-        # Use a method, kwargs, and hyperparams from NULL_IMPUTER_CONFIG
-        hyperparams = None
-        imputation_method = NULL_IMPUTER_CONFIG[null_imputer_name]["method"]
-        imputation_kwargs = NULL_IMPUTER_CONFIG[null_imputer_name]["default_kwargs"]
+        # Use a method, kwargs, and hyperparams from NULL_IMPUTATION_CONFIG
+        hyperparams = null_imputer_params
+        imputation_method = NULL_IMPUTATION_CONFIG[null_imputer_name]["method"]
+        imputation_kwargs = NULL_IMPUTATION_CONFIG[null_imputer_name]["default_kwargs"]
         imputation_kwargs.update({'experiment_seed': experiment_seed})
         imputation_kwargs.update({'dataset_name': self.dataset_name})
 
@@ -109,21 +109,12 @@ class MLLifecycle:
 
         imputation_start_time = datetime.now()
         if null_imputer_name == ErrorRepairMethod.datawig.value:
-            if evaluation_scenario is None:
-                output_path = (pathlib.Path(__file__).parent.parent.parent
-                               .joinpath('intermediate_state')
-                               .joinpath(self.exp_config_name)
-                               .joinpath('null_imputation_stage')
-                               .joinpath(null_imputer_name)
-                               .joinpath(self.dataset_name))
-            else:
-                output_path = (pathlib.Path(__file__).parent.parent.parent
-                               .joinpath('results')
-                               .joinpath('intermediate_state')
-                               .joinpath(null_imputer_name)
-                               .joinpath(self.dataset_name)
-                               .joinpath(evaluation_scenario)
-                               .joinpath(str(experiment_seed)))
+            output_path = (pathlib.Path(__file__).parent.parent.parent
+                           .joinpath('intermediate_state')
+                           .joinpath(self.exp_config_name)
+                           .joinpath('null_imputation_stage')
+                           .joinpath(null_imputer_name)
+                           .joinpath(self.dataset_name))
             X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct, null_imputer = (
                 imputation_method(X_train_with_nulls=X_train_with_nulls,
                                   X_tests_with_nulls_lst=X_tests_with_nulls_lst,
@@ -138,21 +129,12 @@ class MLLifecycle:
             shutil.rmtree(output_path)
 
         elif null_imputer_name == ErrorRepairMethod.automl.value:
-            if evaluation_scenario is None:
-                output_path = (pathlib.Path(__file__).parent.parent.parent
-                               .joinpath('intermediate_state')
-                               .joinpath(self.exp_config_name)
-                               .joinpath('null_imputation_stage')
-                               .joinpath(null_imputer_name)
-                               .joinpath(self.dataset_name))
-            else:
-                output_path = (pathlib.Path(__file__).parent.parent.parent
-                               .joinpath('results')
-                               .joinpath('intermediate_state')
-                               .joinpath(null_imputer_name)
-                               .joinpath(self.dataset_name)
-                               .joinpath(evaluation_scenario)
-                               .joinpath(str(experiment_seed)))
+            output_path = (pathlib.Path(__file__).parent.parent.parent
+                           .joinpath('intermediate_state')
+                           .joinpath(self.exp_config_name)
+                           .joinpath('null_imputation_stage')
+                           .joinpath(null_imputer_name)
+                           .joinpath(self.dataset_name))
 
             imputation_kwargs.update({'directory': output_path})
             X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct, null_imputer = (
@@ -179,38 +161,3 @@ class MLLifecycle:
         self._logger.info('Nulls are successfully imputed')
 
         return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct, null_imputer, imputation_runtime
-
-    def _tune_ML_models(self, model_names, base_flow_dataset, evaluation_scenario,
-                        experiment_seed, null_imputer_name, fairness_intervention_name):
-        # Get hyper-parameters for tuning. Each time reinitialize an init model and its hyper-params for tuning.
-        all_models_params_for_tuning = self.model_params_for_tuning
-        models_params_for_tuning = {model_name: all_models_params_for_tuning[model_name] for model_name in model_names}
-
-        # Tune models and create a models config for metrics computation
-        tuned_params_df, models_config = tune_ML_models(models_params_for_tuning=models_params_for_tuning,
-                                                        base_flow_dataset=base_flow_dataset,
-                                                        dataset_name=self.virny_config.dataset_name,
-                                                        n_folds=self.num_folds_for_tuning)
-
-        # Save tunes parameters in database
-        date_time_str = datetime.now(timezone.utc)
-        tuned_params_df['Model_Best_Params'] = tuned_params_df['Model_Best_Params']
-        tuned_params_df['Model_Tuning_Guid'] = tuned_params_df['Model_Name'].apply(
-            lambda model_name: generate_guid(ordered_hierarchy_lst=[self.exp_config_name, evaluation_scenario, experiment_seed,
-                                                                    self.dataset_name, null_imputer_name, fairness_intervention_name, model_name])
-        )
-        self._db.write_pandas_df_into_db(collection_name=MODEL_HYPER_PARAMS_COLLECTION_NAME,
-                                         df=tuned_params_df,
-                                         custom_tbl_fields_dct={
-                                             'exp_pipeline_guid': generate_guid(ordered_hierarchy_lst=[self.exp_config_name, evaluation_scenario, experiment_seed, self.dataset_name, null_imputer_name, fairness_intervention_name]),
-                                             'session_uuid': self._session_uuid,
-                                             'exp_config_name': self.exp_config_name,
-                                             'evaluation_scenario': evaluation_scenario,
-                                             'experiment_seed': experiment_seed,
-                                             'null_imputer_name': null_imputer_name,
-                                             'fairness_intervention_name': fairness_intervention_name,
-                                             'record_create_date_time': date_time_str,
-                                         })
-        self._logger.info("Models are tuned and their hyper-params are saved into the database")
-
-        return models_config

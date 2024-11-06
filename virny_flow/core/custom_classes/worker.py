@@ -2,6 +2,7 @@ import math
 import time
 import requests
 
+from openbox.utils.history import Observation
 from virny_flow.core.utils.custom_logger import get_logger
 
 
@@ -57,12 +58,14 @@ class Worker:
             self._logger.info(f"Failed to retrieve data. Status code: {response.status_code}.")
             return None
 
-    def complete_task(self, exp_config_name: str, task_guid: str, task_name: str, stage_id: int):
+    def complete_task(self, exp_config_name: str, task_uuid: str, logical_pipeline_uuid: str,
+                      logical_pipeline_name: str, observation: Observation):
         params = {
             "exp_config_name": exp_config_name,
-            "task_guid": task_guid,
-            "task_name": task_name,
-            "stage_id": stage_id,
+            "task_uuid": task_uuid,
+            "logical_pipeline_uuid": logical_pipeline_uuid,
+            "logical_pipeline_name": logical_pipeline_name,
+            "observation": observation,
         }
         response = self.request_with_retries(url=f'{self.address}/complete_worker_task',
                                              params=params,

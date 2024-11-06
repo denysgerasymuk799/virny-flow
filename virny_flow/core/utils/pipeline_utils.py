@@ -48,3 +48,21 @@ def decode_dataset_for_missforest(df_enc, cat_encoders, dataset_name: str = None
         df_dec[c] = decode_cat(df_dec[c], cat_encoders[c])
 
     return df_dec
+
+
+def nested_dict_from_flat(d: dict):
+    result = {}
+    for key, value in d.items():
+        # Split the key by '__'
+        parts = key.split("__")
+
+        # Start at the top level of the result dictionary
+        current_level = result
+        for part in parts[:-1]:  # Go down to the last part
+            if part not in current_level:
+                current_level[part] = {}
+            current_level = current_level[part]
+
+        # Assign the value to the last key in parts
+        current_level[parts[-1]] = value
+    return result

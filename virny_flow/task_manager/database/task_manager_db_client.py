@@ -4,10 +4,8 @@ import motor.motor_asyncio
 
 from bson.objectid import ObjectId
 from dotenv import load_dotenv
-from datetime import datetime, timezone
 
-from virny_flow.configs.constants import (EXP_PROGRESS_TRACKING_TABLE, FINISH_EXECUTION, NO_READY_TASK,
-                                          TaskStatus, StageName, EXP_CONFIG_HISTORY_TABLE)
+from virny_flow.configs.constants import EXP_CONFIG_HISTORY_TABLE, LOGICAL_PIPELINE_SCORES_TABLE
 
 
 class TaskManagerDBClient:
@@ -81,57 +79,23 @@ class TaskManagerDBClient:
         query['deletion_flag'] = False
         return await collection.find_one(query, sort=sort_param)
 
+    async def read_query(self, collection_name: str, query: dict, sort_param: list = None):
+        collection = self._get_collection(collection_name)
+        query['deletion_flag'] = False
+        return await collection.find_many(query, sort=sort_param)
+
     async def count_query(self, collection_name: str, condition: dict):
         collection = self._get_collection(collection_name)
         condition['deletion_flag'] = False
         return await collection.count_documents(condition)
 
     async def write_records_into_db(self, collection_name: str, records: list, static_values_dct: dict):
+        static_values_dct["deletion_flag"] = False # By default, mark new records with deletion_flag = False
         for key, value in static_values_dct.items():
             for record in records:
                 record[key] = value
 
         await self.execute_write_query(records, collection_name)
-
-    async def read_worker_task_from_db(self, exp_config_name: str):
-        collection_name = EXP_PROGRESS_TRACKING_TABLE
-        query = {
-            'exp_config_name': exp_config_name,
-            'task_status': TaskStatus.READY.value,
-        }
-
-        high_priority_task = await self.read_one_query(collection_name, query, sort_param=[('task_id', 1)])
-        if high_priority_task is not None:
-            await self.update_one_query(collection_name, _id=high_priority_task["_id"],
-                                        update_val_dct={"task_status": TaskStatus.ASSIGNED.value,
-                                                        "update_datetime": datetime.now(timezone.utc)})
-            return high_priority_task
-        else:
-            num_blocked_tasks = await self.count_query(collection_name, condition={'exp_config_name': exp_config_name,
-                                                                                   'task_status': TaskStatus.BLOCKED.value})
-            num_ready_tasks = await self.count_query(collection_name, condition={'exp_config_name': exp_config_name,
-                                                                                 'task_status': TaskStatus.READY.value})
-            if num_blocked_tasks + num_ready_tasks > 0:
-                return {"_id": None, "task_name": NO_READY_TASK, "stage_id": None}
-            
-            return {"_id": None, "task_name": FINISH_EXECUTION, "stage_id": None}
-
-    async def complete_worker_task_in_db(self, exp_config_name: str, task_guid: str, task_name: str, stage_id: int):
-        # Set the current task as DONE
-        done_tasks_count = await self.update_one_query(collection_name=EXP_PROGRESS_TRACKING_TABLE,
-                                                       _id=task_guid,
-                                                       update_val_dct={"task_status": TaskStatus.DONE.value,
-                                                                       "update_datetime": datetime.now(timezone.utc)})
-        # Unblock further related tasks if exist
-        ready_tasks_count = None
-        if stage_id != STAGE_NAME_TO_STAGE_ID[StageName.model_evaluation.value]:
-            ready_tasks_count = await self.update_query(collection_name=EXP_PROGRESS_TRACKING_TABLE,
-                                                        condition={"exp_config_name": exp_config_name,
-                                                                   "stage_id": stage_id + 1,
-                                                                   "task_name": {"$regex": f'^{task_name}'}},
-                                                        update_val_dct={"task_status": TaskStatus.READY.value,
-                                                                        "update_datetime": datetime.now(timezone.utc)})
-        return done_tasks_count, ready_tasks_count
 
     def close(self):
         self.client.close()

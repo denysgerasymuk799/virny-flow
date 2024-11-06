@@ -1,5 +1,5 @@
 from typing import List
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from sklearn.impute import SimpleImputer
 from openbox.utils.history import History
 
@@ -38,6 +38,7 @@ class BOAdvisorConfig:
 class LogicalPipeline:
     logical_pipeline_uuid: str
     logical_pipeline_name: str
+    exp_config_name: str
     components: dict
     risk_factor: float
     num_trials: int
@@ -49,12 +50,23 @@ class LogicalPipeline:
     norm_pipeline_quality_std: float
     norm_pipeline_execution_cost: float
 
+    @classmethod
+    def from_dict(cls, data: dict):
+        # Get the set of field names defined in the dataclass
+        valid_fields = {f.name for f in fields(cls)}
+        # Filter the input dictionary to only include keys that are valid fields
+        filtered_data = {k: v for k, v in data.items() if k in valid_fields}
+        # Return an instance of the dataclass initialized with the filtered data
+        return cls(**filtered_data)
+
 
 @dataclass
 class PhysicalPipeline:
     physical_pipeline_uuid: str
     logical_pipeline_uuid: str
     logical_pipeline_name: str
+    exp_config_name: str
+    suggestion: dict
     null_imputer_params: dict
     fairness_intervention_params: dict
     model_params: dict
@@ -64,5 +76,16 @@ class PhysicalPipeline:
 @dataclass
 class Task:
     task_uuid: str
+    exp_config_name: str
     physical_pipeline: PhysicalPipeline
+    objectives: list
     task_status: TaskStatus
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        # Get the set of field names defined in the dataclass
+        valid_fields = {f.name for f in fields(cls)}
+        # Filter the input dictionary to only include keys that are valid fields
+        filtered_data = {k: v for k, v in data.items() if k in valid_fields}
+        # Return an instance of the dataclass initialized with the filtered data
+        return cls(**filtered_data)

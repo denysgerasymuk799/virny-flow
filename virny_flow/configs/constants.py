@@ -3,8 +3,7 @@ from enum import Enum
 
 EXPERIMENT_RUN_SEEDS = [100 * i for i in range(1, 11)]
 NUM_FOLDS_FOR_TUNING = 3
-NO_READY_TASK = 'NO_READY_TASK'
-FINISH_EXECUTION = 'FINISH_EXECUTION'
+NO_TASKS = 'NO_TASKS'
 STAGE_SEPARATOR = '&'
 NO_FAIRNESS_INTERVENTION = 'NO_FAIRNESS_INTERVENTION'
 
@@ -13,14 +12,9 @@ NO_FAIRNESS_INTERVENTION = 'NO_FAIRNESS_INTERVENTION'
 # ====================================================================
 LOGICAL_PIPELINE_SCORES_TABLE = 'logical_pipeline_scores'
 PHYSICAL_PIPELINE_METRICS_TABLE = 'physical_pipeline_metrics'
+ALL_EXPERIMENT_METRICS_TABLE = 'all_experiment_metrics'
 TASK_QUEUE_TABLE = 'task_queue'
 EXP_CONFIG_HISTORY_TABLE = 'exp_config_history'
-
-EXP_PROGRESS_TRACKING_TABLE = 'exp_progress_tracking'
-EXP_PROGRESS_TRACKING_COLLECTION_NAME = 'exp_progress_tracking'
-EXP_COLLECTION_NAME = 'exp_pipeline_metrics'
-MODEL_HYPER_PARAMS_COLLECTION_NAME = 'tuned_model_hyper_params'
-IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME = 'imputation_performance_metrics'
 
 
 # ====================================================================

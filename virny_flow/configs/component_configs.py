@@ -14,9 +14,9 @@ from virny_flow.core.null_imputers.imputation_methods import (impute_with_deleti
 
 
 # ====================================================================
-# Null Imputer Params
+# Null Imputation Params
 # ====================================================================
-NULL_IMPUTER_CONFIG = {
+NULL_IMPUTATION_CONFIG = {
     ErrorRepairMethod.deletion.value: {
         "method": impute_with_deletion,
         "default_kwargs": {},
@@ -61,13 +61,13 @@ NULL_IMPUTER_CONFIG = {
             "mvi__n_init": CategoricalHyperparameter("mvi__n_init", [1, 5, 10]),
         }
     },
-    # ErrorRepairMethod.datawig.value: {
-    #     "method": datawig_imputer.complete,
-    #     "default_kwargs": {"precision_threshold": 0.0, "num_epochs": 100, "iterations": 1},
-    #     "config_space": {
-    #         "mvi__final_fc_hidden_units": CategoricalHyperparameter("mvi__final_fc_hidden_units", [[1], [10], [50], [100]]),
-    #     }
-    # },
+    ErrorRepairMethod.datawig.value: {
+        "method": datawig_imputer.complete,
+        "default_kwargs": {"precision_threshold": 0.0, "num_epochs": 100, "iterations": 1},
+        "config_space": {
+            "mvi__final_fc_hidden_units": CategoricalHyperparameter("mvi__final_fc_hidden_units", [1, 10, 50, 100]),
+        }
+    },
     # ErrorRepairMethod.automl.value: {
     #     "method": impute_with_automl,
     #     "default_kwargs": {"max_trials": 50, "tuner": None, "validation_split": 0.2, "epochs": 100},

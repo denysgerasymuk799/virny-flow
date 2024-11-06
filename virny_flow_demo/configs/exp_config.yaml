@@ -6,8 +6,13 @@ null_imputers: ["miss_forest"]
 fairness_interventions: ["DIR"]
 #models: ["lr_clf", "rf_clf"]
 models: ["lr_clf"]
+objectives:
+  objective_1: {metric: "F1", group: "overall"}
+  objective_2: {metric: "Equalized_Odds_TPR", group: "Gender&Age"}
+
 max_trials: 10
-num_pp_candidates: 10
+num_workers: 4
+num_pp_candidates: 2
 exploration_factor: 0.5
 risk_factor: 0.5
 random_state: 42

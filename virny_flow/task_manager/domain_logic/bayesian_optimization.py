@@ -1,28 +1,55 @@
 import uuid
 import random
 import numpy as np
+from munch import DefaultMunch
 from openbox.core.async_batch_advisor import AsyncBatchAdvisor
 from openbox.utils.config_space import ConfigurationSpace
+from virny.configs.constants import *
+from virny.custom_classes.metrics_composer import MetricsComposer
 
 from virny_flow.configs.constants import StageName, TaskStatus, NO_FAIRNESS_INTERVENTION
 from virny_flow.configs.structs import BOAdvisorConfig, Task, LogicalPipeline, PhysicalPipeline
-from virny_flow.configs.component_configs import (NULL_IMPUTER_CONFIG, FAIRNESS_INTERVENTION_CONFIG_SPACE,
+from virny_flow.configs.component_configs import (NULL_IMPUTATION_CONFIG, FAIRNESS_INTERVENTION_CONFIG_SPACE,
                                                   get_models_params_for_tuning)
 
 
-def compute_metrics(history):
-    """
-    Compute μ_k (mean performance), δ_k (variance), and c_k (cost) for each logical pipeline k.
-    This is a placeholder function and should be implemented based on the specific history format.
-    """
-    # Placeholder example metrics for demonstration
-    metrics = {
-        "pipeline_1": {"mu": 0.8, "delta": 0.1, "c": 1},
-        "pipeline_2": {"mu": 0.5, "delta": 0.2, "c": 2},
-        "pipeline_3": {"mu": 0.6, "delta": 0.3, "c": 1.5},
-        # Add more pipelines and their metrics as needed
-    }
-    return metrics
+# Key - metric name from Virny, value - an operation to create a loss for minimization
+METRIC_TO_LOSS_ALIGNMENT = {
+    # Accuracy metrics
+    F1: "reverse",
+    ACCURACY: "reverse",
+    # Stability metrics
+    STD: None,
+    IQR: None,
+    JITTER: None,
+    LABEL_STABILITY: "reverse",
+    # Uncertainty metrics
+    ALEATORIC_UNCERTAINTY: None,
+    EPISTEMIC_UNCERTAINTY: None,
+    OVERALL_UNCERTAINTY: None,
+    # Error disparity metrics
+    EQUALIZED_ODDS_TPR: "abs",
+    EQUALIZED_ODDS_TNR: "abs",
+    EQUALIZED_ODDS_FPR: "abs",
+    EQUALIZED_ODDS_FNR: "abs",
+    DISPARATE_IMPACT: "reverse&abs",
+    STATISTICAL_PARITY_DIFFERENCE: "abs",
+    ACCURACY_DIFFERENCE: "abs",
+    # Stability disparity metrics
+    LABEL_STABILITY_RATIO: "reverse&abs",
+    LABEL_STABILITY_DIFFERENCE: "abs",
+    IQR_DIFFERENCE: "abs",
+    STD_DIFFERENCE: "abs",
+    STD_RATIO: "reverse&abs",
+    JITTER_DIFFERENCE: "abs",
+    # Uncertainty disparity metrics
+    OVERALL_UNCERTAINTY_DIFFERENCE: "abs",
+    OVERALL_UNCERTAINTY_RATIO: "reverse&abs",
+    EPISTEMIC_UNCERTAINTY_DIFFERENCE: "abs",
+    EPISTEMIC_UNCERTAINTY_RATIO: "reverse&abs",
+    ALEATORIC_UNCERTAINTY_DIFFERENCE: "abs",
+    ALEATORIC_UNCERTAINTY_RATIO: "reverse&abs",
+}
 
 
 def softmax_selection(logical_pipelines, temperature=1.0):
@@ -41,7 +68,7 @@ def softmax_selection(logical_pipelines, temperature=1.0):
     return selected_pipeline
 
 
-def select_next_logical_pipeline(logical_pipelines, exploration_factor: float, max_trials: int):
+def select_next_logical_pipeline(logical_pipelines, exploration_factor: float):
     """
     Select the next promising logical pipeline.
 
@@ -49,15 +76,13 @@ def select_next_logical_pipeline(logical_pipelines, exploration_factor: float, m
      Shang, Zeyuan, et al. "Democratizing data science through interactive curation of ml pipelines."
      Proceedings of the 2019 international conference on management of data. 2019.
     """
-    filtered_logical_pipelines = [lp for lp in logical_pipelines if lp.num_trials < max_trials]
-
     # [Exploitation] With likelihood exploration_factor, select a general logical pipeline, which worked well in the past.
     if random.random() < exploration_factor:
-        selected_pipeline = softmax_selection(filtered_logical_pipelines)
+        selected_pipeline = softmax_selection(logical_pipelines)
 
     # [Exploration] With the likelihood 1 - exploration_factor, randomly select a logical pipeline which we have never run before.
     else:
-        never_explored_lps = [lp for lp in filtered_logical_pipelines if lp.score == 0.0]
+        never_explored_lps = [lp for lp in logical_pipelines if lp.score == 0.0]
         selected_pipeline = np.random.choice(never_explored_lps)
 
     return selected_pipeline
@@ -70,13 +95,45 @@ def get_suggestion(config_advisor: AsyncBatchAdvisor):
     return {k: (None if v == "None" else v) for k, v in component_params.items()}
 
 
+def get_objective_losses(metrics_dct: dict, objectives: list, model_name: str, sensitive_attributes_dct: dict):
+    model_overall_metrics_df = metrics_dct[model_name]
+
+    metrics_composer = MetricsComposer(metrics_dct, sensitive_attributes_dct)
+    models_composed_metrics_df = metrics_composer.compose_metrics()
+    models_composed_metrics_df = models_composed_metrics_df[models_composed_metrics_df.Model_Name == model_name]
+
+    # OpenBox minimizes the objective
+    losses = []
+    for objective in objectives:
+        metric, group = objective['metric'], objective['group']
+        if group == "overall":
+            metric_value = model_overall_metrics_df[model_overall_metrics_df.Metric == metric][group].values[0]
+        else:
+            metric_value = models_composed_metrics_df[models_composed_metrics_df.Metric == metric][group].values[0]
+
+        # Create a loss to minimize based on the metric
+        loss = None
+        operation = METRIC_TO_LOSS_ALIGNMENT[metric]
+        if operation == "abs":
+            loss = abs(metric_value)
+        elif operation == "reverse":
+            loss = 1 - metric_value
+        elif operation == "reverse&abs":
+            loss = abs(1 - metric_value)
+
+        losses.append(loss)
+
+    result = dict(objectives=losses)
+    return result
+
+
 def get_config_advisor(logical_pipeline, bo_advisor_config):
     # Create a config space based on config spaces of each stage
     config_space = ConfigurationSpace()
     for stage in StageName:
         components = logical_pipeline.components
         if stage == StageName.null_imputation:
-            stage_config_space = NULL_IMPUTER_CONFIG[components[stage.value]]['config_space']
+            stage_config_space = NULL_IMPUTATION_CONFIG[components[stage.value]]['config_space']
         elif stage == StageName.fairness_intervention:
             # NO_FAIRNESS_INTERVENTION does not have config space
             if components[stage.value] == NO_FAIRNESS_INTERVENTION:
@@ -113,14 +170,14 @@ def get_config_advisor(logical_pipeline, bo_advisor_config):
 
 
 def select_next_physical_pipelines(logical_pipeline: LogicalPipeline, lp_to_advisor: dict,
-                                   bo_advisor_config: BOAdvisorConfig, num_pp_candidates: int):
+                                   bo_advisor_config: BOAdvisorConfig, exp_config: DefaultMunch):
     config_advisor = lp_to_advisor[logical_pipeline.logical_pipeline_name] \
         if lp_to_advisor.get(logical_pipeline.logical_pipeline_name, None) is not None \
         else get_config_advisor(logical_pipeline, bo_advisor_config)
 
     # Create physical pipelines based on MO-BO suggestions
     physical_pipelines = []
-    for idx in range(num_pp_candidates):
+    for idx in range(exp_config.num_pp_candidates):
         suggestion = get_suggestion(config_advisor)
         null_imputer_params = {k.replace('mvi__', '', 1): v for k, v in suggestion.items() if k.startswith('mvi__')}
         fairness_intervention_params = {k.replace('fi__', '', 1): v for k, v in suggestion.items() if k.startswith('fi__')}
@@ -129,13 +186,17 @@ def select_next_physical_pipelines(logical_pipeline: LogicalPipeline, lp_to_advi
         physical_pipeline = PhysicalPipeline(physical_pipeline_uuid=str(uuid.uuid4()),
                                              logical_pipeline_uuid=logical_pipeline.logical_pipeline_uuid,
                                              logical_pipeline_name=logical_pipeline.logical_pipeline_name,
+                                             exp_config_name=exp_config.exp_config_name,
+                                             suggestion=suggestion,
                                              null_imputer_params=null_imputer_params,
                                              fairness_intervention_params=fairness_intervention_params,
                                              model_params=model_params)
         physical_pipelines.append(physical_pipeline)
 
     new_tasks = [Task(task_uuid=str(uuid.uuid4()),
+                      exp_config_name=exp_config.exp_config_name,
                       task_status=TaskStatus.WAITING.value,
+                      objectives=exp_config.objectives,
                       physical_pipeline=physical_pipeline)
                  for physical_pipeline in physical_pipelines]
     lp_to_advisor[logical_pipeline.logical_pipeline_name] = config_advisor
