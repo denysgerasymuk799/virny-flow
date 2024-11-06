@@ -7,7 +7,7 @@ from openbox.utils.config_space import ConfigurationSpace
 from virny.configs.constants import *
 from virny.custom_classes.metrics_composer import MetricsComposer
 
-from virny_flow.configs.constants import StageName, TaskStatus, NO_FAIRNESS_INTERVENTION
+from virny_flow.configs.constants import StageName, NO_FAIRNESS_INTERVENTION
 from virny_flow.configs.structs import BOAdvisorConfig, Task, LogicalPipeline, PhysicalPipeline
 from virny_flow.configs.component_configs import (NULL_IMPUTATION_CONFIG, FAIRNESS_INTERVENTION_CONFIG_SPACE,
                                                   get_models_params_for_tuning)

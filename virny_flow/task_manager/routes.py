@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime, timezone
 from fastapi import FastAPI, status, Query, Body
 from fastapi.responses import JSONResponse
 from munch import DefaultMunch
@@ -7,7 +8,7 @@ from openbox.utils.history import Observation
 from .database.task_manager_db_client import TaskManagerDBClient
 from .domain_logic.initial_configuration import add_new_tasks, create_init_state_for_config
 from .domain_logic.bayesian_optimization import parse_config_space
-from virny_flow.configs.constants import LOGICAL_PIPELINE_SCORES_TABLE
+from virny_flow.configs.constants import OBSERVATIONS_TABLE
 from virny_flow.configs.structs import BOAdvisorConfig
 from virny_flow.core.custom_classes.task_queue import TaskQueue
 
@@ -66,12 +67,6 @@ def register_routes(app: FastAPI, exp_config: DefaultMunch, task_queue: TaskQueu
         observation = Observation.from_dict(data["observation"],
                                             config_space=lp_to_advisor[logical_pipeline_name]["config_space"])
 
-        # Update the number of trials for the logical pipeline
-        await db_client.increment_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
-                                        condition={"exp_config_name": exp_config_name,
-                                                   "logical_pipeline_uuid": logical_pipeline_uuid},
-                                        increment_val_dct={"num_trials": 1})
-
         # Update the advisor of the logical pipeline
         lp_to_advisor[logical_pipeline_name]["config_advisor"].update_observation(observation)
 
@@ -79,5 +74,19 @@ def register_routes(app: FastAPI, exp_config: DefaultMunch, task_queue: TaskQueu
         done_tasks_count = await task_queue.complete_task(exp_config_name=exp_config_name,
                                                           task_uuid=task_uuid)
         logger.info(f'Task with task_uuid = {task_uuid} was successfully completed.')
+
+        # Add an observation to DB
+        datetime_now = datetime.now(timezone.utc)
+        await db_client.write_records_into_db(collection_name=OBSERVATIONS_TABLE,
+                                              records=[observation.to_dict()],
+                                              static_values_dct={
+                                                  "exp_config_name": exp_config_name,
+                                                  "task_uuid": task_uuid,
+                                                  "logical_pipeline_uuid": logical_pipeline_uuid,
+                                                  "logical_pipeline_name": logical_pipeline_name,
+                                                  "create_datetime": datetime_now,
+                                                  "update_datetime": datetime_now,
+                                              })
+
         return JSONResponse(status_code=status.HTTP_200_OK,
                             content={"message": f"Marked {done_tasks_count} document(s) as DONE"})

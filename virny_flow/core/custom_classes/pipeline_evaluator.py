@@ -62,6 +62,7 @@ class PipelineEvaluator(MLLifecycle):
         # Evaluate the model
         start_time = time.time()
         multiple_models_metrics_dct = self.run_model_evaluation_stage(main_base_flow_dataset=preprocessed_base_flow_dataset,
+                                                                      task_uuid=task.task_uuid,
                                                                       experiment_seed=seed,
                                                                       null_imputer_name=null_imputer_name,
                                                                       fairness_intervention_name=fairness_intervention_name,
@@ -84,9 +85,10 @@ class PipelineEvaluator(MLLifecycle):
             elapsed_time=elapsed_time,
             extra_info=extra_info,
         )
+        observation.extra_info["objectives"] = task.objectives
 
         self._db.close()
-        self._logger.info(f"Task with UUID {task.task_uuid} was executed!")
+        self._logger.info(f"Task with UUID {task.task_uuid} and logical pipeline {task.physical_pipeline.logical_pipeline_name} was executed!")
 
         return observation
 
@@ -183,10 +185,12 @@ class PipelineEvaluator(MLLifecycle):
 
         return preprocessed_base_flow_dataset
 
-    def run_model_evaluation_stage(self, main_base_flow_dataset, experiment_seed: int, null_imputer_name: str,
-                                   fairness_intervention_name: str, model_name: str, model_params: dict):
+    def run_model_evaluation_stage(self, main_base_flow_dataset, task_uuid: str, experiment_seed: int,
+                                   null_imputer_name: str, fairness_intervention_name: str, model_name: str,
+                                   model_params: dict):
         custom_table_fields_dct = dict()
         custom_table_fields_dct['session_uuid'] = self._session_uuid
+        custom_table_fields_dct['task_uuid'] = task_uuid
         custom_table_fields_dct['dataset_split_seed'] = experiment_seed
         custom_table_fields_dct['model_init_seed'] = experiment_seed
         custom_table_fields_dct['experiment_seed'] = experiment_seed

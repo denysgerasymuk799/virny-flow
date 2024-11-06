@@ -30,7 +30,7 @@ async def add_new_tasks(exp_config: DefaultMunch, lp_to_advisor: dict, bo_adviso
         if len(logical_pipeline_records) == 0:
             return
 
-        # Step 2: Get tasks for the first logical pipeline using MO-BO
+        # Step 2: Get tasks for the selected logical pipeline using MO-BO
         next_logical_pipeline = select_next_logical_pipeline(logical_pipelines=logical_pipelines,
                                                              exploration_factor=exp_config.exploration_factor)
         new_tasks = select_next_physical_pipelines(logical_pipeline=next_logical_pipeline,
@@ -38,7 +38,13 @@ async def add_new_tasks(exp_config: DefaultMunch, lp_to_advisor: dict, bo_adviso
                                                    bo_advisor_config=bo_advisor_config,
                                                    exp_config=exp_config)
 
-        # Step 3: Add new tasks to the Task Queue
+        # Step 3: Update the number of trials for the logical pipeline
+        await db_client.increment_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
+                                        condition={"exp_config_name": exp_config.exp_config_name,
+                                                   "logical_pipeline_uuid": next_logical_pipeline.logical_pipeline_uuid},
+                                        increment_val_dct={"num_trials": len(new_tasks)})
+
+        # Step 4: Add new tasks to the Task Queue
         for task in new_tasks:
             await task_queue.enqueue(task)
 
