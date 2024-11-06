@@ -40,6 +40,7 @@ def worker_interface(exp_config: DefaultMunch, virny_flow_address: str, dataset_
             if observation:
                 worker.complete_task(exp_config_name=task.exp_config_name,
                                      task_uuid=task.task_uuid,
+                                     physical_pipeline_uuid=task.physical_pipeline.physical_pipeline_uuid,
                                      logical_pipeline_uuid=task.physical_pipeline.logical_pipeline_uuid,
                                      logical_pipeline_name=task.physical_pipeline.logical_pipeline_name,
                                      observation=observation)

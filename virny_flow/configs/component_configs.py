@@ -96,16 +96,17 @@ FAIRNESS_INTERVENTION_CONFIG_SPACE = {
 
 def get_models_params_for_tuning(models_tuning_seed):
     return {
-        # 'dt_clf': {
-        #     'model': DecisionTreeClassifier(random_state=models_tuning_seed),
-        #     'config_space': {
-        #         "max_depth": [5, 10],
-        #         # "max_depth": [5, 10, 20, 30],
-        #         # 'min_samples_leaf': [5, 10, 20, 50, 100],
-        #         # "max_features": [0.6, 'sqrt'],
-        #         # "criterion": ["gini", "entropy"]
-        #     }
-        # },
+        'dt_clf': {
+            'model': DecisionTreeClassifier,
+            'default_kwargs': {'random_state': models_tuning_seed},
+            'config_space': {
+                'model__max_depth': CategoricalHyperparameter("model__max_depth", [5, 10]),
+                # "max_depth": [5, 10, 20, 30],
+                # 'min_samples_leaf': [5, 10, 20, 50, 100],
+                # "max_features": [0.6, 'sqrt'],
+                # "criterion": ["gini", "entropy"]
+            }
+        },
         'lr_clf': {
             'model': LogisticRegression,
             'default_kwargs': {'random_state': models_tuning_seed, 'max_iter': 1000},

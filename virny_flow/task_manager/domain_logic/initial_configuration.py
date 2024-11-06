@@ -81,11 +81,17 @@ async def create_init_state_for_config(exp_config: DefaultMunch, db_client: Task
                         risk_factor=exp_config.risk_factor,
                         num_trials=0,
                         score=0.0,
-                        pipeline_quality_mean=0.0,
-                        pipeline_quality_std=0.0,
+                        pipeline_quality_mean={objective['name']: 0.0 for objective in exp_config.objectives},
+                        pipeline_quality_std={objective['name']: 0.0 for objective in exp_config.objectives},
                         pipeline_execution_cost=0.0,
-                        norm_pipeline_quality_mean=0.0,
-                        norm_pipeline_quality_std=0.0,
+                        total_lp_quality_mean_of_means={objective['name']: 0.0 for objective in exp_config.objectives},
+                        total_lp_quality_std_of_means={objective['name']: 0.0 for objective in exp_config.objectives},
+                        total_lp_quality_mean_of_stds={objective['name']: 0.0 for objective in exp_config.objectives},
+                        total_lp_quality_std_of_stds={objective['name']: 0.0 for objective in exp_config.objectives},
+                        total_lp_mean_of_execution_costs=0.0,
+                        total_lp_std_of_execution_costs=0.0,
+                        norm_pipeline_quality_mean={objective['name']: 0.0 for objective in exp_config.objectives},
+                        norm_pipeline_quality_std={objective['name']: 0.0 for objective in exp_config.objectives},
                         norm_pipeline_execution_cost=0.0)
         for idx, logical_pipeline in enumerate(logical_pipelines)]
     logical_pipeline_records = [asdict(logical_pipeline_obj) for logical_pipeline_obj in logical_pipeline_objs]

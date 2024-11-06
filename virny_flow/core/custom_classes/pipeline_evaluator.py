@@ -47,6 +47,7 @@ class PipelineEvaluator(MLLifecycle):
         null_imputer_params = nested_dict_from_flat(task.physical_pipeline.null_imputer_params)
         fairness_intervention_params = nested_dict_from_flat(task.physical_pipeline.fairness_intervention_params)
         model_params = nested_dict_from_flat(task.physical_pipeline.model_params)
+        start_time = time.time()
 
         # Perform null imputation
         main_base_flow_dataset = self.run_null_imputation_stage(init_data_loader=self.init_data_loader,
@@ -60,9 +61,10 @@ class PipelineEvaluator(MLLifecycle):
                                                                               fairness_intervention_name=fairness_intervention_name,
                                                                               fairness_intervention_params=fairness_intervention_params)
         # Evaluate the model
-        start_time = time.time()
         multiple_models_metrics_dct = self.run_model_evaluation_stage(main_base_flow_dataset=preprocessed_base_flow_dataset,
                                                                       task_uuid=task.task_uuid,
+                                                                      physical_pipeline_uuid=task.physical_pipeline.physical_pipeline_uuid,
+                                                                      logical_pipeline_name=task.physical_pipeline.logical_pipeline_name,
                                                                       experiment_seed=seed,
                                                                       null_imputer_name=null_imputer_name,
                                                                       fairness_intervention_name=fairness_intervention_name,
@@ -185,12 +187,14 @@ class PipelineEvaluator(MLLifecycle):
 
         return preprocessed_base_flow_dataset
 
-    def run_model_evaluation_stage(self, main_base_flow_dataset, task_uuid: str, experiment_seed: int,
-                                   null_imputer_name: str, fairness_intervention_name: str, model_name: str,
-                                   model_params: dict):
+    def run_model_evaluation_stage(self, main_base_flow_dataset, task_uuid: str, physical_pipeline_uuid: str,
+                                   logical_pipeline_name: str, experiment_seed: int, null_imputer_name: str,
+                                   fairness_intervention_name: str, model_name: str, model_params: dict):
         custom_table_fields_dct = dict()
         custom_table_fields_dct['session_uuid'] = self._session_uuid
         custom_table_fields_dct['task_uuid'] = task_uuid
+        custom_table_fields_dct['physical_pipeline_uuid'] = physical_pipeline_uuid
+        custom_table_fields_dct['logical_pipeline_name'] = logical_pipeline_name
         custom_table_fields_dct['dataset_split_seed'] = experiment_seed
         custom_table_fields_dct['model_init_seed'] = experiment_seed
         custom_table_fields_dct['experiment_seed'] = experiment_seed
@@ -198,14 +202,6 @@ class PipelineEvaluator(MLLifecycle):
         custom_table_fields_dct['null_imputer_name'] = null_imputer_name
         custom_table_fields_dct['fairness_intervention_name'] = fairness_intervention_name
 
-        # Create exp_pipeline_guid to define a row level of granularity.
-        # concat(exp_pipeline_guid, model_name, subgroup, metric) can be used to check duplicates of results
-        # for the same experimental pipeline.
-        custom_table_fields_dct['exp_pipeline_guid'] = (
-            generate_guid(ordered_hierarchy_lst=[self.exp_config_name, experiment_seed, self.dataset_name,
-                                                 null_imputer_name, fairness_intervention_name]))
-
-        # Tune ML models
         all_model_params = {**model_params, **self.models_config[model_name]['default_kwargs']}
         models_dct = {
             model_name: self.models_config[model_name]['model'](**all_model_params)

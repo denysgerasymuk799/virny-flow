@@ -59,11 +59,12 @@ class Worker:
             self._logger.info(f"Failed to retrieve data. Status code: {response.status_code}.")
             return None
 
-    def complete_task(self, exp_config_name: str, task_uuid: str, logical_pipeline_uuid: str,
-                      logical_pipeline_name: str, observation: Observation):
+    def complete_task(self, exp_config_name: str, task_uuid: str, physical_pipeline_uuid: str,
+                      logical_pipeline_uuid: str, logical_pipeline_name: str, observation: Observation):
         params = {
             "exp_config_name": exp_config_name,
             "task_uuid": task_uuid,
+            "physical_pipeline_uuid": physical_pipeline_uuid,
             "logical_pipeline_uuid": logical_pipeline_uuid,
             "logical_pipeline_name": logical_pipeline_name,
             "observation": observation_to_dict(observation),

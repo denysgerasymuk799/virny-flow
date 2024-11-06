@@ -6,8 +6,6 @@ import pandas as pd
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-from virny_flow.configs.constants import STAGE_SEPARATOR
-
 
 def get_secrets_path(secrets_file_name: str):
     return pathlib.Path(__file__).parent.joinpath('..', '..', 'configs', secrets_file_name)
