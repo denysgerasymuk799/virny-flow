@@ -1,10 +1,15 @@
 *_venv
+history
+virny_flow_env
 *.env
 .DS_Store
 .ipynb_checkpoints
 data/*
-logs/*
 results/*
+
+# Unignore a specific logs directory
+logs/*
+!virny_flow_demo/logs/*
 
 # Created by https://www.gitignore.io/api/python,pycharm+all
 # Edit at https://www.gitignore.io/?templates=python,pycharm+all

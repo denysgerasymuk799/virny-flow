@@ -1,6 +1,6 @@
 import numpy as np
 
-from virny_flow.error_injectors.nulls_injector import NullsInjector
+from virny_flow.core.error_injectors.nulls_injector import NullsInjector
 
 
 def test_nulls_injector_mcar_strategy(acs_income_dataloader, common_seed):
