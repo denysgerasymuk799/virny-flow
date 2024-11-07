@@ -8,7 +8,7 @@ from pprint import pprint, pformat
 from copy import deepcopy
 from datetime import datetime
 
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.metrics import make_scorer, accuracy_score, f1_score
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
 
@@ -76,6 +76,107 @@ def test_evaluation(cur_best_model, model_name, cur_best_params,
         plt.show()
 
     return test_f1_score, test_accuracy, cur_model_pred
+
+
+def evaluate_and_select_top_configs(model_name: str, model_params: dict, X_train, y_train, 
+                                    dataset_name: str, round_num: int, selection_rate: float, 
+                                    tuned_params_df: pd.DataFrame):
+    """
+    Evaluates each configuration of the model, logs the results, and selects the top configurations 
+    based on F1 score for the next round.
+
+    Parameters:
+    - model_name: Name of the model being evaluated.
+    - model_params: Dictionary containing the model instance and list of parameter configurations.
+    - X_train, y_train: Training data.
+    - dataset_name: Name of the dataset.
+    - round_num: Current round of evaluation.
+    - selection_rate: Percentage of top configurations to select for the next round.
+    - tuned_params_df: DataFrame to log evaluation results.
+
+    Returns:
+    - top_configs: List of top configurations for the next round.
+    - tuned_params_df: Updated DataFrame with logged results.
+    """
+    scores = []
+    print(f"\nEvaluating configurations for model: {model_name}")
+
+    for config_idx, params in enumerate(model_params['params']):
+        try:
+            tuning_start_time = datetime.now()
+            print(f"{tuning_start_time.strftime('%Y/%m/%d, %H:%M:%S')}: Evaluating configuration {config_idx + 1}...", flush=True)
+
+            # Validate model with current parameters
+            cur_model, cur_f1_score, cur_accuracy, cur_params = validate_model(
+                deepcopy(model_params['model']), X_train, y_train, [params], n_folds=1)
+
+            tuning_end_time = datetime.now()
+            tuning_duration = (tuning_end_time - tuning_start_time).total_seconds() / 60.0
+
+            # Log results for this configuration
+            tuned_params_df = pd.concat([
+                tuned_params_df,
+                pd.DataFrame({
+                    'Dataset_Name': [dataset_name],
+                    'Model_Name': [model_name],
+                    'F1_Score': [cur_f1_score],
+                    'Accuracy_Score': [cur_accuracy],
+                    'Runtime_In_Mins': [tuning_duration],
+                    'Model_Best_Params': [cur_params],
+                    'Round': [round_num]
+                })
+            ], ignore_index=True)
+
+            # Append score for selection
+            scores.append((cur_f1_score, cur_accuracy, cur_params, deepcopy(model_params['model'])))
+
+        except Exception as err:
+            print(f"ERROR with configuration {config_idx + 1} for {model_name}: ", err)
+            continue
+
+    # Select top configurations based on F1 Score
+    scores.sort(reverse=True, key=lambda x: x[0])  # Sort by F1 Score (highest first)
+    top_configs = scores[:max(1, int(len(scores) * selection_rate))]  # Select top configurations
+
+    return top_configs, tuned_params_df
+
+
+def adaptive_model_selection(models_params_for_adaptive_selection: dict, base_flow_dataset: BaseFlowDataset,
+                              dataset_name: str, dataset_fraction_per_round: list[float], selection_rate: float = 0.25):
+    """
+    Adaptive tuning pipeline to iteratively evaluate hyperparameter configurations with an increasing
+    training dataset size and select the best-performing configurations for each model separately at each round.
+    """
+    models_config = dict()
+    tuned_params_df = pd.DataFrame(columns=['Dataset_Name', 'Model_Name', 'F1_Score', 'Accuracy_Score', 
+                                            'Runtime_In_Mins', 'Model_Best_Params', 'Round'])
+    
+    for round_num, data_fraction in enumerate(dataset_fraction_per_round, start=1):
+        print(f"\nRound {round_num}: Evaluating configurations on {int(data_fraction * 100)}% of the dataset.")
+        
+        # Split dataset based on current fraction
+        X_train, _, y_train, _ = train_test_split(base_flow_dataset.X_train_val, base_flow_dataset.y_train_val, 
+                                                  train_size=data_fraction, stratify=base_flow_dataset.y_train_val)
+        
+        # Evaluate each model's configurations separately
+        for model_name, model_params in models_params_for_adaptive_selection.items():
+            top_configs, tuned_params_df = evaluate_and_select_top_configs(
+                model_name, model_params, X_train, y_train, dataset_name, round_num, selection_rate, tuned_params_df
+            )
+
+            # Update configurations for the next round
+            models_params_for_adaptive_selection[model_name]['params'] = [config[2] for config in top_configs]  # Keep only the top params
+            models_params_for_adaptive_selection[model_name]['model'] = deepcopy(top_configs[0][3])  # Update model with best params
+
+            print(f"{model_name}: Selected {len(top_configs)} configurations for the next round.")
+
+        print(f"Round {round_num} completed.")
+
+    # After the final round, save the best configuration for each model
+    for model_name, model_info in models_params_for_adaptive_selection.items():
+        models_config[model_name] = model_info['model']
+
+    return tuned_params_df, models_config
 
 
 def tune_ML_models(models_params_for_tuning: dict, base_flow_dataset: BaseFlowDataset,

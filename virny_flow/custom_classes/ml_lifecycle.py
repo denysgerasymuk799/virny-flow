@@ -10,7 +10,7 @@ from virny.utils.custom_initializers import create_config_obj
 from virny_flow.configs.null_imputers_config import NULL_IMPUTERS_CONFIG
 from virny_flow.configs.constants import MODEL_HYPER_PARAMS_COLLECTION_NAME, NUM_FOLDS_FOR_TUNING, ErrorRepairMethod
 from virny_flow.utils.custom_logger import get_logger
-from virny_flow.utils.model_tuning_utils import tune_ML_models
+from virny_flow.utils.model_tuning_utils import tune_ML_models, adaptive_model_selection
 from virny_flow.utils.common_helpers import generate_guid, create_base_flow_dataset
 from virny_flow.custom_classes.database_client import DatabaseClient
 from virny_flow.custom_classes.s3_client import S3Client
@@ -22,13 +22,16 @@ class MLLifecycle:
     Class encapsulates all required ML lifecycle steps to run different experiments
     """
     def __init__(self, exp_config_name: str, dataset_name: str, secrets_path: str,
-                 dataset_config: dict, model_params_for_tuning: dict):
+                 dataset_config: dict, model_params_for_tuning: dict, 
+                 model_params_adaptive_selection: dict, adaptive_selection_config: dict):
         """
         Constructor defining default variables
         """
         self.exp_config_name = exp_config_name
         self.dataset_name = dataset_name
         self.model_params_for_tuning = model_params_for_tuning
+        self.model_params_adaptive_selection = model_params_adaptive_selection
+        self.adaptive_selection_config = adaptive_selection_config
 
         self.num_folds_for_tuning = NUM_FOLDS_FOR_TUNING
         self.test_set_fraction = dataset_config[dataset_name]['test_set_fraction']
@@ -212,4 +215,38 @@ class MLLifecycle:
                                          })
         self._logger.info("Models are tuned and their hyper-params are saved into the database")
 
+        return models_config
+    
+    def _adaptive_ML_models_selection(self, model_names, base_flow_dataset, evaluation_scenario,
+                        experiment_seed, null_imputer_name, fairness_intervention_name):
+        # Tune models and create a models config for metrics computation
+        all_models_params_for_adaptive_selection = self.model_params_adaptive_selection
+        models_params_for_adaptive_selection = {model_name: all_models_params_for_adaptive_selection[model_name] for model_name in model_names}
+
+        tuned_params_df, models_config = adaptive_model_selection(models_params_for_adaptive_selection=models_params_for_adaptive_selection,
+                                                        base_flow_dataset=base_flow_dataset,
+                                                        dataset_name=self.virny_config.dataset_name,
+                                                        dataset_fraction_per_round=self.adaptive_selection_config['dataset_fraction_per_round'],
+                                                        selection_rate=self.adaptive_selection_config['selection_rate'])
+        
+        # Save tunes parameters in database
+        date_time_str = datetime.now(timezone.utc)
+        tuned_params_df['Model_Best_Params'] = tuned_params_df['Model_Best_Params']
+        tuned_params_df['Model_Tuning_Guid'] = tuned_params_df['Model_Name'].apply(
+            lambda model_name: generate_guid(ordered_hierarchy_lst=[self.exp_config_name, evaluation_scenario, experiment_seed,
+                                                                    self.dataset_name, null_imputer_name, fairness_intervention_name, model_name])
+        )
+        self._db.write_pandas_df_into_db(collection_name=MODEL_HYPER_PARAMS_COLLECTION_NAME,
+                                         df=tuned_params_df,
+                                         custom_tbl_fields_dct={
+                                             'exp_pipeline_guid': generate_guid(ordered_hierarchy_lst=[self.exp_config_name, evaluation_scenario, experiment_seed, self.dataset_name, null_imputer_name, fairness_intervention_name]),
+                                             'session_uuid': self._session_uuid,
+                                             'exp_config_name': self.exp_config_name,
+                                             'evaluation_scenario': evaluation_scenario,
+                                             'experiment_seed': experiment_seed,
+                                             'null_imputer_name': null_imputer_name,
+                                             'fairness_intervention_name': fairness_intervention_name,
+                                             'record_create_date_time': date_time_str,
+                                         })
+        
         return models_config
