@@ -99,8 +99,8 @@ def create_config_space(logical_pipeline_name: str):
 if __name__ == '__main__':
     # Input variables
     lp_name = 'miss_forest&DIR&lr_clf'
-    history_filename = 'history_2024-11-07-14-31-55-784022.json'
-    surrogate_model_type = 'gp'
+    history_filename = 'history_2024-11-07-16-28-57-169314.json'
+    surrogate_model_type = 'gp'  # 'gp' or 'prf'
 
     bo_advisor_config = BOAdvisorConfig()
 

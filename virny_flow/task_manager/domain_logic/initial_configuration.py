@@ -22,7 +22,8 @@ async def add_new_tasks(exp_config: DefaultMunch, lp_to_advisor: dict, bo_adviso
             continue
 
         # Step 1: Get all logical pipelines, which have num_trials less than max_trials
-        query = {"num_trials": {"$lt": exp_config.max_trials}}
+        query = {"num_trials": {"$lt": exp_config.max_trials},
+                 "exp_config_name": exp_config.exp_config_name}
         logical_pipeline_records = await db_client.read_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE, query=query)
         logical_pipelines = [LogicalPipeline.from_dict(lp) for lp in logical_pipeline_records]
 

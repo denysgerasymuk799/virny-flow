@@ -116,6 +116,18 @@ def get_models_params_for_tuning(models_tuning_seed):
                 'model__solver': CategoricalHyperparameter("model__solver", ['newton-cg', 'lbfgs', 'sag', 'saga']),
             }
         },
+        'rf_clf': {
+            'model': RandomForestClassifier,
+            'default_kwargs': {'random_state': models_tuning_seed},
+            'config_space': {
+                'model__n_estimators': CategoricalHyperparameter("model__n_estimators", [50, 100]),
+                # 'n_estimators': [50, 100, 200, 500],
+                # 'max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
+                # 'min_samples_split': [2, 5, 10],
+                # 'min_samples_leaf': [1, 2, 4],
+                # 'bootstrap': [True, False]
+            }
+        },
         # 'lgbm_clf': {
         #     'model': LGBMClassifier(random_state=models_tuning_seed, n_jobs=48, num_threads=48),
         #     'config_space': {
@@ -124,17 +136,6 @@ def get_models_params_for_tuning(models_tuning_seed):
         #         'num_leaves' : [int(x) for x in np.linspace(start = 20, stop = 3000, num = 8)],
         #         'min_data_in_leaf' : [int(x) for x in np.linspace(start = 100, stop = 1000, num = 8)],
         #         'verbosity': [-1]
-        #     }
-        # },
-        # 'rf_clf': {
-        #     'model': RandomForestClassifier(random_state=models_tuning_seed),
-        #     'config_space': {
-        #         'n_estimators': [50, 100],
-        #         # 'n_estimators': [50, 100, 200, 500],
-        #         # 'max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
-        #         # 'min_samples_split': [2, 5, 10],
-        #         # 'min_samples_leaf': [1, 2, 4],
-        #         # 'bootstrap': [True, False]
         #     }
         # },
         # 'mlp_clf': {

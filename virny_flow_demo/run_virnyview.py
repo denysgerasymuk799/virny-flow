@@ -14,7 +14,8 @@ if __name__ == '__main__':
 
     data_loader = DATASET_CONFIG[exp_config.dataset]['data_loader'](**DATASET_CONFIG[exp_config.dataset]['data_loader_kwargs'])
     virny_config = create_config_obj(DATASET_CONFIG[exp_config.dataset]['virny_config_path'])
-    all_metrics_df = prepare_metrics_for_virnyview(secrets_path=exp_config.secrets_path)
+    all_metrics_df = prepare_metrics_for_virnyview(secrets_path=exp_config.secrets_path,
+                                                   exp_config_name=exp_config.exp_config_name)
 
     interactive_metrics_visualizer = MetricsInteractiveVisualizer(X_data=data_loader.X_data,
                                                                   y_data=data_loader.y_data,

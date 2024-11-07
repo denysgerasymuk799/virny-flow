@@ -5,12 +5,18 @@ from virny_flow.configs.constants import (PHYSICAL_PIPELINE_OBSERVATIONS_TABLE, 
                                           NO_FAIRNESS_INTERVENTION)
 
 
-def prepare_metrics_for_virnyview(secrets_path: str):
+def prepare_metrics_for_virnyview(secrets_path: str, exp_config_name: str):
     db_client = CoreDBClient(secrets_path)
     db_client.connect()
 
     pipeline = [
-        # Step 1: Group to get the maximum `compound_pp_improvement` per `exp_config_name` and `logical_pipeline_uuid`
+        # Step 1: Filter documents in PHYSICAL_PIPELINE_OBSERVATIONS_TABLE with the defined exp_config_name
+        {
+            "$match": {
+                "exp_config_name": exp_config_name,
+            }
+        },
+        # Step 2: Group to get the maximum `compound_pp_improvement` per `exp_config_name` and `logical_pipeline_uuid`
         {
             "$group": {
                 "_id": {
@@ -21,24 +27,33 @@ def prepare_metrics_for_virnyview(secrets_path: str):
                 "doc": { "$first": "$$ROOT" }  # Capture the full document with max improvement
             }
         },
-        # Step 2: Replace root with the captured document
+        # Step 3: Replace root with the captured document
         {
             "$replaceRoot": { "newRoot": "$doc" }
         },
-        # Step 3: Join with `all_experiment_metrics` based on `physical_pipeline_uuid`
+        # Step 4: Join with `all_experiment_metrics` based on `physical_pipeline_uuid`
         {
             "$lookup": {
                 "from": ALL_EXPERIMENT_METRICS_TABLE,
-                "localField": "physical_pipeline_uuid",
-                "foreignField": "physical_pipeline_uuid",
+                "let": { "physical_uuid": "$physical_pipeline_uuid" },
+                "pipeline": [
+                    { "$match": {
+                        "$expr": {
+                            "$and": [
+                                { "$eq": ["$physical_pipeline_uuid", "$$physical_uuid"] },
+                                { "$eq": ["$exp_config_name", exp_config_name] }
+                            ]
+                        }
+                    }}
+                ],
                 "as": "experiment_metrics"
             }
         },
-        # Step 4: Unwind to get one document per metric in `all_experiment_metrics`
+        # Step 5: Unwind to get one document per metric in `all_experiment_metrics`
         {
             "$unwind": "$experiment_metrics"
         },
-        # Step 5: Project only the fields you need (optional)
+        # Step 6: Project only the fields you need (optional)
         {
             "$project": {
                 "_id": 0,
