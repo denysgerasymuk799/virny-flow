@@ -76,14 +76,15 @@ def select_next_logical_pipeline(logical_pipelines, exploration_factor: float):
      Shang, Zeyuan, et al. "Democratizing data science through interactive curation of ml pipelines."
      Proceedings of the 2019 international conference on management of data. 2019.
     """
-    # [Exploitation] With likelihood exploration_factor, select a general logical pipeline, which worked well in the past.
-    if random.random() < exploration_factor:
-        selected_pipeline = softmax_selection(logical_pipelines)
+    never_explored_lps = [lp for lp in logical_pipelines if lp.score == 0.0]
 
     # [Exploration] With the likelihood 1 - exploration_factor, randomly select a logical pipeline which we have never run before.
-    else:
-        never_explored_lps = [lp for lp in logical_pipelines if lp.score == 0.0]
+    if random.random() >= exploration_factor and len(never_explored_lps) > 0:
         selected_pipeline = np.random.choice(never_explored_lps)
+
+    # [Exploitation] With likelihood exploration_factor, select a general logical pipeline, which worked well in the past.
+    else:
+        selected_pipeline = softmax_selection(logical_pipelines)
 
     return selected_pipeline
 
@@ -183,7 +184,8 @@ def select_next_physical_pipelines(logical_pipeline: LogicalPipeline, lp_to_advi
 
     # Create physical pipelines based on MO-BO suggestions
     physical_pipelines = []
-    for idx in range(exp_config.num_pp_candidates):
+    num_new_tasks = min(exp_config.num_pp_candidates, exp_config.max_trials - logical_pipeline.num_trials)
+    for idx in range(num_new_tasks):
         suggestion = get_suggestion(config_advisor)
         null_imputer_params = {k.replace('mvi__', '', 1): v for k, v in suggestion.items() if k.startswith('mvi__')}
         fairness_intervention_params = {k.replace('fi__', '', 1): v for k, v in suggestion.items() if k.startswith('fi__')}

@@ -26,9 +26,17 @@ async def add_new_tasks(exp_config: DefaultMunch, lp_to_advisor: dict, bo_adviso
         logical_pipeline_records = await db_client.read_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE, query=query)
         logical_pipelines = [LogicalPipeline.from_dict(lp) for lp in logical_pipeline_records]
 
-        # Terminate in case all work is done
         if len(logical_pipeline_records) == 0:
-            return
+            # Terminate in case all work is done
+            if await task_queue.is_empty(exp_config_name=exp_config.exp_config_name):
+                # Save advisor history for each logical pipeline locally
+                timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')
+                for lp_name, advisor in lp_to_advisor.items():
+                    advisor["config_advisor"].save_json(filename=f'history/{exp_config.exp_config_name}/{lp_name}/history_{timestamp}.json')
+                return
+
+            # Skip adding new tasks in case all logical pipelines have reached max_trials
+            continue
 
         # Step 2: Get tasks for the selected logical pipeline using MO-BO
         next_logical_pipeline = select_next_logical_pipeline(logical_pipelines=logical_pipelines,

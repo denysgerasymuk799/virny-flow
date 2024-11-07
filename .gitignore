@@ -1,4 +1,5 @@
 *_venv
+history
 virny_flow_env
 *.env
 .DS_Store

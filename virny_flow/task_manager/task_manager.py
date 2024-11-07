@@ -22,7 +22,7 @@ class TaskManager:
         self.app = FastAPI()
         self.db_client = TaskManagerDBClient(secrets_path)
         self.task_queue = TaskQueue(secrets_path=secrets_path,
-                                    max_queue_size=5 * max(exp_config.num_workers, exp_config.num_pp_candidates))
+                                    max_queue_size=3 * max(exp_config.num_workers, exp_config.num_pp_candidates))
         self._logger = get_logger(logger_name="task_manager")
         self._lp_to_advisor = dict() # Separate MO-BO optimizer for each logical pipeline
 

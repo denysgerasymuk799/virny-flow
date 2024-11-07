@@ -95,5 +95,9 @@ def register_routes(app: FastAPI, exp_config: DefaultMunch, task_queue: TaskQueu
         done_tasks_count = await task_queue.complete_task(exp_config_name=exp_config_name, task_uuid=task_uuid)
         logger.info(f'Task with task_uuid = {task_uuid} was successfully completed.')
 
+        for lp_name, advisor in lp_to_advisor.items():
+            print("lp_name:", lp_name)
+            print('len(advisor["config_advisor"].get_history()):', len(advisor["config_advisor"].get_history()))
+
         return JSONResponse(status_code=status.HTTP_200_OK,
                             content={"message": f"Marked {done_tasks_count} document(s) as DONE"})

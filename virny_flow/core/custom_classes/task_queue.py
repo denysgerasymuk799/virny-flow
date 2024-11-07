@@ -47,6 +47,14 @@ class TaskQueue:
         })
         return task_count <= self.max_queue_size - num_workers
 
+    async def is_empty(self, exp_config_name: str):
+        task_count = await self.collection.count_documents({
+            "exp_config_name": exp_config_name,
+            "task_status": { "$in": [TaskStatus.WAITING.value, TaskStatus.ASSIGNED.value] },
+            "deletion_flag": False,
+        })
+        return task_count == 0
+
     async def enqueue(self, task: Task):
         """Add an item to the queue."""
         task_record = asdict(task)
