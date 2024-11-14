@@ -78,7 +78,8 @@ def test_evaluation(cur_best_model, model_name, cur_best_params,
     return test_f1_score, test_accuracy, cur_model_pred
 
 
-def evaluate_and_select_top_configs(model_name: str, model_params: dict, X_train, y_train, 
+def evaluate_and_select_top_configs(model_name: str, model_params: dict, 
+                                    X_train, y_train, X_test, y_test,  
                                     dataset_name: str, round_num: int, selection_rate: float, 
                                     tuned_params_df: pd.DataFrame):
     """
@@ -108,7 +109,11 @@ def evaluate_and_select_top_configs(model_name: str, model_params: dict, X_train
 
             # Validate model with current parameters
             cur_model, cur_f1_score, cur_accuracy, cur_params = validate_model(
-                deepcopy(model_params['model']), X_train, y_train, [params], n_folds=1)
+                 deepcopy(model_params['model']), X_train, y_train, [params], n_folds=1)
+            
+            test_f1_score, test_accuracy, cur_model_pred = test_evaluation(cur_model, model_name, cur_params,
+                                                                           X_train, y_train, X_test, y_test, 
+                                                                           dataset_title=None, show_plots=False, debug_mode=False)
 
             tuning_end_time = datetime.now()
             tuning_duration = (tuning_end_time - tuning_start_time).total_seconds() / 60.0
@@ -119,8 +124,8 @@ def evaluate_and_select_top_configs(model_name: str, model_params: dict, X_train
                 pd.DataFrame({
                     'Dataset_Name': [dataset_name],
                     'Model_Name': [model_name],
-                    'F1_Score': [cur_f1_score],
-                    'Accuracy_Score': [cur_accuracy],
+                    'F1_Score': [test_f1_score],
+                    'Accuracy_Score': [test_accuracy],
                     'Runtime_In_Mins': [tuning_duration],
                     'Model_Best_Params': [cur_params],
                     'Round': [round_num]
@@ -128,7 +133,7 @@ def evaluate_and_select_top_configs(model_name: str, model_params: dict, X_train
             ], ignore_index=True)
 
             # Append score for selection
-            scores.append((cur_f1_score, cur_accuracy, cur_params, deepcopy(model_params['model'])))
+            scores.append((test_f1_score, test_accuracy, cur_params, deepcopy(model_params['model'])))
 
         except Exception as err:
             print(f"ERROR with configuration {config_idx + 1} for {model_name}: ", err)
@@ -157,11 +162,12 @@ def adaptive_model_selection(models_params_for_adaptive_selection: dict, base_fl
         # Split dataset based on current fraction
         X_train, _, y_train, _ = train_test_split(base_flow_dataset.X_train_val, base_flow_dataset.y_train_val, 
                                                   train_size=data_fraction, stratify=base_flow_dataset.y_train_val)
+        X_test, y_test = base_flow_dataset.X_test, base_flow_dataset.y_test
         
         # Evaluate each model's configurations separately
         for model_name, model_params in models_params_for_adaptive_selection.items():
             top_configs, tuned_params_df = evaluate_and_select_top_configs(
-                model_name, model_params, X_train, y_train, dataset_name, round_num, selection_rate, tuned_params_df
+                model_name, model_params, X_train, y_train, X_test, y_test, dataset_name, round_num, selection_rate, tuned_params_df
             )
 
             # Update configurations for the next round
