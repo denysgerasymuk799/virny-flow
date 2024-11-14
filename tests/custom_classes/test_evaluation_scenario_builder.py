@@ -1,5 +1,5 @@
 import numpy as np
-from virny_flow.custom_classes.evaluation_scenario_builder import EvaluationScenarioBuilder
+from virny_flow.core.custom_classes.evaluation_scenario_builder import EvaluationScenarioBuilder
 
 
 def test_parsing_in_evaluation_scenario_builder(german_data_loader, common_seed):

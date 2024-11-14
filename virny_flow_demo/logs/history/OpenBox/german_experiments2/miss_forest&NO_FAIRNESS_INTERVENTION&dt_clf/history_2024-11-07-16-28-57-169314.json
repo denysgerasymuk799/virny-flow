@@ -1,0 +1,753 @@
+{
+  "task_id": "OpenBox",
+  "num_objectives": 2,
+  "num_constraints": 0,
+  "ref_point": [
+    0.2,
+    0.1
+  ],
+  "meta_info": {},
+  "global_start_time": "2024-11-07T15:30:20.114290",
+  "observations": [
+    {
+      "config": {
+        "model__max_depth": 5,
+        "mvi__RandomForestClassifier__bootstrap": true,
+        "mvi__RandomForestClassifier__max_depth": 10,
+        "mvi__RandomForestClassifier__min_samples_leaf": 1,
+        "mvi__RandomForestClassifier__min_samples_split": 2,
+        "mvi__RandomForestClassifier__n_estimators": 125,
+        "mvi__RandomForestRegressor__bootstrap": true,
+        "mvi__RandomForestRegressor__max_depth": 10,
+        "mvi__RandomForestRegressor__min_samples_leaf": 1,
+        "mvi__RandomForestRegressor__min_samples_split": 2,
+        "mvi__RandomForestRegressor__n_estimators": 125
+      },
+      "objectives": [
+        0.17903930131004364,
+        0.0016949152542372614
+      ],
+      "constraints": null,
+      "trial_state": 0,
+      "elapsed_time": 2.105958938598633,
+      "create_time": "2024-11-07T15:32:23.345207",
+      "extra_info": {
+        "objectives": [
+          {
+            "name": "objective_1",
+            "metric": "F1",
+            "group": "overall"
+          },
+          {
+            "name": "objective_2",
+            "metric": "Equalized_Odds_TPR",
+            "group": "sex"
+          }
+        ]
+      }
+    },
+    {
+      "config": {
+        "model__max_depth": 10,
+        "mvi__RandomForestClassifier__bootstrap": false,
+        "mvi__RandomForestClassifier__max_depth": "None",
+        "mvi__RandomForestClassifier__min_samples_leaf": 2,
+        "mvi__RandomForestClassifier__min_samples_split": 10,
+        "mvi__RandomForestClassifier__n_estimators": 100,
+        "mvi__RandomForestRegressor__bootstrap": false,
+        "mvi__RandomForestRegressor__max_depth": "None",
+        "mvi__RandomForestRegressor__min_samples_leaf": 4,
+        "mvi__RandomForestRegressor__min_samples_split": 2,
+        "mvi__RandomForestRegressor__n_estimators": 150
+      },
+      "objectives": [
+        0.1767337807606264,
+        0.024971751412429466
+      ],
+      "constraints": null,
+      "trial_state": 0,
+      "elapsed_time": 2.9620399475097656,
+      "create_time": "2024-11-07T15:32:24.257182",
+      "extra_info": {
+        "objectives": [
+          {
+            "name": "objective_1",
+            "metric": "F1",
+            "group": "overall"
+          },
+          {
+            "name": "objective_2",
+            "metric": "Equalized_Odds_TPR",
+            "group": "sex"
+          }
+        ]
+      }
+    },
+    {
+      "config": {
+        "model__max_depth": 5,
+        "mvi__RandomForestClassifier__bootstrap": false,
+        "mvi__RandomForestClassifier__max_depth": "None",
+        "mvi__RandomForestClassifier__min_samples_leaf": 4,
+        "mvi__RandomForestClassifier__min_samples_split": 2,
+        "mvi__RandomForestClassifier__n_estimators": 50,
+        "mvi__RandomForestRegressor__bootstrap": false,
+        "mvi__RandomForestRegressor__max_depth": 10,
+        "mvi__RandomForestRegressor__min_samples_leaf": 2,
+        "mvi__RandomForestRegressor__min_samples_split": 10,
+        "mvi__RandomForestRegressor__n_estimators": 100
+      },
+      "objectives": [
+        0.17211328976034856,
+        0.01502824858757057
+      ],
+      "constraints": null,
+      "trial_state": 0,
+      "elapsed_time": 3.2051830291748047,
+      "create_time": "2024-11-07T15:32:44.705023",
+      "extra_info": {
+        "objectives": [
+          {
+            "name": "objective_1",
+            "metric": "F1",
+            "group": "overall"
+          },
+          {
+            "name": "objective_2",
+            "metric": "Equalized_Odds_TPR",
+            "group": "sex"
+          }
+        ]
+      }
+    },
+    {
+      "config": {
+        "model__max_depth": 10,
+        "mvi__RandomForestClassifier__bootstrap": false,
+        "mvi__RandomForestClassifier__max_depth": 50,
+        "mvi__RandomForestClassifier__min_samples_leaf": 4,
+        "mvi__RandomForestClassifier__min_samples_split": 10,
+        "mvi__RandomForestClassifier__n_estimators": 100,
+        "mvi__RandomForestRegressor__bootstrap": false,
+        "mvi__RandomForestRegressor__max_depth": 75,
+        "mvi__RandomForestRegressor__min_samples_leaf": 4,
+        "mvi__RandomForestRegressor__min_samples_split": 10,
+        "mvi__RandomForestRegressor__n_estimators": 100
+      },
+      "objectives": [
+        0.19111111111111112,
+        0.06192090395480221
+      ],
+      "constraints": null,
+      "trial_state": 0,
+      "elapsed_time": 3.2277119159698486,
+      "create_time": "2024-11-07T15:33:25.454463",
+      "extra_info": {
+        "objectives": [
+          {
+            "name": "objective_1",
+            "metric": "F1",
+            "group": "overall"
+          },
+          {
+            "name": "objective_2",
+            "metric": "Equalized_Odds_TPR",
+            "group": "sex"
+          }
+        ]
+      }
+    },
+    {
+      "config": {
+        "model__max_depth": 5,
+        "mvi__RandomForestClassifier__bootstrap": true,
+        "mvi__RandomForestClassifier__max_depth": 100,
+        "mvi__RandomForestClassifier__min_samples_leaf": 4,
+        "mvi__RandomForestClassifier__min_samples_split": 2,
+        "mvi__RandomForestClassifier__n_estimators": 100,
+        "mvi__RandomForestRegressor__bootstrap": false,
+        "mvi__RandomForestRegressor__max_depth": 75,
+        "mvi__RandomForestRegressor__min_samples_leaf": 4,
+        "mvi__RandomForestRegressor__min_samples_split": 10,
+        "mvi__RandomForestRegressor__n_estimators": 150
+      },
+      "objectives": [
+        0.17211328976034856,
+        0.01502824858757057
+      ],
+      "constraints": null,
+      "trial_state": 0,
+      "elapsed_time": 2.0992538928985596,
+      "create_time": "2024-11-07T15:38:16.749107",
+      "extra_info": {
+        "objectives": [
+          {
+            "name": "objective_1",
+            "metric": "F1",
+            "group": "overall"
+          },
+          {
+            "name": "objective_2",
+            "metric": "Equalized_Odds_TPR",
+            "group": "sex"
+          }
+        ]
+      }
+    },
+    {
+      "config": {
+        "model__max_depth": 10,
+        "mvi__RandomForestClassifier__bootstrap": false,
+        "mvi__RandomForestClassifier__max_depth": "None",
+        "mvi__RandomForestClassifier__min_samples_leaf": 4,
+        "mvi__RandomForestClassifier__min_samples_split": 2,
+        "mvi__RandomForestClassifier__n_estimators": 100,
+        "mvi__RandomForestRegressor__bootstrap": false,
+        "mvi__RandomForestRegressor__max_depth": "None",
+        "mvi__RandomForestRegressor__min_samples_leaf": 1,
+        "mvi__RandomForestRegressor__min_samples_split": 2,
+        "mvi__RandomForestRegressor__n_estimators": 100
+      },
+      "objectives": [
+        0.1785714285714286,
+        0.0485875706214689
+      ],
+      "constraints": null,
+      "trial_state": 0,
+      "elapsed_time": 3.1038999557495117,
+      "create_time": "2024-11-07T15:38:17.752497",
+      "extra_info": {
+        "objectives": [
+          {
+            "name": "objective_1",
+            "metric": "F1",
+            "group": "overall"
+          },
+          {
+            "name": "objective_2",
+            "metric": "Equalized_Odds_TPR",
+            "group": "sex"
+          }
+        ]
+      }
+    },
+    {
+      "config": {
+        "model__max_depth": 10,
+        "mvi__RandomForestClassifier__bootstrap": false,
+        "mvi__RandomForestClassifier__max_depth": 75,
+        "mvi__RandomForestClassifier__min_samples_leaf": 2,
+        "mvi__RandomForestClassifier__min_samples_split": 10,
+        "mvi__RandomForestClassifier__n_estimators": 100,
+        "mvi__RandomForestRegressor__bootstrap": false,
+        "mvi__RandomForestRegressor__max_depth": 75,
+        "mvi__RandomForestRegressor__min_samples_leaf": 1,
+        "mvi__RandomForestRegressor__min_samples_split": 10,
+        "mvi__RandomForestRegressor__n_estimators": 150
+      },
+      "objectives": [
+        0.1767337807606264,
+        0.024971751412429466
+      ],
+      "constraints": null,
+      "trial_state": 0,
+      "elapsed_time": 2.13214111328125,
+      "create_time": "2024-11-07T15:38:56.982275",
+      "extra_info": {
+        "objectives": [
+          {
+            "name": "objective_1",
+            "metric": "F1",
+            "group": "overall"
+          },
+          {
+            "name": "objective_2",
+            "metric": "Equalized_Odds_TPR",
+            "group": "sex"
+          }
+        ]
+      }
+    },
+    {
+      "config": {
+        "model__max_depth": 5,
+        "mvi__RandomForestClassifier__bootstrap": false,
+        "mvi__RandomForestClassifier__max_depth": 10,
+        "mvi__RandomForestClassifier__min_samples_leaf": 2,
+        "mvi__RandomForestClassifier__min_samples_split": 10,
+        "mvi__RandomForestClassifier__n_estimators": 150,
+        "mvi__RandomForestRegressor__bootstrap": true,
+        "mvi__RandomForestRegressor__max_depth": 75,
+        "mvi__RandomForestRegressor__min_samples_leaf": 4,
+        "mvi__RandomForestRegressor__min_samples_split": 2,
+        "mvi__RandomForestRegressor__n_estimators": 50
+      },
+      "objectives": [
+        0.17903930131004364,
+        0.0016949152542372614
+      ],
+      "constraints": null,
+      "trial_state": 0,
+      "elapsed_time": 4.137990713119507,
+      "create_time": "2024-11-07T15:38:58.987767",
+      "extra_info": {
+        "objectives": [
+          {
+            "name": "objective_1",
+            "metric": "F1",
+            "group": "overall"
+          },
+          {
+            "name": "objective_2",
+            "metric": "Equalized_Odds_TPR",
+            "group": "sex"
+          }
+        ]
+      }
+    },
+    {
+      "config": {
+        "model__max_depth": 5,
+        "mvi__RandomForestClassifier__bootstrap": false,
+        "mvi__RandomForestClassifier__max_depth": "None",
+        "mvi__RandomForestClassifier__min_samples_leaf": 2,
+        "mvi__RandomForestClassifier__min_samples_split": 10,
+        "mvi__RandomForestClassifier__n_estimators": 100,
+        "mvi__RandomForestRegressor__bootstrap": false,
+        "mvi__RandomForestRegressor__max_depth": 10,
+        "mvi__RandomForestRegressor__min_samples_leaf": 2,
+        "mvi__RandomForestRegressor__min_samples_split": 2,
+        "mvi__RandomForestRegressor__n_estimators": 200
+      },
+      "objectives": [
+        0.18082788671023964,
+        0.0016949152542372614
+      ],
+      "constraints": null,
+      "trial_state": 0,
+      "elapsed_time": 1.9728009700775146,
+      "create_time": "2024-11-07T15:43:49.655885",
+      "extra_info": {
+        "objectives": [
+          {
+            "name": "objective_1",
+            "metric": "F1",
+            "group": "overall"
+          },
+          {
+            "name": "objective_2",
+            "metric": "Equalized_Odds_TPR",
+            "group": "sex"
+          }
+        ]
+      }
+    },
+    {
+      "config": {
+        "model__max_depth": 10,
+        "mvi__RandomForestClassifier__bootstrap": true,
+        "mvi__RandomForestClassifier__max_depth": 100,
+        "mvi__RandomForestClassifier__min_samples_leaf": 1,
+        "mvi__RandomForestClassifier__min_samples_split": 2,
+        "mvi__RandomForestClassifier__n_estimators": 50,
+        "mvi__RandomForestRegressor__bootstrap": false,
+        "mvi__RandomForestRegressor__max_depth": 10,
+        "mvi__RandomForestRegressor__min_samples_leaf": 1,
+        "mvi__RandomForestRegressor__min_samples_split": 10,
+        "mvi__RandomForestRegressor__n_estimators": 200
+      },
+      "objectives": [
+        0.19999999999999996,
+        0.028022598870056425
+      ],
+      "constraints": null,
+      "trial_state": 0,
+      "elapsed_time": 1.933974027633667,
+      "create_time": "2024-11-07T15:43:49.666600",
+      "extra_info": {
+        "objectives": [
+          {
+            "name": "objective_1",
+            "metric": "F1",
+            "group": "overall"
+          },
+          {
+            "name": "objective_2",
+            "metric": "Equalized_Odds_TPR",
+            "group": "sex"
+          }
+        ]
+      }
+    },
+    {
+      "config": {
+        "model__max_depth": 5,
+        "mvi__RandomForestClassifier__bootstrap": false,
+        "mvi__RandomForestClassifier__max_depth": 50,
+        "mvi__RandomForestClassifier__min_samples_leaf": 2,
+        "mvi__RandomForestClassifier__min_samples_split": 2,
+        "mvi__RandomForestClassifier__n_estimators": 100,
+        "mvi__RandomForestRegressor__bootstrap": false,
+        "mvi__RandomForestRegressor__max_depth": 50,
+        "mvi__RandomForestRegressor__min_samples_leaf": 1,
+        "mvi__RandomForestRegressor__min_samples_split": 10,
+        "mvi__RandomForestRegressor__n_estimators": 50
+      },
+      "objectives": [
+        0.18082788671023964,
+        0.0016949152542372614
+      ],
+      "constraints": null,
+      "trial_state": 0,
+      "elapsed_time": 5.993344068527222,
+      "create_time": "2024-11-07T15:43:53.682539",
+      "extra_info": {
+        "objectives": [
+          {
+            "name": "objective_1",
+            "metric": "F1",
+            "group": "overall"
+          },
+          {
+            "name": "objective_2",
+            "metric": "Equalized_Odds_TPR",
+            "group": "sex"
+          }
+        ]
+      }
+    },
+    {
+      "config": {
+        "model__max_depth": 5,
+        "mvi__RandomForestClassifier__bootstrap": false,
+        "mvi__RandomForestClassifier__max_depth": 100,
+        "mvi__RandomForestClassifier__min_samples_leaf": 4,
+        "mvi__RandomForestClassifier__min_samples_split": 2,
+        "mvi__RandomForestClassifier__n_estimators": 150,
+        "mvi__RandomForestRegressor__bootstrap": true,
+        "mvi__RandomForestRegressor__max_depth": 10,
+        "mvi__RandomForestRegressor__min_samples_leaf": 1,
+        "mvi__RandomForestRegressor__min_samples_split": 2,
+        "mvi__RandomForestRegressor__n_estimators": 150
+      },
+      "objectives": [
+        0.17211328976034856,
+        0.01502824858757057
+      ],
+      "constraints": null,
+      "trial_state": 0,
+      "elapsed_time": 3.4415018558502197,
+      "create_time": "2024-11-07T15:44:21.866232",
+      "extra_info": {
+        "objectives": [
+          {
+            "name": "objective_1",
+            "metric": "F1",
+            "group": "overall"
+          },
+          {
+            "name": "objective_2",
+            "metric": "Equalized_Odds_TPR",
+            "group": "sex"
+          }
+        ]
+      }
+    },
+    {
+      "config": {
+        "model__max_depth": 5,
+        "mvi__RandomForestClassifier__bootstrap": true,
+        "mvi__RandomForestClassifier__max_depth": "None",
+        "mvi__RandomForestClassifier__min_samples_leaf": 4,
+        "mvi__RandomForestClassifier__min_samples_split": 10,
+        "mvi__RandomForestClassifier__n_estimators": 50,
+        "mvi__RandomForestRegressor__bootstrap": true,
+        "mvi__RandomForestRegressor__max_depth": 25,
+        "mvi__RandomForestRegressor__min_samples_leaf": 1,
+        "mvi__RandomForestRegressor__min_samples_split": 10,
+        "mvi__RandomForestRegressor__n_estimators": 150
+      },
+      "objectives": [
+        0.17211328976034856,
+        0.01502824858757057
+      ],
+      "constraints": null,
+      "trial_state": 0,
+      "elapsed_time": 5.447391033172607,
+      "create_time": "2024-11-07T15:47:06.913484",
+      "extra_info": {
+        "objectives": [
+          {
+            "name": "objective_1",
+            "metric": "F1",
+            "group": "overall"
+          },
+          {
+            "name": "objective_2",
+            "metric": "Equalized_Odds_TPR",
+            "group": "sex"
+          }
+        ]
+      }
+    },
+    {
+      "config": {
+        "model__max_depth": 5,
+        "mvi__RandomForestClassifier__bootstrap": false,
+        "mvi__RandomForestClassifier__max_depth": 75,
+        "mvi__RandomForestClassifier__min_samples_leaf": 1,
+        "mvi__RandomForestClassifier__min_samples_split": 10,
+        "mvi__RandomForestClassifier__n_estimators": 200,
+        "mvi__RandomForestRegressor__bootstrap": false,
+        "mvi__RandomForestRegressor__max_depth": 50,
+        "mvi__RandomForestRegressor__min_samples_leaf": 2,
+        "mvi__RandomForestRegressor__min_samples_split": 10,
+        "mvi__RandomForestRegressor__n_estimators": 200
+      },
+      "objectives": [
+        0.18082788671023964,
+        0.0016949152542372614
+      ],
+      "constraints": null,
+      "trial_state": 0,
+      "elapsed_time": 5.908782958984375,
+      "create_time": "2024-11-07T15:47:55.558858",
+      "extra_info": {
+        "objectives": [
+          {
+            "name": "objective_1",
+            "metric": "F1",
+            "group": "overall"
+          },
+          {
+            "name": "objective_2",
+            "metric": "Equalized_Odds_TPR",
+            "group": "sex"
+          }
+        ]
+      }
+    },
+    {
+      "config": {
+        "model__max_depth": 5,
+        "mvi__RandomForestClassifier__bootstrap": true,
+        "mvi__RandomForestClassifier__max_depth": 100,
+        "mvi__RandomForestClassifier__min_samples_leaf": 4,
+        "mvi__RandomForestClassifier__min_samples_split": 5,
+        "mvi__RandomForestClassifier__n_estimators": 50,
+        "mvi__RandomForestRegressor__bootstrap": false,
+        "mvi__RandomForestRegressor__max_depth": 75,
+        "mvi__RandomForestRegressor__min_samples_leaf": 2,
+        "mvi__RandomForestRegressor__min_samples_split": 2,
+        "mvi__RandomForestRegressor__n_estimators": 150
+      },
+      "objectives": [
+        0.17211328976034856,
+        0.01502824858757057
+      ],
+      "constraints": null,
+      "trial_state": 0,
+      "elapsed_time": 1.9055829048156738,
+      "create_time": "2024-11-07T15:49:32.326282",
+      "extra_info": {
+        "objectives": [
+          {
+            "name": "objective_1",
+            "metric": "F1",
+            "group": "overall"
+          },
+          {
+            "name": "objective_2",
+            "metric": "Equalized_Odds_TPR",
+            "group": "sex"
+          }
+        ]
+      }
+    },
+    {
+      "config": {
+        "model__max_depth": 5,
+        "mvi__RandomForestClassifier__bootstrap": false,
+        "mvi__RandomForestClassifier__max_depth": 25,
+        "mvi__RandomForestClassifier__min_samples_leaf": 4,
+        "mvi__RandomForestClassifier__min_samples_split": 2,
+        "mvi__RandomForestClassifier__n_estimators": 150,
+        "mvi__RandomForestRegressor__bootstrap": true,
+        "mvi__RandomForestRegressor__max_depth": 10,
+        "mvi__RandomForestRegressor__min_samples_leaf": 2,
+        "mvi__RandomForestRegressor__min_samples_split": 2,
+        "mvi__RandomForestRegressor__n_estimators": 100
+      },
+      "objectives": [
+        0.17211328976034856,
+        0.01502824858757057
+      ],
+      "constraints": null,
+      "trial_state": 0,
+      "elapsed_time": 3.6880459785461426,
+      "create_time": "2024-11-07T15:49:34.320029",
+      "extra_info": {
+        "objectives": [
+          {
+            "name": "objective_1",
+            "metric": "F1",
+            "group": "overall"
+          },
+          {
+            "name": "objective_2",
+            "metric": "Equalized_Odds_TPR",
+            "group": "sex"
+          }
+        ]
+      }
+    },
+    {
+      "config": {
+        "model__max_depth": 5,
+        "mvi__RandomForestClassifier__bootstrap": false,
+        "mvi__RandomForestClassifier__max_depth": 25,
+        "mvi__RandomForestClassifier__min_samples_leaf": 4,
+        "mvi__RandomForestClassifier__min_samples_split": 5,
+        "mvi__RandomForestClassifier__n_estimators": 150,
+        "mvi__RandomForestRegressor__bootstrap": true,
+        "mvi__RandomForestRegressor__max_depth": 10,
+        "mvi__RandomForestRegressor__min_samples_leaf": 4,
+        "mvi__RandomForestRegressor__min_samples_split": 5,
+        "mvi__RandomForestRegressor__n_estimators": 100
+      },
+      "objectives": [
+        0.17211328976034856,
+        0.01502824858757057
+      ],
+      "constraints": null,
+      "trial_state": 0,
+      "elapsed_time": 3.2121710777282715,
+      "create_time": "2024-11-07T16:21:52.770714",
+      "extra_info": {
+        "objectives": [
+          {
+            "name": "objective_1",
+            "metric": "F1",
+            "group": "overall"
+          },
+          {
+            "name": "objective_2",
+            "metric": "Equalized_Odds_TPR",
+            "group": "sex"
+          }
+        ]
+      }
+    },
+    {
+      "config": {
+        "model__max_depth": 5,
+        "mvi__RandomForestClassifier__bootstrap": false,
+        "mvi__RandomForestClassifier__max_depth": 75,
+        "mvi__RandomForestClassifier__min_samples_leaf": 2,
+        "mvi__RandomForestClassifier__min_samples_split": 5,
+        "mvi__RandomForestClassifier__n_estimators": 50,
+        "mvi__RandomForestRegressor__bootstrap": true,
+        "mvi__RandomForestRegressor__max_depth": 10,
+        "mvi__RandomForestRegressor__min_samples_leaf": 2,
+        "mvi__RandomForestRegressor__min_samples_split": 10,
+        "mvi__RandomForestRegressor__n_estimators": 150
+      },
+      "objectives": [
+        0.18082788671023964,
+        0.0016949152542372614
+      ],
+      "constraints": null,
+      "trial_state": 0,
+      "elapsed_time": 3.042466640472412,
+      "create_time": "2024-11-07T16:22:42.966826",
+      "extra_info": {
+        "objectives": [
+          {
+            "name": "objective_1",
+            "metric": "F1",
+            "group": "overall"
+          },
+          {
+            "name": "objective_2",
+            "metric": "Equalized_Odds_TPR",
+            "group": "sex"
+          }
+        ]
+      }
+    },
+    {
+      "config": {
+        "model__max_depth": 5,
+        "mvi__RandomForestClassifier__bootstrap": false,
+        "mvi__RandomForestClassifier__max_depth": 50,
+        "mvi__RandomForestClassifier__min_samples_leaf": 4,
+        "mvi__RandomForestClassifier__min_samples_split": 10,
+        "mvi__RandomForestClassifier__n_estimators": 150,
+        "mvi__RandomForestRegressor__bootstrap": true,
+        "mvi__RandomForestRegressor__max_depth": 10,
+        "mvi__RandomForestRegressor__min_samples_leaf": 4,
+        "mvi__RandomForestRegressor__min_samples_split": 10,
+        "mvi__RandomForestRegressor__n_estimators": 200
+      },
+      "objectives": [
+        0.17211328976034856,
+        0.01502824858757057
+      ],
+      "constraints": null,
+      "trial_state": 0,
+      "elapsed_time": 3.212369918823242,
+      "create_time": "2024-11-07T16:23:03.236412",
+      "extra_info": {
+        "objectives": [
+          {
+            "name": "objective_1",
+            "metric": "F1",
+            "group": "overall"
+          },
+          {
+            "name": "objective_2",
+            "metric": "Equalized_Odds_TPR",
+            "group": "sex"
+          }
+        ]
+      }
+    },
+    {
+      "config": {
+        "model__max_depth": 5,
+        "mvi__RandomForestClassifier__bootstrap": false,
+        "mvi__RandomForestClassifier__max_depth": "None",
+        "mvi__RandomForestClassifier__min_samples_leaf": 1,
+        "mvi__RandomForestClassifier__min_samples_split": 2,
+        "mvi__RandomForestClassifier__n_estimators": 150,
+        "mvi__RandomForestRegressor__bootstrap": true,
+        "mvi__RandomForestRegressor__max_depth": 75,
+        "mvi__RandomForestRegressor__min_samples_leaf": 2,
+        "mvi__RandomForestRegressor__min_samples_split": 10,
+        "mvi__RandomForestRegressor__n_estimators": 50
+      },
+      "objectives": [
+        0.17316017316017318,
+        0.04915254237288136
+      ],
+      "constraints": null,
+      "trial_state": 0,
+      "elapsed_time": 2.656346082687378,
+      "create_time": "2024-11-07T16:24:34.065494",
+      "extra_info": {
+        "objectives": [
+          {
+            "name": "objective_1",
+            "metric": "F1",
+            "group": "overall"
+          },
+          {
+            "name": "objective_2",
+            "metric": "Equalized_Odds_TPR",
+            "group": "sex"
+          }
+        ]
+      }
+    }
+  ]
+}
