@@ -11,8 +11,8 @@ async def update_logical_pipeline_score_model(exp_config_name: str, objectives_l
 
     # Step 1: Get all physical pipeline observations for the defined logical pipeline.
     pp_observations = await db_client.read_query(collection_name=PHYSICAL_PIPELINE_OBSERVATIONS_TABLE,
-                                                 query={"exp_config_name": exp_config_name,
-                                                        "logical_pipeline_uuid": logical_pipeline_uuid})
+                                                 exp_config_name=exp_config_name,
+                                                 query={"logical_pipeline_uuid": logical_pipeline_uuid})
     # Avoid computation in case the logical pipeline has less than two tested physical pipelines
     # since variance cannot be calculated for one physical pipeline
     if len(pp_observations) < 2:
@@ -43,8 +43,8 @@ async def update_logical_pipeline_score_model(exp_config_name: str, objectives_l
 
     # Step 4: Get all other logical pipelines from DB.
     other_logical_pipeline_records = await db_client.read_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
-                                                                query={"exp_config_name": exp_config_name,
-                                                                       "logical_pipeline_uuid": {"$ne": logical_pipeline_uuid}})
+                                                                exp_config_name=exp_config_name,
+                                                                query={"logical_pipeline_uuid": {"$ne": logical_pipeline_uuid}})
     other_logical_pipelines = [LogicalPipeline.from_dict(lp) for lp in other_logical_pipeline_records]
 
     # Step 5: For the defined logical pipeline, compute:

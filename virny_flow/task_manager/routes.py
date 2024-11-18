@@ -76,8 +76,8 @@ def register_routes(app: FastAPI, exp_config: DefaultMunch, task_queue: TaskQueu
         datetime_now = datetime.now(timezone.utc)
         await db_client.write_records_into_db(collection_name=PHYSICAL_PIPELINE_OBSERVATIONS_TABLE,
                                               records=[observation.to_dict()],
+                                              exp_config_name=exp_config_name,
                                               static_values_dct={
-                                                  "exp_config_name": exp_config_name,
                                                   "task_uuid": task_uuid,
                                                   "physical_pipeline_uuid": physical_pipeline_uuid,
                                                   "logical_pipeline_uuid": logical_pipeline_uuid,

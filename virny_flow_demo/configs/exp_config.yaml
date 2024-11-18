@@ -13,9 +13,8 @@ ref_point: [0.20, 0.10]
 objectives:
   - { name: "objective_1", metric: "F1", group: "overall" }
   - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "sex" }
-
-max_trials: 20
-num_workers: 5
-num_pp_candidates: 4
+max_trials: 5
+num_workers: 4
+num_pp_candidates: 2
 exploration_factor: 0.5  # [0.0-1.0]: a factor on how often the system tries unexplored logical pipelines
 risk_factor: 0.5  # [0.0-1.0]: a factor on how much risk we want to take to try a logical pipeline, which might have a high variance
