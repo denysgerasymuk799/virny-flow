@@ -34,7 +34,7 @@ class TaskManagerDBClient:
         query['deletion_flag'] = False
         return await collection.find_one(query) is not None
 
-    async def execute_write_query(self, records, collection_name):
+    async def execute_write_query(self, records: list, collection_name: str):
         collection = self._get_collection(collection_name)
         await collection.insert_many(records)
 
@@ -50,8 +50,9 @@ class TaskManagerDBClient:
         print(f"Matched {result.matched_count} document(s) and modified {result.modified_count} document(s).")
         return result.modified_count
 
-    async def update_query(self, collection_name: str, condition: dict, update_val_dct: dict):
+    async def update_query(self, collection_name: str, condition: dict, update_val_dct: dict, exp_config_name: str):
         collection = self._get_collection(collection_name)
+        condition["exp_config_name"] = exp_config_name
         condition['deletion_flag'] = False
 
         # Update many documents
@@ -62,8 +63,9 @@ class TaskManagerDBClient:
         print(f"Matched {result.matched_count} document(s) and modified {result.modified_count} document(s).")
         return result.modified_count
 
-    async def increment_query(self, collection_name: str, condition: dict, increment_val_dct: dict):
+    async def increment_query(self, collection_name: str, condition: dict, increment_val_dct: dict, exp_config_name: str):
         collection = self._get_collection(collection_name)
+        condition['exp_config_name'] = exp_config_name
         condition['deletion_flag'] = False
 
         # Update many documents
@@ -74,12 +76,16 @@ class TaskManagerDBClient:
         print(f"Matched {result.matched_count} document(s) and modified {result.modified_count} document(s).")
         return result.modified_count
 
-    async def read_one_query(self, collection_name: str, query: dict, sort_param: list = None):
+    async def read_one_query(self, collection_name: str, query: dict, exp_config_name: str, sort_param: list = None):
         collection = self._get_collection(collection_name)
+        query['exp_config_name'] = exp_config_name
         query['deletion_flag'] = False
         return await collection.find_one(query, sort=sort_param)
 
-    async def find_many_documents(self, collection_name: str, query: dict, sort_param: list = None):
+    async def find_many_documents(self, collection_name: str, query: dict, exp_config_name: str, sort_param: list = None):
+        query['exp_config_name'] = exp_config_name
+        query['deletion_flag'] = False
+
         collection = self._get_collection(collection_name)
         cursor = collection.find(query, sort=sort_param)
         documents = []
@@ -87,18 +93,23 @@ class TaskManagerDBClient:
             documents.append(document)
         return documents
 
-    async def read_query(self, collection_name: str, query: dict, sort_param: list = None):
-        query['deletion_flag'] = False
+    async def read_query(self, collection_name: str, query: dict, exp_config_name: str, sort_param: list = None):
         return await self.find_many_documents(collection_name=collection_name,
+                                              exp_config_name=exp_config_name,
                                               query=query,
                                               sort_param=sort_param)
 
-    async def count_query(self, collection_name: str, condition: dict):
+    async def count_query(self, collection_name: str, condition: dict, exp_config_name: str):
         collection = self._get_collection(collection_name)
+        condition['exp_config_name'] = exp_config_name
         condition['deletion_flag'] = False
         return await collection.count_documents(condition)
 
-    async def write_records_into_db(self, collection_name: str, records: list, static_values_dct: dict):
+    async def write_records_into_db(self, collection_name: str, records: list,
+                                    static_values_dct: dict, exp_config_name: str = None):
+        if exp_config_name is not None:
+            static_values_dct["exp_config_name"] = exp_config_name
+
         static_values_dct["deletion_flag"] = False # By default, mark new records with deletion_flag = False
         for key, value in static_values_dct.items():
             for record in records:

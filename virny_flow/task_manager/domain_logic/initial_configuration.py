@@ -49,8 +49,8 @@ async def add_new_tasks(exp_config: DefaultMunch, lp_to_advisor: dict, bo_adviso
 
         # Step 3: Update the number of trials for the logical pipeline
         await db_client.increment_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
-                                        condition={"exp_config_name": exp_config.exp_config_name,
-                                                   "logical_pipeline_uuid": next_logical_pipeline.logical_pipeline_uuid},
+                                        exp_config_name=exp_config.exp_config_name,
+                                        condition={"logical_pipeline_uuid": next_logical_pipeline.logical_pipeline_uuid},
                                         increment_val_dct={"num_trials": len(new_tasks)})
 
         # Step 4: Add new tasks to the Task Queue

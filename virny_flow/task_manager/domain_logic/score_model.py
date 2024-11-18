@@ -20,8 +20,8 @@ async def update_logical_pipeline_score_model(exp_config_name: str, objectives_l
 
     # Step 2: Get the logical pipeline from DB.
     logical_pipeline_record = await db_client.read_one_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
-                                                             query={"exp_config_name": exp_config_name,
-                                                                    "logical_pipeline_uuid": logical_pipeline_uuid})
+                                                             exp_config_name=exp_config_name,
+                                                             query={"logical_pipeline_uuid": logical_pipeline_uuid})
     logical_pipeline = LogicalPipeline.from_dict(logical_pipeline_record)
 
     # Step 3: Compute pipeline_quality_mean, pipeline_quality_std, pipeline_execution_cost for the defined logical pipeline.
@@ -109,13 +109,15 @@ async def update_logical_pipeline_score_model(exp_config_name: str, objectives_l
             norm_compound_pp_improvement += norm_objective_improvement
 
         await db_client.update_query(collection_name=PHYSICAL_PIPELINE_OBSERVATIONS_TABLE,
-                                     condition={"exp_config_name": exp_config_name, "physical_pipeline_uuid": pp_observation["physical_pipeline_uuid"]},
+                                     exp_config_name=exp_config_name,
+                                     condition={"physical_pipeline_uuid": pp_observation["physical_pipeline_uuid"]},
                                      update_val_dct={"compound_pp_improvement": compound_pp_improvement,
                                                      "norm_compound_pp_improvement": norm_compound_pp_improvement})
 
     # Step 9: Update the scores in DB
     await db_client.update_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
-                                 condition={"exp_config_name": exp_config_name, "logical_pipeline_uuid": logical_pipeline_uuid},
+                                 exp_config_name=exp_config_name,
+                                 condition={"logical_pipeline_uuid": logical_pipeline_uuid},
                                  update_val_dct={"score": final_score,
                                                  "pipeline_quality_mean": pipeline_quality_mean,
                                                  "pipeline_quality_std": pipeline_quality_std,
@@ -131,7 +133,8 @@ async def update_logical_pipeline_score_model(exp_config_name: str, objectives_l
                                                  "norm_pipeline_execution_cost": norm_pipeline_execution_cost})
 
     await db_client.update_query(collection_name=PHYSICAL_PIPELINE_OBSERVATIONS_TABLE,
-                                 condition={"exp_config_name": exp_config_name, "logical_pipeline_uuid": logical_pipeline_uuid},
+                                 exp_config_name=exp_config_name,
+                                 condition={"logical_pipeline_uuid": logical_pipeline_uuid},
                                  update_val_dct={"pipeline_quality_mean": pipeline_quality_mean,
                                                  "pipeline_quality_std": pipeline_quality_std,
                                                  "pipeline_execution_cost": pipeline_execution_cost})
