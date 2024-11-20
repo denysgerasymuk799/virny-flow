@@ -19,9 +19,9 @@ def run_transaction_with_retry(txn_func, session, max_retries=5, **kwargs):
 
     while attempts < max_retries:
         try:
-            txn_func(session, **kwargs)  # Perform the transaction
+            result = txn_func(session, **kwargs)  # Perform the transaction
             print("Transaction completed successfully.")
-            break  # Exit the loop if the transaction is successful
+            return result  # Exit the loop if the transaction is successful
         except (ConnectionFailure, OperationFailure) as exc:
             attempts += 1  # Increment the attempt counter
             print(f"Transaction aborted. Attempt {attempts} of {max_retries}. Exception: {exc}")

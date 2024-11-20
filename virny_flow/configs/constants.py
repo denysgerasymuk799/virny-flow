@@ -11,6 +11,7 @@ NO_FAIRNESS_INTERVENTION = 'NO_FAIRNESS_INTERVENTION'
 # MongoDB Constants
 # ====================================================================
 LOGICAL_PIPELINE_SCORES_TABLE = 'logical_pipeline_scores'
+LOGICAL_PIPELINE_PARAMS_FOR_HALTING_TABLE = 'logical_pipeline_params_for_halting'
 PHYSICAL_PIPELINE_OBSERVATIONS_TABLE = 'physical_pipeline_observations'
 ALL_EXPERIMENT_METRICS_TABLE = 'all_experiment_metrics'
 TASK_QUEUE_TABLE = 'task_queue'

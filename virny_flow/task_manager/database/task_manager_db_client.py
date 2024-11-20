@@ -2,6 +2,7 @@ import os
 import certifi
 import motor.motor_asyncio
 
+from datetime import datetime, timezone
 from bson.objectid import ObjectId
 from dotenv import load_dotenv
 
@@ -33,6 +34,37 @@ class TaskManagerDBClient:
         collection = self._get_collection(collection_name=EXP_CONFIG_HISTORY_TABLE)
         query['deletion_flag'] = False
         return await collection.find_one(query) is not None
+
+    async def upsert_query(self, collection_name: str, exp_config_name: str, condition: dict, record: dict):
+        """
+        Inserts a record if it does not exist, or updates it if it exists.
+        """
+        collection = self._get_collection(collection_name)
+        condition["exp_config_name"] = exp_config_name
+        condition['deletion_flag'] = False
+
+        record["exp_config_name"] = exp_config_name
+        record["update_datetime"] = datetime.now(timezone.utc)
+        record['deletion_flag'] = False
+
+        # Update many documents
+        result = await collection.update_many(
+            condition,           # Match the record using this query
+            {"$set": record},  # Update fields with this data
+            upsert=True             # Insert if not found
+        )
+
+        if result.upserted_id:
+            print(f"Inserted a new record with ID: {result.upserted_id}")
+        else:
+            print("Updated existing record.")
+
+        print(f"Matched {result.matched_count} document(s) and modified {result.modified_count} document(s).")
+        return {
+            "matched_count": result.matched_count,
+            "modified_count": result.modified_count,
+            "upserted_id": result.upserted_id,
+        }
 
     async def execute_write_query(self, records: list, collection_name: str):
         collection = self._get_collection(collection_name)

@@ -9,7 +9,8 @@ from ..database.task_manager_db_client import TaskManagerDBClient
 from virny_flow.core.custom_classes.task_queue import TaskQueue
 from virny_flow.configs.structs import BOAdvisorConfig, LogicalPipeline
 from virny_flow.configs.constants import (StageName, STAGE_SEPARATOR, NO_FAIRNESS_INTERVENTION,
-                                          LOGICAL_PIPELINE_SCORES_TABLE, EXP_CONFIG_HISTORY_TABLE)
+                                          LOGICAL_PIPELINE_SCORES_TABLE, EXP_CONFIG_HISTORY_TABLE,
+                                          LOGICAL_PIPELINE_PARAMS_FOR_HALTING_TABLE)
 
 
 async def add_new_tasks(exp_config: DefaultMunch, lp_to_advisor: dict, bo_advisor_config: BOAdvisorConfig,
@@ -48,13 +49,28 @@ async def add_new_tasks(exp_config: DefaultMunch, lp_to_advisor: dict, bo_adviso
                                                    bo_advisor_config=bo_advisor_config,
                                                    exp_config=exp_config)
 
-        # Step 3: Update the number of trials for the logical pipeline
+        # Step 3: Upsert params for halting for the selected logical pipeline.
+        #    These params will be used to compare the selected k physical pipeline and to prune unpromising pipelines.
+        #    For example, we need to have the same pipeline_quality_mean to compare the selected k physical pipelines,
+        #    but TaskManager updates pipeline_quality_mean in the LOGICAL_PIPELINE_SCORES_TABLE table,
+        #    therefore we need to copy it to a separate table specific for halting.
+        await db_client.upsert_query(collection_name=LOGICAL_PIPELINE_PARAMS_FOR_HALTING_TABLE,
+                                     exp_config_name=exp_config.exp_config_name,
+                                     condition={"logical_pipeline_uuid": next_logical_pipeline.logical_pipeline_uuid},
+                                     record={
+                                         "logical_pipeline_uuid": next_logical_pipeline.logical_pipeline_uuid,
+                                         "logical_pipeline_name": next_logical_pipeline.logical_pipeline_name,
+                                         "pipeline_quality_mean": next_logical_pipeline.pipeline_quality_mean,
+                                         "num_trials": next_logical_pipeline.num_trials,
+                                     })
+
+        # Step 4: Update the number of trials for the logical pipeline
         await db_client.increment_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
                                         exp_config_name=exp_config.exp_config_name,
                                         condition={"logical_pipeline_uuid": next_logical_pipeline.logical_pipeline_uuid},
                                         increment_val_dct={"num_trials": len(new_tasks)})
 
-        # Step 4: Add new tasks to the Task Queue
+        # Step 5: Add new tasks to the Task Queue
         for task in new_tasks:
             await task_queue.enqueue(task)
 
