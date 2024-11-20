@@ -1,4 +1,5 @@
 import os
+import time
 import warnings
 
 from munch import DefaultMunch
@@ -26,19 +27,26 @@ def worker_interface(exp_config: DefaultMunch, virny_flow_address: str, dataset_
     task_dct = worker.get_task(exp_config.exp_config_name)
 
     # Infinite while loop for task execution
+    no_tasks_confirmation = False
     while True:
-        if task_dct["task_uuid"] == NO_TASKS:
+        if task_dct["task_uuid"] == NO_TASKS and no_tasks_confirmation is False:
+            no_tasks_confirmation = True
+            print('Queue is empty. Waiting for new tasks during 60 seconds...', flush=True)
+            time.sleep(60) # Waiting in case new tasks come up
+
+        elif task_dct["task_uuid"] == NO_TASKS and no_tasks_confirmation:
             # Shutdown the worker to know when all job is done.
             # Can be useful when the job sends you an email when it is done.
             print('Queue is empty. Shutting down the worker...', flush=True)
             return
+
         else:
+            no_tasks_confirmation = False
             task = Task.from_dict(task_dct)
 
             # Use PipelineEvaluator to execute the task
             observation = pipeline_evaluator.execute_task(task=task, seed=exp_config.random_state)
 
-            # TODO: Update cost models using running history of pipeline on the worker side
             if observation:
                 worker.complete_task(exp_config_name=task.exp_config_name,
                                      task_uuid=task.task_uuid,

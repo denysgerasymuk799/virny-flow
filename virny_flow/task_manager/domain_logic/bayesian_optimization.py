@@ -206,6 +206,7 @@ def select_next_physical_pipelines(logical_pipeline: LogicalPipeline, lp_to_advi
     new_tasks = [Task(task_uuid=str(uuid.uuid4()),
                       exp_config_name=exp_config.exp_config_name,
                       objectives=exp_config.objectives,
+                      pipeline_quality_mean=logical_pipeline.pipeline_quality_mean,  # Used for halting
                       physical_pipeline=physical_pipeline)
                  for physical_pipeline in physical_pipelines]
     lp_to_advisor[logical_pipeline.logical_pipeline_name] = {"config_advisor": config_advisor, "config_space": config_space}

@@ -94,8 +94,9 @@ class PhysicalPipeline:
 class Task:
     task_uuid: str
     exp_config_name: str
-    physical_pipeline: PhysicalPipeline
     objectives: list
+    pipeline_quality_mean: dict
+    physical_pipeline: PhysicalPipeline
 
     @classmethod
     def from_dict(cls, data: dict):
