@@ -111,7 +111,6 @@ def get_objective_losses(metrics_dct: dict, objectives: list, model_name: str, s
     losses = []
     reversed_objectives = []
     for objective in objectives:
-        print("objective:", objective)
         metric, group = objective['metric'], objective['group']
         if group == "overall":
             metric_value = model_overall_metrics_df[model_overall_metrics_df.Metric == metric][group].values[0]

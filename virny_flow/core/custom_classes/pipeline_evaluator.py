@@ -2,12 +2,13 @@ import copy
 import time
 import pandas as pd
 
+from datetime import datetime, timezone
 from munch import DefaultMunch
 from openbox.utils.constants import SUCCESS
 from openbox.utils.history import Observation
 from openbox.utils.util_funcs import parse_result
 from sklearn.model_selection import train_test_split
-from virny.user_interfaces import compute_metrics_with_fitted_bootstrap, compute_metrics_with_db_writer
+from virny.user_interfaces import compute_metrics_with_fitted_bootstrap, compute_metrics_with_config
 
 from .ml_lifecycle import MLLifecycle
 from virny_flow.core.utils.common_helpers import create_base_flow_dataset
@@ -18,8 +19,8 @@ from virny_flow.core.fairness_interventions.postprocessors import get_eq_odds_po
 from virny_flow.core.fairness_interventions.inprocessors import get_adversarial_debiasing_wrapper_config, get_exponentiated_gradient_reduction_wrapper
 from virny_flow.core.custom_classes.core_db_client import run_transaction_with_retry, commit_with_retry
 from virny_flow.configs.structs import Task, PhysicalPipeline
-from virny_flow.configs.constants import (ErrorRepairMethod, STAGE_SEPARATOR, ALL_EXPERIMENT_METRICS_TABLE,
-                                          NO_FAIRNESS_INTERVENTION, FairnessIntervention, LOGICAL_PIPELINE_SCORES_TABLE)
+from virny_flow.configs.constants import (ErrorRepairMethod, STAGE_SEPARATOR, NO_FAIRNESS_INTERVENTION, ALL_EXPERIMENT_METRICS_TABLE,
+                                          FairnessIntervention, LOGICAL_PIPELINE_SCORES_TABLE)
 from virny_flow.task_manager.domain_logic.bayesian_optimization import get_objective_losses
 
 
@@ -94,14 +95,13 @@ class PipelineEvaluator(MLLifecycle):
 
         # Start a client session
         session = self._db.client.start_session()
-        generator = self.execute_adaptive_pipeline(physical_pipeline=task.physical_pipeline,
-                                                   objectives=task.objectives,
-                                                   pipeline_quality_mean=pipeline_quality_mean,
-                                                   task_uuid=task.task_uuid,
-                                                   exp_config_name=self.exp_config_name,
-                                                   use_init_best_score=use_init_best_score,
-                                                   seed=seed)
-        for cur_test_compound_pp_improvement, observation in generator:
+        adaptive_pipeline_generator = self.execute_adaptive_pipeline(physical_pipeline=task.physical_pipeline,
+                                                                     objectives=task.objectives,
+                                                                     pipeline_quality_mean=pipeline_quality_mean,
+                                                                     exp_config_name=self.exp_config_name,
+                                                                     use_init_best_score=use_init_best_score,
+                                                                     seed=seed)
+        for cur_test_compound_pp_improvement, observation, test_multiple_models_metrics_df in adaptive_pipeline_generator:
             try:
                 session.start_transaction()
                 run_transaction_with_retry(adaptive_execution_transaction,
@@ -116,6 +116,23 @@ class PipelineEvaluator(MLLifecycle):
                 print(f"Transaction aborted: {e}")
                 session.abort_transaction()
 
+        # Write virny metrics from the latest halting round into database
+        null_imputer_name, fairness_intervention_name, model_name = task.physical_pipeline.logical_pipeline_name.split(STAGE_SEPARATOR)
+        custom_tbl_fields_dct = dict()
+        custom_tbl_fields_dct['session_uuid'] = self._session_uuid
+        custom_tbl_fields_dct['task_uuid'] = task.task_uuid
+        custom_tbl_fields_dct['physical_pipeline_uuid'] = task.physical_pipeline.physical_pipeline_uuid
+        custom_tbl_fields_dct['logical_pipeline_name'] = task.physical_pipeline.logical_pipeline_name
+        custom_tbl_fields_dct['dataset_split_seed'] = seed
+        custom_tbl_fields_dct['model_init_seed'] = seed
+        custom_tbl_fields_dct['experiment_seed'] = seed
+        custom_tbl_fields_dct['exp_config_name'] = self.exp_config_name
+        custom_tbl_fields_dct['null_imputer_name'] = null_imputer_name
+        custom_tbl_fields_dct['fairness_intervention_name'] = fairness_intervention_name
+
+        self.save_virny_metrics_in_db(model_metrics_df=test_multiple_models_metrics_df,
+                                      custom_tbl_fields_dct=custom_tbl_fields_dct)
+
         # End the session
         session.end_session()
 
@@ -125,12 +142,13 @@ class PipelineEvaluator(MLLifecycle):
         return observation
 
     def execute_adaptive_pipeline(self, physical_pipeline: PhysicalPipeline, objectives: list, pipeline_quality_mean: dict,
-                                  task_uuid: str, exp_config_name: str, use_init_best_score: bool, seed: int):
+                                  exp_config_name: str, use_init_best_score: bool, seed: int):
         data_loader = copy.deepcopy(self.init_data_loader)
         X_train_val, X_test, y_train_val, y_test = self._split_dataset(data_loader, seed)
 
         test_compound_pp_improvement = None
         observation = None
+        test_multiple_models_metrics_df = None
         for training_set_fraction in self.training_set_fractions_for_halting:
             print('training_set_fraction:', training_set_fraction)
 
@@ -139,13 +157,13 @@ class PipelineEvaluator(MLLifecycle):
                                         else train_test_split(X_train_val, y_train_val,
                                                               train_size=training_set_fraction, stratify=y_train_val))
             # Execute a pipeline for the current incremental training set
-            train_objectives, test_objectives, observation = self.execute_pipeline(X_train=X_train,
+            (train_objectives, test_objectives,
+             observation, test_multiple_models_metrics_df) = self.execute_pipeline(X_train=X_train,
                                                                                    X_test=X_test,
                                                                                    y_train=y_train,
                                                                                    y_test=y_test,
                                                                                    physical_pipeline=physical_pipeline,
                                                                                    objectives=objectives,
-                                                                                   task_uuid=task_uuid,
                                                                                    seed=seed)
             # Create train_compound_pp_improvement and test_compound_pp_improvement based on the test_losses
             train_compound_pp_improvement = 0.0
@@ -165,15 +183,15 @@ class PipelineEvaluator(MLLifecycle):
             if test_compound_pp_improvement > best_compound_pp_improvement:
                 best_compound_pp_improvement = test_compound_pp_improvement
 
-            yield test_compound_pp_improvement, observation
+            yield test_compound_pp_improvement, observation, test_multiple_models_metrics_df
 
             if train_compound_pp_improvement < best_compound_pp_improvement:
-                return test_compound_pp_improvement, observation
+                return test_compound_pp_improvement, observation, test_multiple_models_metrics_df
 
-        return test_compound_pp_improvement, observation
+        return test_compound_pp_improvement, observation, test_multiple_models_metrics_df
 
     def execute_pipeline(self, X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.DataFrame, y_test: pd.DataFrame,
-                         physical_pipeline: PhysicalPipeline, objectives: list, task_uuid: str, seed: int):
+                         physical_pipeline: PhysicalPipeline, objectives: list, seed: int):
         # Parse an input physical pipeline
         null_imputer_name, fairness_intervention_name, model_name = physical_pipeline.logical_pipeline_name.split(STAGE_SEPARATOR)
         null_imputer_params = nested_dict_from_flat(physical_pipeline.null_imputer_params)
@@ -197,16 +215,13 @@ class PipelineEvaluator(MLLifecycle):
                                                                               fairness_intervention_name=fairness_intervention_name,
                                                                               fairness_intervention_params=fairness_intervention_params)
         # Evaluate a model
-        test_multiple_models_metrics_dct, train_multiple_models_metrics_dct = (
-            self.run_model_evaluation_stage(main_base_flow_dataset=preprocessed_base_flow_dataset,
-                                            task_uuid=task_uuid,
-                                            physical_pipeline_uuid=physical_pipeline.physical_pipeline_uuid,
-                                            logical_pipeline_name=physical_pipeline.logical_pipeline_name,
-                                            experiment_seed=seed,
-                                            null_imputer_name=null_imputer_name,
-                                            fairness_intervention_name=fairness_intervention_name,
-                                            model_name=model_name,
-                                            model_params=model_params))
+        (test_multiple_models_metrics_dct,
+         train_multiple_models_metrics_dct) = self.run_model_evaluation_stage(main_base_flow_dataset=preprocessed_base_flow_dataset,
+                                                                              experiment_seed=seed,
+                                                                              null_imputer_name=null_imputer_name,
+                                                                              fairness_intervention_name=fairness_intervention_name,
+                                                                              model_name=model_name,
+                                                                              model_params=model_params)
         elapsed_time = time.time() - start_time
 
         # Create an observation for MO optimisation based on the computed metrics
@@ -236,7 +251,7 @@ class PipelineEvaluator(MLLifecycle):
         observation.extra_info["reversed_objectives"] = test_reversed_objectives
         observation.extra_info["exp_config_objectives"] = objectives
 
-        return train_reversed_objectives, test_reversed_objectives, observation
+        return train_reversed_objectives, test_reversed_objectives, observation, test_multiple_models_metrics_dct[model_name]
 
     def run_null_imputation_stage(self, X_train_val_with_nulls, X_test_with_nulls, y_train_val, y_test,
                                   experiment_seed: int, null_imputer_name: str, null_imputer_params: dict):
@@ -327,21 +342,8 @@ class PipelineEvaluator(MLLifecycle):
 
         return preprocessed_base_flow_dataset
 
-    def run_model_evaluation_stage(self, main_base_flow_dataset, task_uuid: str, physical_pipeline_uuid: str,
-                                   logical_pipeline_name: str, experiment_seed: int, null_imputer_name: str,
+    def run_model_evaluation_stage(self, main_base_flow_dataset, experiment_seed: int, null_imputer_name: str,
                                    fairness_intervention_name: str, model_name: str, model_params: dict):
-        custom_table_fields_dct = dict()
-        custom_table_fields_dct['session_uuid'] = self._session_uuid
-        custom_table_fields_dct['task_uuid'] = task_uuid
-        custom_table_fields_dct['physical_pipeline_uuid'] = physical_pipeline_uuid
-        custom_table_fields_dct['logical_pipeline_name'] = logical_pipeline_name
-        custom_table_fields_dct['dataset_split_seed'] = experiment_seed
-        custom_table_fields_dct['model_init_seed'] = experiment_seed
-        custom_table_fields_dct['experiment_seed'] = experiment_seed
-        custom_table_fields_dct['exp_config_name'] = self.exp_config_name
-        custom_table_fields_dct['null_imputer_name'] = null_imputer_name
-        custom_table_fields_dct['fairness_intervention_name'] = fairness_intervention_name
-
         all_model_params = {**model_params, **self.models_config[model_name]['default_kwargs']}
         models_dct = {
             model_name: self.models_config[model_name]['model'](**all_model_params)
@@ -375,16 +377,14 @@ class PipelineEvaluator(MLLifecycle):
 
         # Compute metrics for tuned models based on the test set
         self.virny_config.random_state = experiment_seed  # Set random state for the metric computation with Virny
-        test_multiple_models_metrics_dct, models_fitted_bootstraps_dct = (
-            compute_metrics_with_db_writer(dataset=main_base_flow_dataset,
-                                           config=self.virny_config,
-                                           models_config=models_dct,
-                                           custom_tbl_fields_dct=custom_table_fields_dct,
-                                           db_writer_func=self._db.get_db_writer(collection_name=ALL_EXPERIMENT_METRICS_TABLE),
-                                           notebook_logs_stdout=False,
-                                           postprocessor=postprocessor,
-                                           return_fitted_bootstrap=True,
-                                           verbose=0))
+        (test_multiple_models_metrics_dct,
+         models_fitted_bootstraps_dct) = compute_metrics_with_config(dataset=main_base_flow_dataset,
+                                                                     config=self.virny_config,
+                                                                     models_config=models_dct,
+                                                                     notebook_logs_stdout=False,
+                                                                     postprocessor=postprocessor,
+                                                                     return_fitted_bootstrap=True,
+                                                                     verbose=0)
 
         # Compute metrics based on the training set to check model fit
         train_base_flow_dataset = copy.deepcopy(main_base_flow_dataset)
@@ -401,3 +401,27 @@ class PipelineEvaluator(MLLifecycle):
         print(f'Metric computation for {null_imputer_name}&{fairness_intervention_name}&{model_name} was finished\n', flush=True)
 
         return test_multiple_models_metrics_dct, train_multiple_models_metrics_dct
+
+    def save_virny_metrics_in_db(self, model_metrics_df: pd.DataFrame, custom_tbl_fields_dct: dict):
+        # Concatenate current run metrics with previous results and
+        # create melted_model_metrics_df to save it in a database
+        model_metrics_df['Dataset_Name'] = self.virny_config.dataset_name
+        model_metrics_df['Num_Estimators'] = self.virny_config.n_estimators
+
+        # Extend df with technical columns
+        model_metrics_df['Tag'] = 'OK'
+        model_metrics_df['Record_Create_Date_Time'] = datetime.now(timezone.utc)
+
+        for column, value in custom_tbl_fields_dct.items():
+            model_metrics_df[column] = value
+
+        subgroup_names = [col for col in model_metrics_df.columns if '_priv' in col or '_dis' in col] + ['overall']
+        melted_model_metrics_df = model_metrics_df.melt(
+            id_vars=[col for col in model_metrics_df.columns if col not in subgroup_names],
+            value_vars=subgroup_names,
+            var_name="Subgroup",
+            value_name="Metric_Value")
+
+        melted_model_metrics_df.columns = melted_model_metrics_df.columns.str.lower()
+        self._db.execute_write_query(records=melted_model_metrics_df.to_dict('records'),
+                                     collection_name=ALL_EXPERIMENT_METRICS_TABLE)
