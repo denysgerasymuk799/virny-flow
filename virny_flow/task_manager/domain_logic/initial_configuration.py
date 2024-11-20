@@ -91,6 +91,8 @@ async def create_init_state_for_config(exp_config: DefaultMunch, db_client: Task
                         risk_factor=exp_config.risk_factor,
                         num_trials=0,
                         score=0.0,
+                        best_physical_pipeline_uuid=None,
+                        best_compound_pp_improvement=0.0,
                         pipeline_quality_mean={objective['name']: 0.0 for objective in exp_config.objectives},
                         pipeline_quality_std={objective['name']: 0.0 for objective in exp_config.objectives},
                         pipeline_execution_cost=0.0,

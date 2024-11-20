@@ -37,6 +37,8 @@ def worker_interface(exp_config: DefaultMunch, virny_flow_address: str, dataset_
 
             # Use PipelineEvaluator to execute the task
             observation = pipeline_evaluator.execute_task(task=task, seed=exp_config.random_state)
+
+            # TODO: Update cost models using running history of pipeline on the worker side
             if observation:
                 worker.complete_task(exp_config_name=task.exp_config_name,
                                      task_uuid=task.task_uuid,

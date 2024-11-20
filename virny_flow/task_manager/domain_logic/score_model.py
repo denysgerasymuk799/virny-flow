@@ -32,8 +32,8 @@ async def update_logical_pipeline_score_model(exp_config_name: str, objectives_l
     pipeline_quality_mean = dict()
     pipeline_quality_std = dict()
     for idx, objective in enumerate(objectives_lst):
-        objective_mean = statistics.mean([pp_observation["objectives"][idx] for pp_observation in pp_observations])
-        objective_std = statistics.stdev([pp_observation["objectives"][idx] for pp_observation in pp_observations])
+        objective_mean = statistics.mean([pp_observation["extra_info"]["reversed_objectives"][idx] for pp_observation in pp_observations])
+        objective_std = statistics.stdev([pp_observation["extra_info"]["reversed_objectives"][idx] for pp_observation in pp_observations])
         pipeline_quality_mean[objective["name"]] = objective_mean
         pipeline_quality_std[objective["name"]] = objective_std
 
@@ -103,8 +103,8 @@ async def update_logical_pipeline_score_model(exp_config_name: str, objectives_l
         compound_pp_improvement = 0.0
         norm_compound_pp_improvement = 0.0
         for idx, objective in enumerate(objectives_lst):
-            objective_improvement = pp_observation['objectives'][idx] - pipeline_quality_mean[objective["name"]]
-            norm_objective_improvement = (pp_observation['objectives'][idx] - pipeline_quality_mean[objective["name"]]) / pipeline_quality_std[objective["name"]]
+            objective_improvement = pp_observation['extra_info']['reversed_objectives'][idx] - pipeline_quality_mean[objective["name"]]
+            norm_objective_improvement = (pp_observation['extra_info']['reversed_objectives'][idx] - pipeline_quality_mean[objective["name"]]) / pipeline_quality_std[objective["name"]]
             compound_pp_improvement += objective_improvement
             norm_compound_pp_improvement += norm_objective_improvement
 

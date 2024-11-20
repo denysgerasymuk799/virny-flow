@@ -16,5 +16,6 @@ objectives:
 max_trials: 5
 num_workers: 4
 num_pp_candidates: 2
+training_set_fractions_for_halting: [0.5, 0.75, 1.0]
 exploration_factor: 0.5  # [0.0-1.0]: a factor on how often the system tries unexplored logical pipelines
 risk_factor: 0.5  # [0.0-1.0]: a factor on how much risk we want to take to try a logical pipeline, which might have a high variance

@@ -109,6 +109,7 @@ def get_objective_losses(metrics_dct: dict, objectives: list, model_name: str, s
 
     # OpenBox minimizes the objective
     losses = []
+    reversed_objectives = []
     for objective in objectives:
         print("objective:", objective)
         metric, group = objective['metric'], objective['group']
@@ -128,8 +129,9 @@ def get_objective_losses(metrics_dct: dict, objectives: list, model_name: str, s
             loss = abs(1 - metric_value)
 
         losses.append(loss)
+        reversed_objectives.append(1 - loss)
 
-    result = dict(objectives=losses)
+    result = dict(objectives=losses, reversed_objectives=reversed_objectives)
     return result
 
 

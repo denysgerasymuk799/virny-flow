@@ -14,7 +14,6 @@ from virny_flow.core.utils.common_helpers import create_base_flow_dataset
 from virny_flow.core.validation import is_in_enum
 
 from .core_db_client import CoreDBClient
-from .s3_client import S3Client
 
 
 class MLLifecycle:
@@ -38,7 +37,6 @@ class MLLifecycle:
 
         self._logger = get_logger(logger_name='ml_lifecycle')
         self._db = CoreDBClient(secrets_path)
-        self._s3_client = S3Client(secrets_path)
         # Create a unique uuid per session to manipulate in the database
         # by all experimental results generated in this session
         self._session_uuid = str(uuid.uuid1())
