@@ -140,6 +140,10 @@ def get_config_advisor(logical_pipeline, bo_advisor_config):
     for stage in StageName:
         components = logical_pipeline.components
         if stage == StageName.null_imputation:
+            # None imputer does not have config space
+            if components[stage.value] == 'None':
+                continue
+
             stage_config_space = NULL_IMPUTATION_CONFIG[components[stage.value]]['config_space']
         elif stage == StageName.fairness_intervention:
             # NO_FAIRNESS_INTERVENTION does not have config space

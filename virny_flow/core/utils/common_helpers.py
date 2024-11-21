@@ -5,6 +5,8 @@ import base64
 import yaml
 import pandas as pd
 
+from pprint import pprint
+from cerberus import Validator
 from munch import DefaultMunch
 from virny.custom_classes.base_dataset import BaseFlowDataset
 
@@ -39,8 +41,66 @@ def create_exp_config_obj(exp_config_yaml_path: str):
     with open(exp_config_yaml_path) as f:
         config_dct = yaml.load(f, Loader=yaml.FullLoader)
 
+    config_dct = validate_config(config_dct)
+    pprint(config_dct)
     config_obj = DefaultMunch.fromDict(config_dct)
     config_obj.objectives = [dict(obj) for obj in config_obj.objectives]
+
+    return config_obj
+
+
+def validate_config(config_obj):
+    """
+    Validate parameters types, values, ranges and set optional parameters in config yaml file.
+    """
+    # Define the schema for the configuration
+    schema = {
+        # General experiment parameters
+        "exp_config_name": {"type": "string", "required": True},
+        "dataset": {"type": "string", "required": True},
+        "sensitive_attrs_for_intervention": {"type": "list", "required": True},
+        "null_imputers": {"type": "list", "required": True},
+        "fairness_interventions": {"type": "list", "required": True},
+        "models": {"type": "list", "required": True},
+        "random_state": {"type": "integer", "min": 1, "required": True},
+        "secrets_path": {"type": "string", "required": True},
+
+        # Parameters for multi-objective optimisation
+        "ref_point": {"type": "list", "required": False},
+        "objectives": {
+            "type": "list",
+            "required": True,
+            "schema": {  # Schema for each dictionary in the list
+                "type": "dict",
+                "schema": {
+                    "name": {"type": "string", "required": True},
+                    "metric": {"type": "string", "required": True},
+                    "group": {"type": "string", "required": True},
+                }
+            }
+        },
+        "max_trials": {"type": "integer", "min": 1, "required": True},
+        "num_workers": {"type": "integer", "min": 1, "required": True},
+        "num_pp_candidates": {"type": "integer", "min": 1, "required": False, "default": 10},
+        "queue_size": {"type": "integer", "min": max(config_obj['num_workers'], config_obj['num_pp_candidates']),
+                       "required": False, "default": 2 * max(config_obj['num_workers'], config_obj['num_pp_candidates'])},
+        "training_set_fractions_for_halting": {"type": "list", "required": False, "default": [0.5, 0.75, 1.0]},
+        "exploration_factor": {"type": "float", "min": 0.0, "max": 1.0, "required": False, "default": 0.5},
+        "risk_factor": {"type": "float", "min": 0.0, "max": 1.0, "required": False, "default": 0.5},
+    }
+
+    # Initialize the validator
+    v = Validator(schema)
+
+    # Validate the configuration
+    if v.validate(config_obj):
+        config_obj = v.normalized(config_obj)  # Enforce defaults
+    else:
+        raise ValueError("Validation errors in exp_config.yaml:", v.errors)
+
+    # Default arguments
+    if len(config_obj['null_imputers']) == 0:
+        config_obj['null_imputers'] = ['None']
 
     return config_obj
 

@@ -83,7 +83,12 @@ class PipelineEvaluator(MLLifecycle):
         self.exp_config = exp_config
         self.null_imputation_config = null_imputation_config
         self.fairness_intervention_config = fairness_intervention_config
-        self.training_set_fractions_for_halting = exp_config.training_set_fractions_for_halting
+
+        if self.init_data_loader.full_df.shape[0] <= 1000:
+            print('Skip halting since a dataset is less or equal 1000 rows')
+            self.training_set_fractions_for_halting = [1.0]
+        else:
+            self.training_set_fractions_for_halting = exp_config.training_set_fractions_for_halting
 
     def execute_task(self, task: Task, seed: int):
         self._db.connect()
@@ -268,16 +273,20 @@ class PipelineEvaluator(MLLifecycle):
                                                                                 data_loader=self.init_data_loader)
 
         # Impute nulls
-        (X_train_val_imputed_wo_sensitive_attrs,
-         X_tests_imputed_wo_sensitive_attrs_lst,
-         null_imputer_params_dct,
-         imputation_runtime) = self._impute_nulls(X_train_with_nulls=X_train_val_with_nulls_wo_sensitive_attrs,
-                                                  X_tests_with_nulls_lst=X_tests_with_nulls_wo_sensitive_attrs_lst,
-                                                  null_imputer_name=null_imputer_name,
-                                                  null_imputer_params=null_imputer_params,
-                                                  experiment_seed=experiment_seed,
-                                                  categorical_columns=categorical_columns_wo_sensitive_attrs,
-                                                  numerical_columns=numerical_columns_wo_sensitive_attrs)
+        if null_imputer_name == 'None':
+            X_train_val_imputed_wo_sensitive_attrs = X_train_val_with_nulls_wo_sensitive_attrs
+            X_tests_imputed_wo_sensitive_attrs_lst = X_tests_with_nulls_wo_sensitive_attrs_lst
+        else:
+            (X_train_val_imputed_wo_sensitive_attrs,
+             X_tests_imputed_wo_sensitive_attrs_lst,
+             null_imputer_params_dct,
+             imputation_runtime) = self._impute_nulls(X_train_with_nulls=X_train_val_with_nulls_wo_sensitive_attrs,
+                                                      X_tests_with_nulls_lst=X_tests_with_nulls_wo_sensitive_attrs_lst,
+                                                      null_imputer_name=null_imputer_name,
+                                                      null_imputer_params=null_imputer_params,
+                                                      experiment_seed=experiment_seed,
+                                                      categorical_columns=categorical_columns_wo_sensitive_attrs,
+                                                      numerical_columns=numerical_columns_wo_sensitive_attrs)
 
         # Create base flow datasets for Virny to compute metrics
         X_test_imputed_wo_sensitive_attrs = X_tests_imputed_wo_sensitive_attrs_lst[0]

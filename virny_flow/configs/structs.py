@@ -3,8 +3,6 @@ from dataclasses import dataclass, field, fields
 from sklearn.impute import SimpleImputer
 from openbox.utils.history import History
 
-from virny_flow.configs.constants import TaskStatus
-
 
 @dataclass
 class MixedImputer:

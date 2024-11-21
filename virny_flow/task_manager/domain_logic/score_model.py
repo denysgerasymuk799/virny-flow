@@ -47,6 +47,11 @@ async def update_logical_pipeline_score_model(exp_config_name: str, objectives_l
                                                                 query={"logical_pipeline_uuid": {"$ne": logical_pipeline_uuid}})
     other_logical_pipelines = [LogicalPipeline.from_dict(lp) for lp in other_logical_pipeline_records]
 
+    # Avoid computation in case there is no any other logical pipelines
+    # since variance cannot be calculated for one physical pipeline
+    if len(other_logical_pipelines) == 0:
+        return
+
     # Step 5: For the defined logical pipeline, compute:
     #         total_lp_quality_mean_of_means, total_lp_quality_std_of_means,
     #         total_lp_quality_mean_of_stds, total_lp_quality_std_of_stds,
