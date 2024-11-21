@@ -31,8 +31,8 @@ def worker_interface(exp_config: DefaultMunch, virny_flow_address: str, dataset_
     while True:
         if task_dct["task_uuid"] == NO_TASKS and no_tasks_confirmation is False:
             no_tasks_confirmation = True
-            print('Queue is empty. Waiting for new tasks during 60 seconds...', flush=True)
-            time.sleep(60) # Waiting in case new tasks come up
+            print('Queue is empty. Waiting for new tasks during 120 seconds...', flush=True)
+            time.sleep(120) # Waiting in case new tasks come up
 
         elif task_dct["task_uuid"] == NO_TASKS and no_tasks_confirmation:
             # Shutdown the worker to know when all job is done.

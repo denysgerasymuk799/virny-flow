@@ -35,7 +35,7 @@ async def update_logical_pipeline_score_model(exp_config_name: str, objectives_l
         objective_mean = statistics.mean([pp_observation["extra_info"]["reversed_objectives"][idx] for pp_observation in pp_observations])
         objective_std = statistics.stdev([pp_observation["extra_info"]["reversed_objectives"][idx] for pp_observation in pp_observations])
         pipeline_quality_mean[objective["name"]] = objective_mean
-        pipeline_quality_std[objective["name"]] = objective_std
+        pipeline_quality_std[objective["name"]] = objective_std + 0.000_001  # To avoid zero division
 
     logical_pipeline.pipeline_execution_cost = pipeline_execution_cost
     logical_pipeline.pipeline_quality_mean = pipeline_quality_mean
@@ -71,14 +71,14 @@ async def update_logical_pipeline_score_model(exp_config_name: str, objectives_l
         objective_mean = statistics.mean([pp_observation[objective["name"]] for pp_observation in all_pipeline_quality_means])
         objective_std = statistics.stdev([pp_observation[objective["name"]] for pp_observation in all_pipeline_quality_means])
         total_lp_quality_mean_of_means[objective["name"]] = objective_mean
-        total_lp_quality_std_of_means[objective["name"]] = objective_std
+        total_lp_quality_std_of_means[objective["name"]] = objective_std + 0.000_001  # To avoid zero division
 
     total_lp_quality_mean_of_stds = dict()
     total_lp_quality_std_of_stds = dict()
     for idx, objective in enumerate(objectives_lst):
         objective_mean = statistics.mean([pp_observation[objective["name"]] for pp_observation in all_pipeline_quality_stds])
         objective_std = statistics.stdev([pp_observation[objective["name"]] for pp_observation in all_pipeline_quality_stds])
-        total_lp_quality_mean_of_stds[objective["name"]] = objective_mean + 0.000_001 # To avoid zero division
+        total_lp_quality_mean_of_stds[objective["name"]] = objective_mean
         total_lp_quality_std_of_stds[objective["name"]] = objective_std + 0.000_001  # To avoid zero division
 
     # Step 6: Compute norm_pipeline_quality_mean, norm_pipeline_quality_std, norm_pipeline_execution_cost for the defined logical pipeline.
@@ -92,7 +92,7 @@ async def update_logical_pipeline_score_model(exp_config_name: str, objectives_l
         norm_objective_mean = (pipeline_quality_mean[objective["name"]] - total_lp_quality_mean_of_means[objective["name"]]) / total_lp_quality_std_of_means[objective["name"]]
         norm_objective_std = (pipeline_quality_std[objective["name"]] - total_lp_quality_mean_of_stds[objective["name"]]) / total_lp_quality_std_of_stds[objective["name"]]
         norm_pipeline_quality_mean[objective["name"]] = norm_objective_mean
-        norm_pipeline_quality_std[objective["name"]] = norm_objective_std
+        norm_pipeline_quality_std[objective["name"]] = norm_objective_std + 0.000_001  # To avoid zero division
 
     # Step 7: Compute the final score for the defined logical pipeline.
     #   score = norm_pipeline_quality_mean + risk_factor * norm_pipeline_quality_std / norm_pipeline_execution_cost
