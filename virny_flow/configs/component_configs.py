@@ -79,7 +79,12 @@ FAIRNESS_INTERVENTION_CONFIG_SPACE = {
     FairnessIntervention.DIR.value: {
         "fi__repair_level": UniformFloatHyperparameter("fi__repair_level", 0.1, 1.0),
     },
-    # FairnessIntervention.LFR.value: {"k": 5, "Ax": 0.01, "Ay": 1.0, "Az": 50.0},
+    FairnessIntervention.LFR.value: {
+        "fi__k": UniformIntegerHyperparameter("fi__k", 5, 6, q=1),
+        "fi__Ax": UniformFloatHyperparameter("fi__Ax", 0.01, 0.02),
+        "fi__Ay": UniformFloatHyperparameter("fi__Ay", 1.0, 1.1),
+        "fi__Az": UniformFloatHyperparameter("fi__Az", 50.0, 51.0),
+    }
     # FairnessIntervention.AD.value: {"scope_name": "debiased_classifier",
     #                                 "adversary_loss_weight": 0.1, "num_epochs": 50, "batch_size": 128,
     #                                 "classifier_num_hidden_units": 200, "debias": True},
