@@ -146,3 +146,4 @@ def get_models_params_for_tuning(models_tuning_seed):
         #         'learning_rate': ['constant', 'invscaling', 'adaptive']
         #     }
         # }
+    }
