@@ -12,12 +12,12 @@ from virny_flow.configs.constants import (StageName, STAGE_SEPARATOR, NO_FAIRNES
                                           LOGICAL_PIPELINE_SCORES_TABLE, EXP_CONFIG_HISTORY_TABLE)
 
 
-async def add_new_tasks(exp_config: DefaultMunch, lp_to_advisor: dict, bo_advisor_config: BOAdvisorConfig,
-                        db_client: TaskManagerDBClient, task_queue: TaskQueue):
+async def start_task_generator(exp_config: DefaultMunch, lp_to_advisor: dict, bo_advisor_config: BOAdvisorConfig,
+                               db_client: TaskManagerDBClient, task_queue: TaskQueue, logger):
     while True:
         if not await task_queue.has_space_for_next_lp(exp_config_name=exp_config.exp_config_name,
                                                       num_workers=exp_config.num_workers):
-            print("Wait until the queue has enough space for next pp candidates...")
+            logger.info("Wait until the queue has enough space for next pp candidates...")
             time.sleep(10)
             continue
 
@@ -54,7 +54,7 @@ async def add_new_tasks(exp_config: DefaultMunch, lp_to_advisor: dict, bo_adviso
                                         condition={"logical_pipeline_uuid": next_logical_pipeline.logical_pipeline_uuid},
                                         increment_val_dct={"num_trials": len(new_tasks)})
 
-        # Step 4: Add new tasks to the Task Queue
+        # Step 4: Add new tasks to the Task Queue in the database
         for task in new_tasks:
             await task_queue.enqueue(task)
 

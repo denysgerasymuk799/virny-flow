@@ -30,6 +30,11 @@ DB_NAME=your_mongodb_name
 CONNECTION_STRING=your_mongodb_connection_string
 ```
 
+Start Task Manager:
+```shell
+docker-compose up --build
+```
+
 
 ## Usage
 

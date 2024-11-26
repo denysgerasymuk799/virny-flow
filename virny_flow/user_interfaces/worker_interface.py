@@ -24,7 +24,7 @@ def worker_interface(exp_config: DefaultMunch, virny_flow_address: str, dataset_
 
     # Get an initial task
     worker = Worker(address=virny_flow_address)
-    task_dct = worker.get_task(exp_config.exp_config_name)
+    task_dct = worker.get_task()
 
     # Infinite while loop for task execution
     no_tasks_confirmation = False
@@ -57,4 +57,4 @@ def worker_interface(exp_config: DefaultMunch, virny_flow_address: str, dataset_
             print('\n\n', flush=True)
 
         # Request a new task in VirnyFlow
-        task_dct = worker.get_task(exp_config.exp_config_name)
+        task_dct = worker.get_task()

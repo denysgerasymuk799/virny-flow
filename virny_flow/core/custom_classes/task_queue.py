@@ -55,6 +55,14 @@ class TaskQueue:
         })
         return task_count == 0
 
+    async def get_num_available_tasks(self, exp_config_name: str):
+        task_count = await self.collection.count_documents({
+            "exp_config_name": exp_config_name,
+            "task_status": TaskStatus.WAITING.value,
+            "deletion_flag": False,
+        })
+        return task_count
+
     async def enqueue(self, task: Task):
         """Add an item to the queue."""
         task_record = asdict(task)

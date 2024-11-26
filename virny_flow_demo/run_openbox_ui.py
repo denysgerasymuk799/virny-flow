@@ -80,6 +80,10 @@ def create_config_space(logical_pipeline_name: str):
     }
     for stage in StageName:
         if stage == StageName.null_imputation:
+            # None imputer does not have config space
+            if components[stage.value] == 'None':
+                continue
+
             stage_config_space = NULL_IMPUTATION_CONFIG[components[stage.value]]['config_space']
         elif stage == StageName.fairness_intervention:
             # NO_FAIRNESS_INTERVENTION does not have config space
@@ -100,8 +104,8 @@ if __name__ == '__main__':
     # Input variables
     # lp_name = 'miss_forest&DIR&lr_clf'
     # history_filename = 'history_2024-11-21-00-39-13-139162.json'
-    lp_name = 'miss_forest&NO_FAIRNESS_INTERVENTION&lr_clf'
-    history_filename = 'history_2024-11-21-00-39-13-139162.json'
+    lp_name = 'None&NO_FAIRNESS_INTERVENTION&rf_clf'
+    history_filename = 'history_2024-11-21-14-58-07-794874.json'
     surrogate_model_type = 'gp'  # 'gp' or 'prf'
 
     bo_advisor_config = BOAdvisorConfig()
