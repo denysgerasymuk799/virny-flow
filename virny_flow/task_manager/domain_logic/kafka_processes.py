@@ -59,9 +59,7 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
 
                 try:
                     await producer.send_and_wait(topic=NEW_TASKS_QUEUE_TOPIC,
-                                                 value=json_message.encode('utf-8'),
-                                                 partition=divmod(i, exp_config.num_workers)[1]
-                                                    if new_high_priority_task["task_uuid"] == NO_TASKS else None)
+                                                 value=json_message.encode('utf-8'))
                 except Exception as e:
                     logger.info(f'Sending message to Kafka failed due to the following error -- {e}')
                     # Wait for all pending messages to be delivered or expire.
@@ -116,17 +114,15 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
                                                       "create_datetime": datetime_now,
                                                       "update_datetime": datetime_now,
                                                   })
-            # # Update score of the selected logical pipeline
-            # await update_logical_pipeline_score_model(exp_config_name=exp_config_name,
-            #                                           objectives_lst=exp_config.objectives,
-            #                                           logical_pipeline_uuid=logical_pipeline_uuid,
-            #                                           db_client=db_client)
-
+            # Update score of the selected logical pipeline
+            await update_logical_pipeline_score_model(exp_config_name=exp_config_name,
+                                                      objectives_lst=exp_config.objectives,
+                                                      logical_pipeline_uuid=logical_pipeline_uuid,
+                                                      db_client=db_client)
             # Complete the task
             await task_queue.complete_task(exp_config_name=exp_config_name, task_uuid=task_uuid)
             logger.info(f'Task with task_uuid = {task_uuid} was successfully completed.')
 
-            # await consumer.commit()
     except Exception as err:
         logger.error(f'Consume error: {err}')
     finally:
