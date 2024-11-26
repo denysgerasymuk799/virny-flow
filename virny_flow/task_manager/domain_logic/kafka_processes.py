@@ -17,7 +17,6 @@ from virny_flow.configs.constants import (TASK_MANAGER_CONSUMER_GROUP, NEW_TASKS
 
 async def start_task_provider(exp_config: DefaultMunch, task_queue: TaskQueue):
     restart_producer = False
-    print('KAFKA_BROKER --', os.getenv("KAFKA_BROKER"))
     producer = AIOKafkaProducer(bootstrap_servers=os.getenv("KAFKA_BROKER"))
     await producer.start()
 
@@ -56,7 +55,10 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
     consumer = AIOKafkaConsumer(COMPLETED_TASKS_QUEUE_TOPIC,
                                 bootstrap_servers=[os.getenv("KAFKA_BROKER")],
                                 group_id=TASK_MANAGER_CONSUMER_GROUP,
-                                auto_offset_reset="latest")
+                                session_timeout_ms=30000,  # Increase session timeout (default: 10000 ms)
+                                heartbeat_interval_ms=10000,  # Increase heartbeat interval (default: 3000 ms)
+                                auto_offset_reset="earliest",
+                                enable_auto_commit=True)
     await consumer.start()
     try:
         async for record in consumer:
@@ -100,7 +102,7 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
             await task_queue.complete_task(exp_config_name=exp_config_name, task_uuid=task_uuid)
             logger.info(f'Task with task_uuid = {task_uuid} was successfully completed.')
 
-            await consumer.commit()
+            # await consumer.commit()
     except Exception as err:
         logger.error(f'Consume error: {err}')
     finally:

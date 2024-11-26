@@ -16,7 +16,7 @@ async def start_task_generator(exp_config: DefaultMunch, lp_to_advisor: dict, bo
                                db_client: TaskManagerDBClient, task_queue: TaskQueue, logger):
     while True:
         if not await task_queue.has_space_for_next_lp(exp_config_name=exp_config.exp_config_name,
-                                                      num_workers=exp_config.num_workers):
+                                                      num_pp_candidates=exp_config.num_pp_candidates):
             logger.info("Wait until the queue has enough space for next pp candidates...")
             time.sleep(10)
             continue

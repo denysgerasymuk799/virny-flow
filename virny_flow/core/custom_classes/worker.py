@@ -31,7 +31,6 @@ class Worker:
             value_deserializer=lambda v: json.loads(v.decode('utf-8')),
             # consumer_timeout_ms=10,
             enable_auto_commit=True,
-            # auto_offset_reset="latest"
             auto_offset_reset="earliest"
         )
         self.producer = KafkaProducer(

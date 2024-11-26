@@ -30,6 +30,8 @@ services:
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT_INTERNAL://kafka_broker:9092,PLAINTEXT_EXTERNAL://localhost:9093
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT_INTERNAL:PLAINTEXT,PLAINTEXT_EXTERNAL:PLAINTEXT
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT_INTERNAL
+      - KAFKA_CFG_GROUP_MIN_SESSION_TIMEOUT_MS=6000
+      - KAFKA_CFG_GROUP_MAX_SESSION_TIMEOUT_MS=60000
       - ALLOW_PLAINTEXT_LISTENER=yes
     ports:
       - "9092:9092"
@@ -52,8 +54,8 @@ services:
       kafka-topics --bootstrap-server kafka_broker:9092 --list
 
       echo -e 'Creating kafka topics'
-      kafka-topics --bootstrap-server kafka_broker:9092 --create --if-not-exists --topic NewTasksQueue --replication-factor 1 --partitions 3
-      kafka-topics --bootstrap-server kafka_broker:9092 --create --if-not-exists --topic CompletedTasksQueue --replication-factor 1 --partitions 3
+      kafka-topics --bootstrap-server kafka_broker:9092 --create --if-not-exists --topic NewTasksQueue --replication-factor 1 --partitions 1
+      kafka-topics --bootstrap-server kafka_broker:9092 --create --if-not-exists --topic CompletedTasksQueue --replication-factor 1 --partitions 1
       
       echo -e 'Successfully created the following topics:'
       kafka-topics --bootstrap-server kafka_broker:9092 --list

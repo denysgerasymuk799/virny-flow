@@ -30,7 +30,7 @@ DB_NAME=your_mongodb_name
 CONNECTION_STRING=your_mongodb_connection_string
 ```
 
-Start a system for local debugging:
+Start the system for local debugging:
 ```shell
 # Start Kafka
 docker-compose up --build
@@ -40,6 +40,11 @@ python3 -m virny_flow_demo.run_task_manager
 
 # Start Worker in the root dir
 python3 -m virny_flow_demo.run_worker
+```
+
+Shutdown the system:
+```shell
+docker-compose down --volumes
 ```
 
 
