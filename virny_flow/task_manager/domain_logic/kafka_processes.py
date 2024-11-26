@@ -11,12 +11,14 @@ from .bayesian_optimization import parse_config_space
 from ..config import logger
 from ..database.task_manager_db_client import TaskManagerDBClient
 from virny_flow.core.custom_classes.task_queue import TaskQueue
-from virny_flow.configs.constants import (TASK_MANAGER_CONSUMER_GROUP, NEW_TASKS_QUEUE_TOPIC,
-                                          COMPLETED_TASKS_QUEUE_TOPIC, PHYSICAL_PIPELINE_OBSERVATIONS_TABLE)
+from virny_flow.configs.structs import LogicalPipeline
+from virny_flow.configs.constants import (TASK_MANAGER_CONSUMER_GROUP, NEW_TASKS_QUEUE_TOPIC, LOGICAL_PIPELINE_SCORES_TABLE,
+                                          COMPLETED_TASKS_QUEUE_TOPIC, PHYSICAL_PIPELINE_OBSERVATIONS_TABLE, NO_TASKS)
 
 
-async def start_task_provider(exp_config: DefaultMunch, task_queue: TaskQueue):
+async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDBClient, task_queue: TaskQueue):
     restart_producer = False
+    termination_flag = False
     producer = AIOKafkaProducer(bootstrap_servers=os.getenv("KAFKA_BROKER"))
     await producer.start()
 
@@ -24,12 +26,28 @@ async def start_task_provider(exp_config: DefaultMunch, task_queue: TaskQueue):
         while True:
             num_available_tasks = await task_queue.get_num_available_tasks(exp_config_name=exp_config.exp_config_name)
             if num_available_tasks == 0:
-                print("Wait until new tasks come up...")
-                time.sleep(10)
-                continue
+                if not await task_queue.is_empty(exp_config_name=exp_config.exp_config_name):
+                    print("Wait until new tasks come up...")
+                    time.sleep(10)
+                    continue
+
+                # Check termination factor: Get all logical pipelines, which have num_trials less than max_trials.
+                query = {"num_trials": {"$lt": exp_config.max_trials}}
+                logical_pipeline_records = await db_client.read_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
+                                                                      exp_config_name=exp_config.exp_config_name,
+                                                                      query=query)
+                if len(logical_pipeline_records) == 0:
+                    # If all work is done, set num_available_tasks to num_workers and get new tasks from task_queue.
+                    # When task_queue is empty, it will return NO_TASKS and it will be sent to each worker.
+                    num_available_tasks = exp_config.num_workers
+                    termination_flag = True
+                else:
+                    print("Wait until all physical pipelines are executed to terminate all workers...")
+                    time.sleep(10)
+                    continue
 
             # Add new tasks to the NewTaskQueue topic in Kafka
-            for _ in range(num_available_tasks):
+            for i in range(num_available_tasks):
                 new_high_priority_task = await task_queue.dequeue(exp_config_name=exp_config.exp_config_name)
                 json_message = json.dumps(new_high_priority_task)  # Serialize to JSON
                 logger.info(f'New task was retrieved, UUID: {new_high_priority_task["task_uuid"]}')
@@ -42,12 +60,16 @@ async def start_task_provider(exp_config: DefaultMunch, task_queue: TaskQueue):
                 try:
                     await producer.send_and_wait(topic=NEW_TASKS_QUEUE_TOPIC,
                                                  value=json_message.encode('utf-8'),
-                                                 key=new_high_priority_task['physical_pipeline']['logical_pipeline_name'].encode('utf-8'))
+                                                 partition=divmod(i, exp_config.num_workers)[1]
+                                                    if new_high_priority_task["task_uuid"] == NO_TASKS else None)
                 except Exception as e:
                     logger.info(f'Sending message to Kafka failed due to the following error -- {e}')
                     # Wait for all pending messages to be delivered or expire.
                     await producer.stop()
                     restart_producer = True
+
+            if termination_flag:
+                break
     finally:
         await producer.stop()
 
@@ -94,11 +116,11 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
                                                       "create_datetime": datetime_now,
                                                       "update_datetime": datetime_now,
                                                   })
-            # Update score of the selected logical pipeline
-            await update_logical_pipeline_score_model(exp_config_name=exp_config_name,
-                                                      objectives_lst=exp_config.objectives,
-                                                      logical_pipeline_uuid=logical_pipeline_uuid,
-                                                      db_client=db_client)
+            # # Update score of the selected logical pipeline
+            # await update_logical_pipeline_score_model(exp_config_name=exp_config_name,
+            #                                           objectives_lst=exp_config.objectives,
+            #                                           logical_pipeline_uuid=logical_pipeline_uuid,
+            #                                           db_client=db_client)
 
             # Complete the task
             await task_queue.complete_task(exp_config_name=exp_config_name, task_uuid=task_uuid)

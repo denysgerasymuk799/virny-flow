@@ -41,6 +41,7 @@ def register_routes(app: FastAPI, exp_config: DefaultMunch, task_queue: TaskQueu
                                                  logger=logger))
         # Start a background process that reads new tasks from the task queue in DB and adds to a Kafka queue
         asyncio.create_task(start_task_provider(exp_config=exp_config,
+                                                db_client=db_client,
                                                 task_queue=task_queue))
         # Start a background process that updates cost models based on completed tasks
         asyncio.create_task(start_cost_model_updater(exp_config=exp_config,
