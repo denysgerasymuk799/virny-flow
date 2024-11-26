@@ -40,7 +40,9 @@ async def start_task_provider(exp_config: DefaultMunch, task_queue: TaskQueue):
                     restart_producer = False
 
                 try:
-                    await producer.send_and_wait(NEW_TASKS_QUEUE_TOPIC, json_message.encode('utf-8'))
+                    await producer.send_and_wait(topic=NEW_TASKS_QUEUE_TOPIC,
+                                                 value=json_message.encode('utf-8'),
+                                                 key=new_high_priority_task['physical_pipeline']['logical_pipeline_name'].encode('utf-8'))
                 except Exception as e:
                     logger.info(f'Sending message to Kafka failed due to the following error -- {e}')
                     # Wait for all pending messages to be delivered or expire.

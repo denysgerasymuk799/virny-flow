@@ -45,6 +45,7 @@ python3 -m virny_flow_demo.run_worker
 Shutdown the system:
 ```shell
 docker-compose down --volumes
+#docker-compose down --volumes && docker system prune -a --volumes -f
 ```
 
 
