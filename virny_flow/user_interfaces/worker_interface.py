@@ -23,7 +23,7 @@ def worker_interface(exp_config: DefaultMunch, virny_flow_address: str, dataset_
                                            models_config=models_config)
 
     # Get an initial task
-    worker = Worker(address=virny_flow_address)
+    worker = Worker(address=virny_flow_address, secrets_path=exp_config.secrets_path)
     task_dct = worker.get_task()
 
     # Infinite while loop for task execution

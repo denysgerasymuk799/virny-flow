@@ -42,7 +42,9 @@ def create_exp_config_obj(exp_config_yaml_path: str):
         config_dct = yaml.load(f, Loader=yaml.FullLoader)
 
     config_dct = validate_config(config_dct)
+    print('Input experiment config:')
     pprint(config_dct)
+    print()
     config_obj = DefaultMunch.fromDict(config_dct)
     config_obj.objectives = [dict(obj) for obj in config_obj.objectives]
 

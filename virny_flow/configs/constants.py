@@ -1,9 +1,5 @@
-import os
 from enum import Enum
-from dotenv import load_dotenv
 
-
-load_dotenv()
 
 DEBUG_MODE = False
 EXPERIMENT_RUN_SEEDS = [100 * i for i in range(1, 11)]
@@ -25,10 +21,10 @@ EXP_CONFIG_HISTORY_TABLE = 'exp_config_history'
 # ====================================================================
 # Kafka Constants
 # ====================================================================
-KAFKA_BROKER = os.getenv("KAFKA_BROKER")
 NEW_TASKS_QUEUE_TOPIC = 'NewTasksQueue'
 COMPLETED_TASKS_QUEUE_TOPIC = 'CompletedTasksQueue'
 TASK_MANAGER_CONSUMER_GROUP = "task_manager_consumer_group"
+WORKER_CONSUMER_GROUP = "worker_consumer_group"
 
 
 # ====================================================================

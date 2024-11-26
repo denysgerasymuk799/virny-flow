@@ -1,8 +1,12 @@
+import os
 import json
+from gc import enable
+
+from dotenv import load_dotenv
 from kafka import KafkaProducer, KafkaConsumer
 from openbox.utils.history import Observation
 
-from virny_flow.configs.constants import KAFKA_BROKER, NEW_TASKS_QUEUE_TOPIC, COMPLETED_TASKS_QUEUE_TOPIC
+from virny_flow.configs.constants import NEW_TASKS_QUEUE_TOPIC, COMPLETED_TASKS_QUEUE_TOPIC, WORKER_CONSUMER_GROUP
 from virny_flow.core.utils.custom_logger import get_logger
 from virny_flow.core.utils.pipeline_utils import observation_to_dict
 
@@ -12,20 +16,26 @@ def on_send_error(exc_info):
 
 
 class Worker:
-    def __init__(self, address: str):
+    def __init__(self, address: str, secrets_path: str):
+        load_dotenv(secrets_path, override=True)
+
         self.address = address.rstrip('/')
         self._logger = get_logger(logger_name="worker")
 
         self.consumer = KafkaConsumer(
             NEW_TASKS_QUEUE_TOPIC,
-            group_id='grp1',
-            bootstrap_servers=KAFKA_BROKER,
+            group_id=WORKER_CONSUMER_GROUP,
+            # group_id='new-consumer-group',
+            bootstrap_servers=os.getenv("KAFKA_BROKER"),
             api_version=(0, 10, 1),
             value_deserializer=lambda v: json.loads(v.decode('utf-8')),
-            consumer_timeout_ms=10
+            # consumer_timeout_ms=10,
+            enable_auto_commit=True,
+            # auto_offset_reset="latest"
+            auto_offset_reset="earliest"
         )
         self.producer = KafkaProducer(
-            bootstrap_servers=KAFKA_BROKER,
+            bootstrap_servers=os.getenv("KAFKA_BROKER"),
             api_version=(0, 10, 1),
             acks='all',
             retries=3,

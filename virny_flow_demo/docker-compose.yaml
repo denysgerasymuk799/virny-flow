@@ -1,0 +1,71 @@
+version: '3'
+
+networks:
+  task-manager-network:
+    driver: bridge
+
+services:
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    container_name: zookeeper
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    ports:
+      - "2181:2181"
+    networks:
+      - task-manager-network
+
+  kafka_broker:
+    image: bitnami/kafka:latest
+    container_name: kafka_broker
+    environment:
+      - KAFKA_CFG_BROKER_ID=1
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://0.0.0.0:9092
+#      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+#      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka_broker:9092
+#      - KAFKA_CFG_LISTENERS=PLAINTEXT_INTERNAL://0.0.0.0:9092,PLAINTEXT_EXTERNAL://0.0.0.0:9092
+#      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT_INTERNAL://kafka_broker:9092,PLAINTEXT_EXTERNAL://localhost:9092
+      - KAFKA_CFG_LISTENERS=PLAINTEXT_INTERNAL://0.0.0.0:9092,PLAINTEXT_EXTERNAL://0.0.0.0:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT_INTERNAL://kafka_broker:9092,PLAINTEXT_EXTERNAL://localhost:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT_INTERNAL:PLAINTEXT,PLAINTEXT_EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT_INTERNAL
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    depends_on:
+      - zookeeper
+    networks:
+      - task-manager-network
+
+  init-kafka:
+    image: confluentinc/cp-kafka:6.1.1
+    networks:
+      - task-manager-network
+    depends_on:
+      - kafka_broker
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      "
+      # blocks until kafka is reachable
+      kafka-topics --bootstrap-server kafka_broker:9092 --list
+
+      echo -e 'Creating kafka topics'
+      kafka-topics --bootstrap-server kafka_broker:9092 --create --if-not-exists --topic NewTasksQueue --replication-factor 1 --partitions 3
+      kafka-topics --bootstrap-server kafka_broker:9092 --create --if-not-exists --topic CompletedTasksQueue --replication-factor 1 --partitions 3
+      
+      echo -e 'Successfully created the following topics:'
+      kafka-topics --bootstrap-server kafka_broker:9092 --list
+      "
+
+#  task-manager:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    depends_on:
+#      - init-kafka
+#    ports:
+#      - "8000:8000"
+#    networks:
+#      - task-manager-network
