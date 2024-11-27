@@ -11,9 +11,8 @@ from .bayesian_optimization import parse_config_space
 from ..config import logger
 from ..database.task_manager_db_client import TaskManagerDBClient
 from virny_flow.core.custom_classes.task_queue import TaskQueue
-from virny_flow.configs.structs import LogicalPipeline
 from virny_flow.configs.constants import (TASK_MANAGER_CONSUMER_GROUP, NEW_TASKS_QUEUE_TOPIC, LOGICAL_PIPELINE_SCORES_TABLE,
-                                          COMPLETED_TASKS_QUEUE_TOPIC, PHYSICAL_PIPELINE_OBSERVATIONS_TABLE, NO_TASKS)
+                                          COMPLETED_TASKS_QUEUE_TOPIC, PHYSICAL_PIPELINE_OBSERVATIONS_TABLE)
 
 
 async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDBClient, task_queue: TaskQueue):
