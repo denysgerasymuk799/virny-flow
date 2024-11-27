@@ -24,7 +24,7 @@ def prepare_metrics_for_virnyview(secrets_path: str, exp_config_name: str):
                     "logical_pipeline_uuid": "$logical_pipeline_uuid"
                 },
                 "max_compound_pp_quality": { "$max": "$compound_pp_quality" },
-                "doc": { "$first": "$$ROOT" }  # Capture the full document with max improvement
+                "doc": { "$first": "$$ROOT" }  # Capture the $first document with max improvement
             }
         },
         # Step 3: Replace root with the captured document
@@ -97,4 +97,5 @@ def prepare_metrics_for_virnyview(secrets_path: str, exp_config_name: str):
                                                          if col not in ('Subgroup', 'Metric_Value')]).reset_index()
 
     db_client.close()
+
     return pivoted_all_metrics_df

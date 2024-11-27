@@ -54,8 +54,8 @@ services:
       kafka-topics --bootstrap-server kafka_broker:9092 --list
 
       echo -e 'Creating kafka topics'
-      kafka-topics --bootstrap-server kafka_broker:9092 --create --if-not-exists --topic NewTasksQueue --replication-factor 1 --partitions 4
-      kafka-topics --bootstrap-server kafka_broker:9092 --create --if-not-exists --topic CompletedTasksQueue --replication-factor 1 --partitions 4
+      kafka-topics --bootstrap-server kafka_broker:9092 --create --if-not-exists --topic NewTasksQueue --replication-factor 1 --partitions 10
+      kafka-topics --bootstrap-server kafka_broker:9092 --create --if-not-exists --topic CompletedTasksQueue --replication-factor 1 --partitions 10
       
       echo -e 'Successfully created the following topics:'
       kafka-topics --bootstrap-server kafka_broker:9092 --list

@@ -88,8 +88,7 @@ class PipelineEvaluator(MLLifecycle):
 
         if self.init_data_loader.full_df.shape[0] * (1 - dataset_config[exp_config.dataset]['test_set_fraction']) < 1000:
             print('Skip halting since a training set is less than 1000 rows')
-            # self.training_set_fractions_for_halting = [1.0]
-            self.training_set_fractions_for_halting = exp_config.training_set_fractions_for_halting
+            self.training_set_fractions_for_halting = [1.0]
         else:
             self.training_set_fractions_for_halting = exp_config.training_set_fractions_for_halting
 

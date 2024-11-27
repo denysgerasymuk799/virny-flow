@@ -1,6 +1,5 @@
 import os
 import json
-from gc import enable
 
 from dotenv import load_dotenv
 from kafka import KafkaProducer, KafkaConsumer
@@ -29,9 +28,11 @@ class Worker:
             bootstrap_servers=os.getenv("KAFKA_BROKER"),
             api_version=(0, 10, 1),
             value_deserializer=lambda v: json.loads(v.decode('utf-8')),
-            # consumer_timeout_ms=10,
             enable_auto_commit=True,
-            auto_offset_reset="earliest"
+            auto_offset_reset="earliest",
+            session_timeout_ms=50_000,  # Increase session timeout (default: 10000 ms)
+            heartbeat_interval_ms=10_000,  # Increase heartbeat interval (default: 3000 ms)
+            max_poll_interval_ms=600_000, # Up to 10 minutes to process a batch of messages
         )
         self.producer = KafkaProducer(
             bootstrap_servers=os.getenv("KAFKA_BROKER"),
