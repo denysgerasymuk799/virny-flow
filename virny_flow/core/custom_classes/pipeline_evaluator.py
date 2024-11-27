@@ -199,6 +199,7 @@ class PipelineEvaluator(MLLifecycle):
             yield test_compound_pp_quality, test_compound_pp_improvement, observation, test_multiple_models_metrics_df
 
             if train_compound_pp_quality < best_compound_pp_quality:
+                self._logger.info("Pruning the physical pipeline...")
                 return test_compound_pp_quality, test_compound_pp_improvement, observation, test_multiple_models_metrics_df
 
         return test_compound_pp_quality, test_compound_pp_improvement, observation, test_multiple_models_metrics_df
