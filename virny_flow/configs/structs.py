@@ -42,19 +42,11 @@ class LogicalPipeline:
     num_trials: int
     score: float
     best_physical_pipeline_uuid: str
+    best_compound_pp_quality: float
     best_compound_pp_improvement: float
     pipeline_quality_mean: dict
     pipeline_quality_std: dict
     pipeline_execution_cost: float
-    total_lp_quality_mean_of_means: dict
-    total_lp_quality_std_of_means: dict
-    total_lp_quality_mean_of_stds: dict
-    total_lp_quality_std_of_stds: dict
-    total_lp_mean_of_execution_costs: float
-    total_lp_std_of_execution_costs: float
-    norm_pipeline_quality_mean: dict
-    norm_pipeline_quality_std: dict
-    norm_pipeline_execution_cost: float
 
     @classmethod
     def from_dict(cls, data: dict):

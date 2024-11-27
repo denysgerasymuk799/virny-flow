@@ -11,8 +11,8 @@ secrets_path: "/Users/denys_herasymuk/Research/NYU/VirnyFlow_Project/Code/virny-
 # Parameters for MO-BO
 ref_point: [0.20, 0.10]
 objectives:
-  - { name: "objective_1", metric: "F1", group: "overall" }
-  - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "sex" }
+  - { name: "objective_1", metric: "F1", group: "overall", weight: 0.25 }
+  - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "sex", weight: 0.75 }
 max_trials: 5
 num_workers: 4
 num_pp_candidates: 2

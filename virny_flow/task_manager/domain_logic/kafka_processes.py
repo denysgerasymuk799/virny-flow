@@ -116,6 +116,8 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
             # Update score of the selected logical pipeline
             await update_logical_pipeline_score_model(exp_config_name=exp_config_name,
                                                       objectives_lst=exp_config.objectives,
+                                                      observation=observation,
+                                                      physical_pipeline_uuid=physical_pipeline_uuid,
                                                       logical_pipeline_uuid=logical_pipeline_uuid,
                                                       db_client=db_client)
             # Complete the task

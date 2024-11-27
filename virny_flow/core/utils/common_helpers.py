@@ -78,6 +78,7 @@ def validate_config(config_obj):
                     "name": {"type": "string", "required": True},
                     "metric": {"type": "string", "required": True},
                     "group": {"type": "string", "required": True},
+                    "weight": {"type": "float", "required": False, "default": 0.5},
                 }
             }
         },
@@ -103,6 +104,14 @@ def validate_config(config_obj):
     # Default arguments
     if len(config_obj['null_imputers']) == 0:
         config_obj['null_imputers'] = ['None']
+
+    # Other checks
+    objective_total_weight = 0.0
+    for objective in config_obj['objectives']:
+        objective_total_weight += objective['weight']
+
+    if objective_total_weight != 1.0:
+        raise ValueError("Objective weights must sum to 1.0")
 
     return config_obj
 
