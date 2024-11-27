@@ -20,7 +20,7 @@ class Worker:
         load_dotenv(secrets_path, override=True)
 
         self.address = address.rstrip('/')
-        self._logger = get_logger(logger_name="worker")
+        self._logger = get_logger(logger_name="Worker")
 
         self.consumer = KafkaConsumer(
             NEW_TASKS_QUEUE_TOPIC,

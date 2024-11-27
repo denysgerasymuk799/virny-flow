@@ -35,7 +35,7 @@ class MLLifecycle:
         self.dataset_sensitive_attrs = [col for col in self.virny_config.sensitive_attributes_dct.keys() if '&' not in col]
         self.init_data_loader = dataset_config[dataset_name]['data_loader'](**dataset_config[dataset_name]['data_loader_kwargs'])
 
-        self._logger = get_logger(logger_name='ml_lifecycle')
+        self._logger = get_logger(logger_name='MLLifecycle')
         self._db = CoreDBClient(secrets_path)
         # Create a unique uuid per session to manipulate in the database
         # by all experimental results generated in this session

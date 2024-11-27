@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 
 from .bayesian_optimization import select_next_logical_pipeline, select_next_physical_pipelines
 from ..database.task_manager_db_client import TaskManagerDBClient
+from ...core.utils.custom_logger import get_logger
 from virny_flow.core.custom_classes.task_queue import TaskQueue
 from virny_flow.configs.structs import BOAdvisorConfig, LogicalPipeline
 from virny_flow.configs.constants import (StageName, STAGE_SEPARATOR, NO_FAIRNESS_INTERVENTION,
@@ -13,7 +14,9 @@ from virny_flow.configs.constants import (StageName, STAGE_SEPARATOR, NO_FAIRNES
 
 
 async def start_task_generator(exp_config: DefaultMunch, lp_to_advisor: dict, bo_advisor_config: BOAdvisorConfig,
-                               db_client: TaskManagerDBClient, task_queue: TaskQueue, logger):
+                               db_client: TaskManagerDBClient, task_queue: TaskQueue):
+    logger = get_logger('TaskGenerator')
+
     while True:
         if not await task_queue.has_space_for_next_lp(exp_config_name=exp_config.exp_config_name,
                                                       num_pp_candidates=exp_config.num_pp_candidates):

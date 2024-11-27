@@ -8,14 +8,15 @@ from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 
 from .score_model import update_logical_pipeline_score_model
 from .bayesian_optimization import parse_config_space
-from ..config import logger
 from ..database.task_manager_db_client import TaskManagerDBClient
+from virny_flow.core.utils.custom_logger import get_logger
 from virny_flow.core.custom_classes.task_queue import TaskQueue
 from virny_flow.configs.constants import (TASK_MANAGER_CONSUMER_GROUP, NEW_TASKS_QUEUE_TOPIC, LOGICAL_PIPELINE_SCORES_TABLE,
                                           COMPLETED_TASKS_QUEUE_TOPIC, PHYSICAL_PIPELINE_OBSERVATIONS_TABLE)
 
 
 async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDBClient, task_queue: TaskQueue):
+    logger = get_logger('TaskProvider')
     restart_producer = False
     termination_flag = False
     producer = AIOKafkaProducer(bootstrap_servers=os.getenv("KAFKA_BROKER"))
@@ -41,7 +42,7 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
                     num_available_tasks = exp_config.num_workers
                     termination_flag = True
                 else:
-                    print("Wait until all physical pipelines are executed to terminate all workers...")
+                    logger.info("Wait until all physical pipelines are executed to terminate all workers...")
                     time.sleep(10)
                     continue
 
@@ -73,6 +74,7 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
 
 async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict,
                                    db_client: TaskManagerDBClient, task_queue: TaskQueue):
+    logger = get_logger('CostModelUpdater')
     consumer = AIOKafkaConsumer(COMPLETED_TASKS_QUEUE_TOPIC,
                                 bootstrap_servers=[os.getenv("KAFKA_BROKER")],
                                 group_id=TASK_MANAGER_CONSUMER_GROUP,
@@ -84,7 +86,7 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
     try:
         async for record in consumer:
             data = json.loads(record.value)
-            print(f'Consumer record: {data["task_uuid"]}')
+            logger.info(f'Consumed a new task for cost model updating: {data["task_uuid"]}')
 
             # Process body
             exp_config_name = data["exp_config_name"]
