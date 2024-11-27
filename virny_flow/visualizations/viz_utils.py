@@ -16,14 +16,14 @@ def prepare_metrics_for_virnyview(secrets_path: str, exp_config_name: str):
                 "exp_config_name": exp_config_name,
             }
         },
-        # Step 2: Group to get the maximum `compound_pp_improvement` per `exp_config_name` and `logical_pipeline_uuid`
+        # Step 2: Group to get the maximum `compound_pp_quality` per `exp_config_name` and `logical_pipeline_uuid`
         {
             "$group": {
                 "_id": {
                     "exp_config_name": "$exp_config_name",
                     "logical_pipeline_uuid": "$logical_pipeline_uuid"
                 },
-                "max_compound_pp_improvement": { "$max": "$compound_pp_improvement" },
+                "max_compound_pp_quality": { "$max": "$compound_pp_quality" },
                 "doc": { "$first": "$$ROOT" }  # Capture the full document with max improvement
             }
         },
@@ -60,7 +60,7 @@ def prepare_metrics_for_virnyview(secrets_path: str, exp_config_name: str):
                 "exp_config_name": 1,
                 "logical_pipeline_uuid": 1,
                 "physical_pipeline_uuid": 1,
-                "compound_pp_improvement": 1,
+                "compound_pp_quality": 1,
                 "experiment_metrics.logical_pipeline_name": 1,
                 "experiment_metrics.dataset_name": 1,
                 "experiment_metrics.null_imputer_name": 1,

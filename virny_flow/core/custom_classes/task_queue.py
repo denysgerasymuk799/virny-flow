@@ -8,12 +8,14 @@ from pymongo import ASCENDING
 
 from virny_flow.configs.structs import Task
 from virny_flow.configs.constants import TASK_QUEUE_TABLE, TaskStatus, NO_TASKS
+from virny_flow.core.utils.custom_logger import get_logger
 
 
 class TaskQueue:
     def __init__(self, secrets_path: str, max_queue_size: int):
         load_dotenv(secrets_path, override=True)  # Take environment variables from .env
         self.max_queue_size = max_queue_size
+        self._logger = get_logger('TaskQueue')
 
         # Provide the mongodb atlas url to connect python to mongodb using pymongo
         self.connection_string = os.getenv("CONNECTION_STRING")
@@ -74,7 +76,7 @@ class TaskQueue:
         task_record["update_datetime"] = datetime_now
 
         await self.collection.insert_one(task_record)
-        print(f"Enqueued task with UUID: {task.task_uuid}")
+        self._logger.info(f"Enqueued task with UUID: {task.task_uuid}")
 
     async def dequeue(self, exp_config_name):
         """Remove a task from the queue."""
@@ -86,13 +88,13 @@ class TaskQueue:
             sort=[("_id", ASCENDING)]
         )
         if task:
-            print(f"Dequeued task with UUID: {task['task_uuid']}")
+            self._logger.info(f"Dequeued task with UUID: {task['task_uuid']}")
             task["_id"] = str(task["_id"])
             task["create_datetime"] = str(task["create_datetime"])
             task["update_datetime"] = str(task["update_datetime"])
             return task
         else:
-            print("Queue is empty.")
+            self._logger.info("Queue is empty.")
             return {"_id": None, "task_uuid": NO_TASKS}
 
     async def complete_task(self, exp_config_name: str, task_uuid: str):
@@ -102,7 +104,7 @@ class TaskQueue:
             {"$set": {"task_status": TaskStatus.DONE.value,
                       "update_datetime": datetime.now(timezone.utc)}}
         )
-        print(f"Completed task with UUID: {task_uuid}")
+        self._logger.info(f"Completed task with UUID: {task_uuid}")
         return resp.modified_count
 
     def close(self):

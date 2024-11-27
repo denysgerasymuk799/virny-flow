@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 
 from .bayesian_optimization import select_next_logical_pipeline, select_next_physical_pipelines
 from ..database.task_manager_db_client import TaskManagerDBClient
+from ...core.utils.custom_logger import get_logger
 from virny_flow.core.custom_classes.task_queue import TaskQueue
 from virny_flow.configs.structs import BOAdvisorConfig, LogicalPipeline
 from virny_flow.configs.constants import (StageName, STAGE_SEPARATOR, NO_FAIRNESS_INTERVENTION,
@@ -13,7 +14,9 @@ from virny_flow.configs.constants import (StageName, STAGE_SEPARATOR, NO_FAIRNES
 
 
 async def start_task_generator(exp_config: DefaultMunch, lp_to_advisor: dict, bo_advisor_config: BOAdvisorConfig,
-                               db_client: TaskManagerDBClient, task_queue: TaskQueue, logger):
+                               db_client: TaskManagerDBClient, task_queue: TaskQueue):
+    logger = get_logger('TaskGenerator')
+
     while True:
         if not await task_queue.has_space_for_next_lp(exp_config_name=exp_config.exp_config_name,
                                                       num_pp_candidates=exp_config.num_pp_candidates):
@@ -92,19 +95,11 @@ async def create_init_state_for_config(exp_config: DefaultMunch, db_client: Task
                         num_trials=0,
                         score=0.0,
                         best_physical_pipeline_uuid=None,
+                        best_compound_pp_quality=0.0,
                         best_compound_pp_improvement=0.0,
                         pipeline_quality_mean={objective['name']: 0.0 for objective in exp_config.objectives},
                         pipeline_quality_std={objective['name']: 0.0 for objective in exp_config.objectives},
-                        pipeline_execution_cost=0.0,
-                        total_lp_quality_mean_of_means={objective['name']: 0.0 for objective in exp_config.objectives},
-                        total_lp_quality_std_of_means={objective['name']: 0.0 for objective in exp_config.objectives},
-                        total_lp_quality_mean_of_stds={objective['name']: 0.0 for objective in exp_config.objectives},
-                        total_lp_quality_std_of_stds={objective['name']: 0.0 for objective in exp_config.objectives},
-                        total_lp_mean_of_execution_costs=0.0,
-                        total_lp_std_of_execution_costs=0.0,
-                        norm_pipeline_quality_mean={objective['name']: 0.0 for objective in exp_config.objectives},
-                        norm_pipeline_quality_std={objective['name']: 0.0 for objective in exp_config.objectives},
-                        norm_pipeline_execution_cost=0.0)
+                        pipeline_execution_cost=0.0)
         for idx, logical_pipeline in enumerate(logical_pipelines)]
     logical_pipeline_records = [asdict(logical_pipeline_obj) for logical_pipeline_obj in logical_pipeline_objs]
     await db_client.write_records_into_db(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
