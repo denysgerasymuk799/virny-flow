@@ -47,6 +47,7 @@ class LogicalPipeline:
     pipeline_quality_mean: dict
     pipeline_quality_std: dict
     pipeline_execution_cost: float
+    num_completed_pps: int
 
     @classmethod
     def from_dict(cls, data: dict):
