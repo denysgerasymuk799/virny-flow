@@ -183,7 +183,8 @@ def get_config_advisor(logical_pipeline, bo_advisor_config):
 def select_next_physical_pipelines(logical_pipeline: LogicalPipeline, lp_to_advisor: dict,
                                    bo_advisor_config: BOAdvisorConfig, exp_config: DefaultMunch):
     config_advisor, config_space = (
-        (lp_to_advisor[logical_pipeline.logical_pipeline_name]["config_advisor"], lp_to_advisor[logical_pipeline.logical_pipeline_name]["config_space"])
+        (lp_to_advisor[logical_pipeline.logical_pipeline_name]["config_advisor"],
+         lp_to_advisor[logical_pipeline.logical_pipeline_name]["config_space"])
             if lp_to_advisor.get(logical_pipeline.logical_pipeline_name, None) is not None
             else get_config_advisor(logical_pipeline, bo_advisor_config))
 

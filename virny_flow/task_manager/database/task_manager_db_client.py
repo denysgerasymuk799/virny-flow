@@ -114,22 +114,25 @@ class TaskManagerDBClient:
         query['deletion_flag'] = False
         return await collection.find_one(query, sort=sort_param)
 
-    async def find_many_documents(self, collection_name: str, query: dict, exp_config_name: str, sort_param: list = None):
+    async def find_many_documents(self, collection_name: str, query: dict, exp_config_name: str,
+                                  sort_param: list = None, projection: dict = None):
         query['exp_config_name'] = exp_config_name
         query['deletion_flag'] = False
 
         collection = self._get_collection(collection_name)
-        cursor = collection.find(query, sort=sort_param)
+        cursor = collection.find(query, sort=sort_param, projection=projection)
         documents = []
         async for document in cursor:
             documents.append(document)
         return documents
 
-    async def read_query(self, collection_name: str, query: dict, exp_config_name: str, sort_param: list = None):
+    async def read_query(self, collection_name: str, query: dict, exp_config_name: str,
+                         sort_param: list = None, projection: dict = None):
         return await self.find_many_documents(collection_name=collection_name,
                                               exp_config_name=exp_config_name,
                                               query=query,
-                                              sort_param=sort_param)
+                                              sort_param=sort_param,
+                                              projection=projection)
 
     async def count_query(self, collection_name: str, condition: dict, exp_config_name: str):
         collection = self._get_collection(collection_name)

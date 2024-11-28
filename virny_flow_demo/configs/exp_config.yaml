@@ -15,7 +15,7 @@ objectives:
 #max_trials: 5
 #num_workers: 4
 #num_pp_candidates: 2
-max_trials: 100
+max_trials: 50
 num_workers: 10
 num_pp_candidates: 5
 training_set_fractions_for_halting: [0.5, 0.75, 1.0]
