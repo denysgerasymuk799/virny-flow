@@ -105,7 +105,7 @@ if __name__ == '__main__':
     # lp_name = 'miss_forest&DIR&lr_clf'
     # history_filename = 'history_2024-11-21-00-39-13-139162.json'
     lp_name = 'None&NO_FAIRNESS_INTERVENTION&rf_clf'
-    history_filename = 'history_2024-11-21-14-58-07-794874.json'
+    history_filename = 'history_2024-11-28-14-56-57-090021.json'
     surrogate_model_type = 'gp'  # 'gp' or 'prf'
 
     bo_advisor_config = BOAdvisorConfig()
