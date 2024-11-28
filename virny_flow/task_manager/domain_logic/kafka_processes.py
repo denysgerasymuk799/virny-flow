@@ -12,10 +12,11 @@ from ..database.task_manager_db_client import TaskManagerDBClient
 from virny_flow.core.utils.custom_logger import get_logger
 from virny_flow.core.custom_classes.task_queue import TaskQueue
 from virny_flow.configs.constants import (TASK_MANAGER_CONSUMER_GROUP, NEW_TASKS_QUEUE_TOPIC, LOGICAL_PIPELINE_SCORES_TABLE,
-                                          COMPLETED_TASKS_QUEUE_TOPIC, PHYSICAL_PIPELINE_OBSERVATIONS_TABLE)
+                                          EXP_CONFIG_HISTORY_TABLE, COMPLETED_TASKS_QUEUE_TOPIC, PHYSICAL_PIPELINE_OBSERVATIONS_TABLE)
 
 
 async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDBClient, task_queue: TaskQueue):
+    execution_start_time = time.time()
     logger = get_logger('TaskProvider')
     restart_producer = False
     termination_flag = False
@@ -39,9 +40,16 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
                                                                           query=query)
                     if len(logical_pipeline_records) == 0:
                         # If all work is done, set num_available_tasks to num_workers and get new tasks from task_queue.
-                        # When task_queue is empty, it will return NO_TASKS and it will be sent to each worker.
+                        # When task_queue is empty, it will return NO_TASKS, and it will be sent to each worker.
                         num_available_tasks = exp_config.num_workers
                         termination_flag = True
+                        # Save execution time of all pipelines for the define experimental config
+                        exp_config_execution_time = time.time() - execution_start_time
+                        await db_client.update_query(collection_name=EXP_CONFIG_HISTORY_TABLE,
+                                                     exp_config_name=exp_config.exp_config_name,
+                                                     condition={},
+                                                     update_val_dct={"exp_config_execution_time": exp_config_execution_time})
+
                     else:
                         logger.info("Wait until all physical pipelines are executed to terminate all workers...")
                         time.sleep(10)

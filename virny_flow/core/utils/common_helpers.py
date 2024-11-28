@@ -85,8 +85,8 @@ def validate_config(config_obj):
         "max_trials": {"type": "integer", "min": 1, "required": True},
         "num_workers": {"type": "integer", "min": 1, "required": True},
         "num_pp_candidates": {"type": "integer", "min": 2, "required": False, "default": 10},
-        "queue_size": {"type": "integer", "min": max(config_obj['num_workers'], config_obj['num_pp_candidates']),
-                       "required": False, "default": 2 * max(config_obj['num_workers'], config_obj['num_pp_candidates'])},
+        "queue_size": {"type": "integer", "min": config_obj['num_workers'],
+                       "required": False, "default": 3 * config_obj['num_workers']},
         "training_set_fractions_for_halting": {"type": "list", "required": False, "default": [0.5, 0.75, 1.0]},
         "exploration_factor": {"type": "float", "min": 0.0, "max": 1.0, "required": False, "default": 0.5},
         "risk_factor": {"type": "float", "min": 0.0, "max": 1.0, "required": False, "default": 0.5},
@@ -112,6 +112,9 @@ def validate_config(config_obj):
 
     if objective_total_weight != 1.0:
         raise ValueError("Objective weights must sum to 1.0")
+
+    if config_obj['num_workers'] >= config_obj['num_pp_candidates']:
+        raise ValueError("Number of workers should be much larger than number of physical pipeline candidates for each round")
 
     return config_obj
 
