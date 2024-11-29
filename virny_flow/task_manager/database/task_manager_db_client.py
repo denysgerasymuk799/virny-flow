@@ -35,15 +35,18 @@ class TaskManagerDBClient:
         query['deletion_flag'] = False
         return await collection.find_one(query) is not None
 
-    async def upsert_query(self, collection_name: str, exp_config_name: str, condition: dict, record: dict):
+    async def upsert_query(self, collection_name: str, exp_config_name: str, run_num: int,
+                           condition: dict, record: dict):
         """
         Inserts a record if it does not exist, or updates it if it exists.
         """
         collection = self._get_collection(collection_name)
         condition["exp_config_name"] = exp_config_name
+        condition["run_num"] = run_num
         condition['deletion_flag'] = False
 
         record["exp_config_name"] = exp_config_name
+        record["run_num"] = run_num
         record["update_datetime"] = datetime.now(timezone.utc)
         record['deletion_flag'] = False
 
@@ -82,9 +85,11 @@ class TaskManagerDBClient:
         print(f"Matched {result.matched_count} document(s) and modified {result.modified_count} document(s).")
         return result.modified_count
 
-    async def update_query(self, collection_name: str, condition: dict, update_val_dct: dict, exp_config_name: str):
+    async def update_query(self, collection_name: str, condition: dict, update_val_dct: dict,
+                           exp_config_name: str, run_num: int):
         collection = self._get_collection(collection_name)
         condition["exp_config_name"] = exp_config_name
+        condition["run_num"] = run_num
         condition['deletion_flag'] = False
 
         # Update many documents
@@ -95,9 +100,11 @@ class TaskManagerDBClient:
         print(f"Matched {result.matched_count} document(s) and modified {result.modified_count} document(s).")
         return result.modified_count
 
-    async def increment_query(self, collection_name: str, condition: dict, increment_val_dct: dict, exp_config_name: str):
+    async def increment_query(self, collection_name: str, condition: dict, increment_val_dct: dict,
+                              exp_config_name: str, run_num: int):
         collection = self._get_collection(collection_name)
         condition['exp_config_name'] = exp_config_name
+        condition['run_num'] = run_num
         condition['deletion_flag'] = False
 
         # Update many documents
@@ -106,17 +113,21 @@ class TaskManagerDBClient:
             {"$inc": increment_val_dct}  # Update operation
         )
         print(f"Matched {result.matched_count} document(s) and modified {result.modified_count} document(s).")
+
         return result.modified_count
 
-    async def read_one_query(self, collection_name: str, query: dict, exp_config_name: str, sort_param: list = None):
+    async def read_one_query(self, collection_name: str, query: dict, exp_config_name: str,
+                             run_num: int, sort_param: list = None):
         collection = self._get_collection(collection_name)
         query['exp_config_name'] = exp_config_name
+        query['run_num'] = run_num
         query['deletion_flag'] = False
         return await collection.find_one(query, sort=sort_param)
 
-    async def find_many_documents(self, collection_name: str, query: dict, exp_config_name: str,
+    async def find_many_documents(self, collection_name: str, query: dict, exp_config_name: str, run_num: int,
                                   sort_param: list = None, projection: dict = None):
         query['exp_config_name'] = exp_config_name
+        query['run_num'] = run_num
         query['deletion_flag'] = False
 
         collection = self._get_collection(collection_name)
@@ -126,25 +137,26 @@ class TaskManagerDBClient:
             documents.append(document)
         return documents
 
-    async def read_query(self, collection_name: str, query: dict, exp_config_name: str,
+    async def read_query(self, collection_name: str, query: dict, exp_config_name: str, run_num: int,
                          sort_param: list = None, projection: dict = None):
         return await self.find_many_documents(collection_name=collection_name,
                                               exp_config_name=exp_config_name,
+                                              run_num=run_num,
                                               query=query,
                                               sort_param=sort_param,
                                               projection=projection)
 
-    async def count_query(self, collection_name: str, condition: dict, exp_config_name: str):
+    async def count_query(self, collection_name: str, condition: dict, exp_config_name: str, run_num: int):
         collection = self._get_collection(collection_name)
         condition['exp_config_name'] = exp_config_name
+        condition['run_num'] = run_num
         condition['deletion_flag'] = False
         return await collection.count_documents(condition)
 
-    async def write_records_into_db(self, collection_name: str, records: list,
-                                    static_values_dct: dict, exp_config_name: str = None):
-        if exp_config_name is not None:
-            static_values_dct["exp_config_name"] = exp_config_name
-
+    async def write_records_into_db(self, collection_name: str, records: list, static_values_dct: dict,
+                                    exp_config_name: str, run_num: int):
+        static_values_dct["exp_config_name"] = exp_config_name
+        static_values_dct["run_num"] = run_num
         static_values_dct["deletion_flag"] = False # By default, mark new records with deletion_flag = False
         for key, value in static_values_dct.items():
             for record in records:

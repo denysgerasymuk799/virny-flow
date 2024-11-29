@@ -115,7 +115,7 @@ if __name__ == '__main__':
     exp_config = create_exp_config_obj(exp_config_yaml_path=exp_config_yaml_path)
 
     config_space = create_config_space(lp_name)
-    history_path = f'../history/{exp_config.exp_config_name}/{lp_name}/' + history_filename
+    history_path = f'../history/{exp_config.exp_config_name}/run_num_1/{lp_name}/' + history_filename
     history = History.load_json(history_path, config_space)
 
     task_info = {

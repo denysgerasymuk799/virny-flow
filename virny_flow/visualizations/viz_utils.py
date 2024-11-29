@@ -14,6 +14,19 @@ def prepare_metrics_for_virnyview(secrets_path: str, exp_config_name: str):
         {
             "$match": {
                 "exp_config_name": exp_config_name,
+                "deletion_flag": False
+            }
+        },
+        # Step 2: Group by exp_config_name, logical_pipeline_uuid, and physical_pipeline_uuid
+        # to calculate the average compound_pp_quality
+        {
+            "$group": {
+                "_id": {
+                    "exp_config_name": "$exp_config_name",
+                    "logical_pipeline_uuid": "$logical_pipeline_uuid",
+                    "physical_pipeline_uuid": "$physical_pipeline_uuid"
+                },
+                "avg_compound_pp_quality": { "$avg": "$compound_pp_quality" }
             }
         },
         # Step 2: Group to get the maximum `compound_pp_quality` per `exp_config_name` and `logical_pipeline_uuid`
@@ -23,7 +36,7 @@ def prepare_metrics_for_virnyview(secrets_path: str, exp_config_name: str):
                     "exp_config_name": "$exp_config_name",
                     "logical_pipeline_uuid": "$logical_pipeline_uuid"
                 },
-                "max_compound_pp_quality": { "$max": "$compound_pp_quality" },
+                "max_compound_pp_quality": { "$max": "avg_compound_pp_quality" },
                 "doc": { "$first": "$$ROOT" }  # Capture the $first document with max improvement
             }
         },
@@ -95,7 +108,6 @@ def prepare_metrics_for_virnyview(secrets_path: str, exp_config_name: str):
     pivoted_all_metrics_df = all_metrics_df.pivot(columns='Subgroup', values='Metric_Value',
                                                   index=[col for col in all_metrics_df.columns
                                                          if col not in ('Subgroup', 'Metric_Value')]).reset_index()
-
     db_client.close()
 
     return pivoted_all_metrics_df

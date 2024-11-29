@@ -18,7 +18,7 @@ cors = {
 }
 
 def register_routes(app: FastAPI, exp_config: DefaultMunch, task_queue: TaskQueue, db_client: TaskManagerDBClient,
-                    lp_to_advisor: dict, bo_advisor_config: BOAdvisorConfig, logger):
+                    lp_to_advisor: dict, bo_advisor_config: BOAdvisorConfig):
     @app.options("/{full_path:path}")
     async def options():
         return JSONResponse(status_code=status.HTTP_200_OK, headers=cors, content=None)
@@ -30,7 +30,8 @@ def register_routes(app: FastAPI, exp_config: DefaultMunch, task_queue: TaskQueu
         task_queue.connect()
 
         # Create an optimized execution plan
-        await create_init_state_for_config(exp_config=exp_config, db_client=db_client)
+        for run_num in exp_config.run_nums:
+            await create_init_state_for_config(exp_config=exp_config, db_client=db_client, run_num=run_num)
 
         # Start a background process that adds new tasks to the queue in the database if it has available space
         asyncio.create_task(start_task_generator(exp_config=exp_config,

@@ -64,7 +64,8 @@ def validate_config(config_obj):
         "null_imputers": {"type": "list", "required": True},
         "fairness_interventions": {"type": "list", "required": True},
         "models": {"type": "list", "required": True},
-        "random_state": {"type": "integer", "min": 1, "required": True},
+        "num_runs": {"type": "integer", "required": False, "min": 1, "default": None},
+        "run_nums": {"type": "list", "required": False, "schema": {"type": "integer", "min": 1}, "default": None},
         "secrets_path": {"type": "string", "required": True},
 
         # Parameters for multi-objective optimisation
@@ -101,11 +102,12 @@ def validate_config(config_obj):
     else:
         raise ValueError("Validation errors in exp_config.yaml:", v.errors)
 
-    # Default arguments
-    if len(config_obj['null_imputers']) == 0:
-        config_obj['null_imputers'] = ['None']
-
     # Other checks
+    if config_obj["num_runs"] is not None and config_obj["run_nums"] is not None:
+        raise ValueError("Only one of two arguments (num_runs, run_nums) should be defined in a config.")
+    if config_obj["num_runs"] is None and config_obj["run_nums"] is None:
+        raise ValueError("One of two arguments (num_runs, run_nums) should be defined in a config.")
+
     objective_total_weight = 0.0
     for objective in config_obj['objectives']:
         objective_total_weight += objective['weight']
@@ -113,8 +115,15 @@ def validate_config(config_obj):
     if objective_total_weight != 1.0:
         raise ValueError("Objective weights must sum to 1.0")
 
-    if config_obj['num_workers'] >= config_obj['num_pp_candidates']:
-        raise ValueError("Number of workers should be much larger than number of physical pipeline candidates for each round")
+    if config_obj['num_workers'] < config_obj['num_pp_candidates']:
+        raise ValueError("The number of workers should be greater or equal than the number of physical pipeline candidates for each round")
+
+    # Default arguments
+    if len(config_obj['null_imputers']) == 0:
+        config_obj['null_imputers'] = ['None']
+
+    if config_obj["num_runs"] is not None:
+        config_obj["run_nums"] = [run_num for run_num in range(1, config_obj["num_runs"] + 1)]
 
     return config_obj
 

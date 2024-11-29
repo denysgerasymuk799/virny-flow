@@ -181,11 +181,12 @@ def get_config_advisor(logical_pipeline, bo_advisor_config):
 
 
 def select_next_physical_pipelines(logical_pipeline: LogicalPipeline, lp_to_advisor: dict,
-                                   bo_advisor_config: BOAdvisorConfig, exp_config: DefaultMunch):
+                                   bo_advisor_config: BOAdvisorConfig, exp_config: DefaultMunch,
+                                   run_num: int, random_state: int):
     config_advisor, config_space = (
-        (lp_to_advisor[logical_pipeline.logical_pipeline_name]["config_advisor"],
-         lp_to_advisor[logical_pipeline.logical_pipeline_name]["config_space"])
-            if lp_to_advisor.get(logical_pipeline.logical_pipeline_name, None) is not None
+        (lp_to_advisor[run_num][logical_pipeline.logical_pipeline_name]["config_advisor"],
+         lp_to_advisor[run_num][logical_pipeline.logical_pipeline_name]["config_space"])
+            if lp_to_advisor[run_num].get(logical_pipeline.logical_pipeline_name, None) is not None
             else get_config_advisor(logical_pipeline, bo_advisor_config))
 
     # Create physical pipelines based on MO-BO suggestions
@@ -204,15 +205,19 @@ def select_next_physical_pipelines(logical_pipeline: LogicalPipeline, lp_to_advi
                                              suggestion=suggestion,
                                              null_imputer_params=null_imputer_params,
                                              fairness_intervention_params=fairness_intervention_params,
-                                             model_params=model_params)
+                                             model_params=model_params,
+                                             run_num=run_num,
+                                             random_state=random_state)
         physical_pipelines.append(physical_pipeline)
 
     new_tasks = [Task(task_uuid=str(uuid.uuid4()),
                       exp_config_name=exp_config.exp_config_name,
                       objectives=exp_config.objectives,
                       pipeline_quality_mean=logical_pipeline.pipeline_quality_mean,  # Used for halting
-                      physical_pipeline=physical_pipeline)
+                      physical_pipeline=physical_pipeline,
+                      run_num=run_num,
+                      random_state=random_state)
                  for physical_pipeline in physical_pipelines]
-    lp_to_advisor[logical_pipeline.logical_pipeline_name] = {"config_advisor": config_advisor, "config_space": config_space}
-
+    lp_to_advisor[run_num][logical_pipeline.logical_pipeline_name] = {"config_advisor": config_advisor,
+                                                                      "config_space": config_space}
     return new_tasks

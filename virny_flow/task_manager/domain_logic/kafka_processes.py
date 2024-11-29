@@ -16,19 +16,20 @@ from virny_flow.configs.constants import (TASK_MANAGER_CONSUMER_GROUP, NEW_TASKS
 
 
 async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDBClient, task_queue: TaskQueue):
-    execution_start_time = time.time()
-    logger = get_logger('TaskProvider')
-    restart_producer = False
     termination_flag = False
+    logger = get_logger('TaskProvider')
     producer = AIOKafkaProducer(bootstrap_servers=os.getenv("KAFKA_BROKER"))
-    await producer.start()
 
-    try:
+    await producer.start()
+    for idx, run_num in enumerate(exp_config.run_nums):
+        execution_start_time = time.time()
+        print('#' * 40, '\n', f'START TASK PROVIDING FOR RUN_NUM={run_num}', '\n', '#' * 40)
+
         while True:
             try:
-                num_available_tasks = await task_queue.get_num_available_tasks(exp_config_name=exp_config.exp_config_name)
+                num_available_tasks = await task_queue.get_num_available_tasks(exp_config_name=exp_config.exp_config_name, run_num=run_num)
                 if num_available_tasks == 0:
-                    if not await task_queue.is_empty(exp_config_name=exp_config.exp_config_name):
+                    if not await task_queue.is_empty(exp_config_name=exp_config.exp_config_name, run_num=run_num):
                         print("Wait until new tasks come up...")
                         time.sleep(10)
                         continue
@@ -37,19 +38,23 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
                     query = {"num_trials": {"$lt": exp_config.max_trials}}
                     logical_pipeline_records = await db_client.read_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
                                                                           exp_config_name=exp_config.exp_config_name,
+                                                                          run_num=run_num,
                                                                           query=query)
                     if len(logical_pipeline_records) == 0:
-                        # If all work is done, set num_available_tasks to num_workers and get new tasks from task_queue.
-                        # When task_queue is empty, it will return NO_TASKS, and it will be sent to each worker.
-                        num_available_tasks = exp_config.num_workers
-                        termination_flag = True
                         # Save execution time of all pipelines for the define experimental config
                         exp_config_execution_time = time.time() - execution_start_time
                         await db_client.update_query(collection_name=EXP_CONFIG_HISTORY_TABLE,
                                                      exp_config_name=exp_config.exp_config_name,
+                                                     run_num=run_num,
                                                      condition={},
                                                      update_val_dct={"exp_config_execution_time": exp_config_execution_time})
-
+                        if idx + 1 == len(exp_config.run_nums):
+                            # If all work is done, set num_available_tasks to num_workers and get new tasks from task_queue.
+                            # When task_queue is empty, it will return NO_TASKS, and it will be sent to each worker.
+                            num_available_tasks = exp_config.num_workers
+                            termination_flag = True
+                        else:
+                            break  # Start processing tasks for another run_num
                     else:
                         logger.info("Wait until all physical pipelines are executed to terminate all workers...")
                         time.sleep(10)
@@ -57,23 +62,18 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
 
                 # Add new tasks to the NewTaskQueue topic in Kafka
                 for i in range(num_available_tasks):
-                    new_high_priority_task = await task_queue.dequeue(exp_config_name=exp_config.exp_config_name)
+                    new_high_priority_task = await task_queue.dequeue(exp_config_name=exp_config.exp_config_name, run_num=run_num)
                     json_message = json.dumps(new_high_priority_task)  # Serialize to JSON
                     logger.info(f'New task was retrieved, UUID: {new_high_priority_task["task_uuid"]}')
-
-                    # In case the producer was stopped due to an error
-                    if restart_producer:
-                        await producer.start()  # Get cluster layout and initial topic/partition leadership information
-                        restart_producer = False
 
                     try:
                         await producer.send_and_wait(topic=NEW_TASKS_QUEUE_TOPIC,
                                                      value=json_message.encode('utf-8'))
                     except Exception as e:
                         logger.info(f'Sending message to Kafka failed due to the following error -- {e}')
-                        # Wait for all pending messages to be delivered or expire.
+                        # Wait for all pending messages to be delivered or expire
                         await producer.stop()
-                        restart_producer = True
+                        await producer.start()
 
                 if termination_flag:
                     break
@@ -82,8 +82,8 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
                 logger.error(f'Produce error: {err}')
                 await producer.stop()
                 await producer.start()
-    finally:
-        await producer.stop()
+
+    await producer.stop()
 
 
 async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict,
@@ -106,6 +106,7 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
 
                 # Process body
                 exp_config_name = data["exp_config_name"]
+                run_num = data["run_num"]
                 task_uuid = data["task_uuid"]
                 physical_pipeline_uuid = data["physical_pipeline_uuid"]
                 logical_pipeline_uuid = data["logical_pipeline_uuid"]
@@ -116,13 +117,14 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
                                                     config_space=lp_to_advisor[logical_pipeline_name]["config_space"])
 
                 # Update the advisor of the logical pipeline
-                lp_to_advisor[logical_pipeline_name]["config_advisor"].update_observation(observation)
+                lp_to_advisor[run_num][logical_pipeline_name]["config_advisor"].update_observation(observation)
 
                 # Add an observation to DB
                 datetime_now = datetime.now(timezone.utc)
                 await db_client.write_records_into_db(collection_name=PHYSICAL_PIPELINE_OBSERVATIONS_TABLE,
                                                       records=[observation.to_dict()],
                                                       exp_config_name=exp_config_name,
+                                                      run_num=run_num,
                                                       static_values_dct={
                                                           "task_uuid": task_uuid,
                                                           "physical_pipeline_uuid": physical_pipeline_uuid,
@@ -137,10 +139,11 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
                                                           observation=observation,
                                                           physical_pipeline_uuid=physical_pipeline_uuid,
                                                           logical_pipeline_uuid=logical_pipeline_uuid,
-                                                          db_client=db_client)
+                                                          db_client=db_client,
+                                                          run_num=run_num)
                 # Complete the task
-                await task_queue.complete_task(exp_config_name=exp_config_name, task_uuid=task_uuid)
-                logger.info(f'Task with task_uuid = {task_uuid} was successfully completed.')
+                await task_queue.complete_task(exp_config_name=exp_config_name, run_num=run_num, task_uuid=task_uuid)
+                logger.info(f'Task with task_uuid = {task_uuid} and run_num = {run_num} was successfully completed.')
 
             except Exception as err:
                 logger.error(f'Consume error: {err}')
