@@ -1,5 +1,6 @@
 import time
 import uuid
+import base64
 from munch import DefaultMunch
 from dataclasses import asdict
 from datetime import datetime, timezone
@@ -20,7 +21,7 @@ async def start_task_generator(exp_config: DefaultMunch, lp_to_advisor: dict, bo
     for run_num in exp_config.run_nums:
         random_state = INIT_RANDOM_STATE + run_num
         bo_advisor_config.random_state = random_state
-        print('#' * 40, '\n', f'START TASK GENERATION FOR RUN_NUM={run_num}', '\n', '#' * 40)
+        print('#' * 40 + '\n' + f'START TASK GENERATION FOR RUN_NUM={run_num}' + '\n' + '#' * 40)
 
         while True:
             if not await task_queue.has_space_for_next_lp(exp_config_name=exp_config.exp_config_name,
@@ -98,7 +99,7 @@ async def create_init_state_for_config(exp_config: DefaultMunch, db_client: Task
     datetime_now = datetime.now(timezone.utc)
     random_state = INIT_RANDOM_STATE + run_num
     logical_pipeline_objs = [
-        LogicalPipeline(logical_pipeline_uuid=str(uuid.uuid4()),
+        LogicalPipeline(logical_pipeline_uuid=base64.b64encode(logical_pipeline['name'].encode()).decode(),
                         logical_pipeline_name=logical_pipeline['name'],
                         exp_config_name=exp_config.exp_config_name,
                         components=logical_pipeline['components'],

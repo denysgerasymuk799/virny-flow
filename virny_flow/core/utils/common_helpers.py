@@ -64,8 +64,8 @@ def validate_config(config_obj):
         "null_imputers": {"type": "list", "required": True},
         "fairness_interventions": {"type": "list", "required": True},
         "models": {"type": "list", "required": True},
-        "num_runs": {"type": "integer", "required": False, "min": 1, "default": None},
-        "run_nums": {"type": "list", "required": False, "schema": {"type": "integer", "min": 1}, "default": None},
+        "num_runs": {"type": "integer", "required": False, "min": 1},
+        "run_nums": {"type": "list", "required": False, "schema": {"type": "integer", "min": 1}},
         "secrets_path": {"type": "string", "required": True},
 
         # Parameters for multi-objective optimisation
@@ -103,9 +103,9 @@ def validate_config(config_obj):
         raise ValueError("Validation errors in exp_config.yaml:", v.errors)
 
     # Other checks
-    if config_obj["num_runs"] is not None and config_obj["run_nums"] is not None:
+    if config_obj.get("num_runs", None) is not None and config_obj.get("run_nums", None) is not None:
         raise ValueError("Only one of two arguments (num_runs, run_nums) should be defined in a config.")
-    if config_obj["num_runs"] is None and config_obj["run_nums"] is None:
+    if config_obj.get("num_runs", None) is None and config_obj.get("run_nums", None) is None:
         raise ValueError("One of two arguments (num_runs, run_nums) should be defined in a config.")
 
     objective_total_weight = 0.0
@@ -122,7 +122,7 @@ def validate_config(config_obj):
     if len(config_obj['null_imputers']) == 0:
         config_obj['null_imputers'] = ['None']
 
-    if config_obj["num_runs"] is not None:
+    if config_obj.get("num_runs") is not None:
         config_obj["run_nums"] = [run_num for run_num in range(1, config_obj["num_runs"] + 1)]
 
     return config_obj

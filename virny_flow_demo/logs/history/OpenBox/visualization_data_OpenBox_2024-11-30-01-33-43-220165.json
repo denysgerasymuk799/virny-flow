@@ -1,0 +1,836 @@
+var info={
+  "data": {
+    "num_objectives": 2,
+    "num_constraints": 0,
+    "advance": true,
+    "line_data": [
+      {
+        "best": [
+          [
+            1,
+            0.164179
+          ]
+        ],
+        "infeasible": [],
+        "feasible": [
+          [
+            2,
+            0.165049
+          ],
+          [
+            3,
+            0.174107
+          ],
+          [
+            4,
+            0.173626
+          ],
+          [
+            5,
+            0.178022
+          ]
+        ]
+      },
+      {
+        "best": [
+          [
+            1,
+            0.006989
+          ],
+          [
+            2,
+            0.0
+          ]
+        ],
+        "infeasible": [],
+        "feasible": [
+          [
+            3,
+            0.014516
+          ],
+          [
+            4,
+            0.033871
+          ],
+          [
+            5,
+            0.027419
+          ]
+        ]
+      }
+    ],
+    "cons_line_data": [],
+    "cons_list_rev": [],
+    "parallel_data": {
+      "data": [
+        [
+          1,
+          0.6640136446707283,
+          0.1,
+          "l2",
+          "saga",
+          true,
+          "None",
+          4,
+          5,
+          100,
+          false,
+          "None",
+          4,
+          10,
+          150,
+          0.164179,
+          0.006989
+        ],
+        [
+          2,
+          0.55,
+          0.001,
+          "l2",
+          "newton-cg",
+          true,
+          10,
+          1,
+          2,
+          125,
+          true,
+          10,
+          1,
+          2,
+          125,
+          0.165049,
+          0.0
+        ],
+        [
+          3,
+          0.9728004322509621,
+          1,
+          "None",
+          "sag",
+          false,
+          "None",
+          2,
+          2,
+          50,
+          true,
+          10,
+          1,
+          2,
+          200,
+          0.174107,
+          0.014516
+        ],
+        [
+          4,
+          0.8087940870381793,
+          1,
+          "l2",
+          "newton-cg",
+          true,
+          "None",
+          1,
+          2,
+          200,
+          true,
+          10,
+          2,
+          10,
+          200,
+          0.173626,
+          0.033871
+        ],
+        [
+          5,
+          0.8370849969502283,
+          1,
+          "l2",
+          "newton-cg",
+          false,
+          10,
+          4,
+          10,
+          150,
+          true,
+          75,
+          2,
+          2,
+          100,
+          0.178022,
+          0.027419
+        ]
+      ],
+      "schema": [
+        "Uid",
+        "fi__repair_level",
+        "model__C",
+        "model__penalty",
+        "model__solver",
+        "mvi__RandomForestClassifier__bootstrap",
+        "mvi__RandomForestClassifier__max_depth",
+        "mvi__RandomForestClassifier__min_samples_leaf",
+        "mvi__RandomForestClassifier__min_samples_split",
+        "mvi__RandomForestClassifier__n_estimators",
+        "mvi__RandomForestRegressor__bootstrap",
+        "mvi__RandomForestRegressor__max_depth",
+        "mvi__RandomForestRegressor__min_samples_leaf",
+        "mvi__RandomForestRegressor__min_samples_split",
+        "mvi__RandomForestRegressor__n_estimators",
+        "Objs 1",
+        "Objs 2"
+      ],
+      "visualMap": {
+        "min": 1,
+        "max": 5,
+        "dimension": 0
+      }
+    },
+    "table_list": [
+      [
+        1,
+        [
+          0.164179,
+          0.006989
+        ],
+        null,
+        {
+          "fi__repair_level": 0.6640136446707283,
+          "model__C": 0.1,
+          "model__penalty": "l2",
+          "model__solver": "saga",
+          "mvi__RandomForestClassifier__bootstrap": true,
+          "mvi__RandomForestClassifier__max_depth": "None",
+          "mvi__RandomForestClassifier__min_samples_leaf": 4,
+          "mvi__RandomForestClassifier__min_samples_split": 5,
+          "mvi__RandomForestClassifier__n_estimators": 100,
+          "mvi__RandomForestRegressor__bootstrap": false,
+          "mvi__RandomForestRegressor__max_depth": "None",
+          "mvi__RandomForestRegressor__min_samples_leaf": 4,
+          "mvi__RandomForestRegressor__min_samples_split": 10,
+          "mvi__RandomForestRegressor__n_estimators": 150
+        },
+        "'fi__repair_level': 0.664013644670",
+        0,
+        7.35
+      ],
+      [
+        2,
+        [
+          0.165049,
+          0.0
+        ],
+        null,
+        {
+          "fi__repair_level": 0.55,
+          "model__C": 0.001,
+          "model__penalty": "l2",
+          "model__solver": "newton-cg",
+          "mvi__RandomForestClassifier__bootstrap": true,
+          "mvi__RandomForestClassifier__max_depth": 10,
+          "mvi__RandomForestClassifier__min_samples_leaf": 1,
+          "mvi__RandomForestClassifier__min_samples_split": 2,
+          "mvi__RandomForestClassifier__n_estimators": 125,
+          "mvi__RandomForestRegressor__bootstrap": true,
+          "mvi__RandomForestRegressor__max_depth": 10,
+          "mvi__RandomForestRegressor__min_samples_leaf": 1,
+          "mvi__RandomForestRegressor__min_samples_split": 2,
+          "mvi__RandomForestRegressor__n_estimators": 125
+        },
+        "'fi__repair_level': 0.55, 'model__",
+        0,
+        75.805
+      ],
+      [
+        3,
+        [
+          0.174107,
+          0.014516
+        ],
+        null,
+        {
+          "fi__repair_level": 0.9728004322509621,
+          "model__C": 1,
+          "model__penalty": "None",
+          "model__solver": "sag",
+          "mvi__RandomForestClassifier__bootstrap": false,
+          "mvi__RandomForestClassifier__max_depth": "None",
+          "mvi__RandomForestClassifier__min_samples_leaf": 2,
+          "mvi__RandomForestClassifier__min_samples_split": 2,
+          "mvi__RandomForestClassifier__n_estimators": 50,
+          "mvi__RandomForestRegressor__bootstrap": true,
+          "mvi__RandomForestRegressor__max_depth": 10,
+          "mvi__RandomForestRegressor__min_samples_leaf": 1,
+          "mvi__RandomForestRegressor__min_samples_split": 2,
+          "mvi__RandomForestRegressor__n_estimators": 200
+        },
+        "'fi__repair_level': 0.972800432250",
+        0,
+        34.128
+      ],
+      [
+        4,
+        [
+          0.173626,
+          0.033871
+        ],
+        null,
+        {
+          "fi__repair_level": 0.8087940870381793,
+          "model__C": 1,
+          "model__penalty": "l2",
+          "model__solver": "newton-cg",
+          "mvi__RandomForestClassifier__bootstrap": true,
+          "mvi__RandomForestClassifier__max_depth": "None",
+          "mvi__RandomForestClassifier__min_samples_leaf": 1,
+          "mvi__RandomForestClassifier__min_samples_split": 2,
+          "mvi__RandomForestClassifier__n_estimators": 200,
+          "mvi__RandomForestRegressor__bootstrap": true,
+          "mvi__RandomForestRegressor__max_depth": 10,
+          "mvi__RandomForestRegressor__min_samples_leaf": 2,
+          "mvi__RandomForestRegressor__min_samples_split": 10,
+          "mvi__RandomForestRegressor__n_estimators": 200
+        },
+        "'fi__repair_level': 0.808794087038",
+        0,
+        196.645
+      ],
+      [
+        5,
+        [
+          0.178022,
+          0.027419
+        ],
+        null,
+        {
+          "fi__repair_level": 0.8370849969502283,
+          "model__C": 1,
+          "model__penalty": "l2",
+          "model__solver": "newton-cg",
+          "mvi__RandomForestClassifier__bootstrap": false,
+          "mvi__RandomForestClassifier__max_depth": 10,
+          "mvi__RandomForestClassifier__min_samples_leaf": 4,
+          "mvi__RandomForestClassifier__min_samples_split": 10,
+          "mvi__RandomForestClassifier__n_estimators": 150,
+          "mvi__RandomForestRegressor__bootstrap": true,
+          "mvi__RandomForestRegressor__max_depth": 75,
+          "mvi__RandomForestRegressor__min_samples_leaf": 2,
+          "mvi__RandomForestRegressor__min_samples_split": 2,
+          "mvi__RandomForestRegressor__n_estimators": 100
+        },
+        "'fi__repair_level': 0.837084996950",
+        0,
+        312.806
+      ]
+    ],
+    "pareto_data": {
+      "ref_point": [
+        0.2,
+        0.1
+      ],
+      "hv": [
+        [
+          1,
+          0.003
+        ],
+        [
+          2,
+          0.004
+        ],
+        [
+          3,
+          0.004
+        ],
+        [
+          4,
+          0.004
+        ],
+        [
+          5,
+          0.004
+        ]
+      ],
+      "pareto_point": [
+        [
+          0.16504854368932043,
+          0.0
+        ],
+        [
+          0.16417910447761197,
+          0.006989247311827929
+        ]
+      ],
+      "pareto_point_feasible": [
+        [
+          0.16417910447761197,
+          0.006989247311827929
+        ],
+        [
+          0.16504854368932043,
+          0.0
+        ],
+        [
+          0.1741071428571429,
+          0.014516129032258074
+        ],
+        [
+          0.17362637362637368,
+          0.03387096774193554
+        ],
+        [
+          0.17802197802197806,
+          0.02741935483870972
+        ]
+      ],
+      "pareto_point_infeasible": [],
+      "all_points": [
+        [
+          0.16417910447761197,
+          0.006989247311827929
+        ],
+        [
+          0.16504854368932043,
+          0.0
+        ],
+        [
+          0.1741071428571429,
+          0.014516129032258074
+        ],
+        [
+          0.17362637362637368,
+          0.03387096774193554
+        ],
+        [
+          0.17802197802197806,
+          0.02741935483870972
+        ]
+      ]
+    },
+    "task_inf": {
+      "table_field": [
+        "Task Id",
+        "Advisor Type",
+        "Surrogate Type",
+        "Current Run",
+        "Max Runs",
+        "Max Runtime Per Trial"
+      ],
+      "table_data": [
+        "OpenBox",
+        "default",
+        "gp",
+        5,
+        5,
+        null
+      ]
+    },
+    "importance_data": {
+      "X": [
+        [
+          0.6640136446707283,
+          2.0,
+          0.0,
+          3.0,
+          0.0,
+          5.0,
+          2.0,
+          1.0,
+          100.0,
+          1.0,
+          5.0,
+          2.0,
+          2.0,
+          150.0
+        ],
+        [
+          0.55,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          125.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          125.0
+        ],
+        [
+          0.9728004322509621,
+          3.0,
+          1.0,
+          2.0,
+          1.0,
+          5.0,
+          1.0,
+          0.0,
+          50.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          200.0
+        ],
+        [
+          0.8087940870381793,
+          3.0,
+          0.0,
+          0.0,
+          0.0,
+          5.0,
+          0.0,
+          0.0,
+          200.0,
+          0.0,
+          0.0,
+          1.0,
+          2.0,
+          200.0
+        ],
+        [
+          0.8370849969502283,
+          3.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          2.0,
+          2.0,
+          150.0,
+          0.0,
+          3.0,
+          1.0,
+          0.0,
+          100.0
+        ]
+      ],
+      "x": [
+        "fi__repair_level",
+        "model__C",
+        "model__penalty",
+        "model__solver",
+        "mvi__RandomForestClassifier__bootstrap",
+        "mvi__RandomForestClassifier__max_depth",
+        "mvi__RandomForestClassifier__min_samples_leaf",
+        "mvi__RandomForestClassifier__min_samples_split",
+        "mvi__RandomForestClassifier__n_estimators",
+        "mvi__RandomForestRegressor__bootstrap",
+        "mvi__RandomForestRegressor__max_depth",
+        "mvi__RandomForestRegressor__min_samples_leaf",
+        "mvi__RandomForestRegressor__min_samples_split",
+        "mvi__RandomForestRegressor__n_estimators"
+      ],
+      "method": "shap",
+      "data": {
+        "obj 1": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "obj 2": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "con_data": {},
+      "obj_shap_value": [
+        [
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ]
+      ],
+      "con_shap_value": []
+    },
+    "pred_label_data": {
+      "data": [
+        [
+          [
+            0.17270100954870377,
+            0.16417910447761197
+          ],
+          [
+            0.17248364974577665,
+            0.16504854368932043
+          ],
+          [
+            0.17021899995382103,
+            0.1741071428571429
+          ],
+          [
+            0.17033919226151334,
+            0.17362637362637368
+          ],
+          [
+            0.16949248416324195,
+            0.17802197802197806
+          ]
+        ],
+        [
+          [
+            0.018951612903225834,
+            0.006989247311827929
+          ],
+          [
+            0.020698924731182816,
+            0.0
+          ],
+          [
+            0.017069892473118298,
+            0.014516129032258074
+          ],
+          [
+            0.01223118279569893,
+            0.03387096774193554
+          ],
+          [
+            0.013844086021505386,
+            0.02741935483870972
+          ]
+        ]
+      ],
+      "min_array": [
+        0.163,
+        -0.002
+      ],
+      "max_array": [
+        0.179,
+        0.036
+      ]
+    },
+    "grade_data": {
+      "data": [
+        [
+          [
+            5,
+            1
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            1,
+            5
+          ]
+        ],
+        [
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ]
+        ]
+      ],
+      "min": 0,
+      "max": 5
+    },
+    "cons_pred_label_data": null
+  }
+};

@@ -6,8 +6,8 @@ null_imputers: ["miss_forest"]
 fairness_interventions: ["DIR"]
 models: ["dt_clf", "lr_clf"]
 #random_state: 42
-num_runs: 2
-#run_nums: [1, 2]
+#num_runs: 2
+run_nums: [1, 2]
 secrets_path: "/Users/denys_herasymuk/Research/NYU/VirnyFlow_Project/Code/virny-flow/virny_flow_demo/configs/secrets.env"
 
 # Parameters for optimisation

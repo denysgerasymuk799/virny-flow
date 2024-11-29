@@ -23,7 +23,7 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
     await producer.start()
     for idx, run_num in enumerate(exp_config.run_nums):
         execution_start_time = time.time()
-        print('#' * 40, '\n', f'START TASK PROVIDING FOR RUN_NUM={run_num}', '\n', '#' * 40)
+        print('#' * 40 + '\n' + f'START TASK PROVIDING FOR RUN_NUM={run_num}' + '\n' + '#' * 40)
 
         while True:
             try:
@@ -73,6 +73,7 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
                         logger.info(f'Sending message to Kafka failed due to the following error -- {e}')
                         # Wait for all pending messages to be delivered or expire
                         await producer.stop()
+                        producer = AIOKafkaProducer(bootstrap_servers=os.getenv("KAFKA_BROKER"))
                         await producer.start()
 
                 if termination_flag:
@@ -81,22 +82,27 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
             except Exception as err:
                 logger.error(f'Produce error: {err}')
                 await producer.stop()
+                producer = AIOKafkaProducer(bootstrap_servers=os.getenv("KAFKA_BROKER"))
                 await producer.start()
 
     await producer.stop()
 
 
+def get_kafka_consumer():
+    return AIOKafkaConsumer(COMPLETED_TASKS_QUEUE_TOPIC,
+                            bootstrap_servers=[os.getenv("KAFKA_BROKER")],
+                            group_id=TASK_MANAGER_CONSUMER_GROUP,
+                            session_timeout_ms=50_000,  # Increase session timeout (default: 10000 ms)
+                            heartbeat_interval_ms=30_000,  # Increase heartbeat interval (default: 3000 ms)
+                            max_poll_interval_ms=600_000,  # Increase to 10 minutes if needed
+                            auto_offset_reset="earliest",
+                            enable_auto_commit=True)
+
+
 async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict,
                                    db_client: TaskManagerDBClient, task_queue: TaskQueue):
     logger = get_logger('CostModelUpdater')
-    consumer = AIOKafkaConsumer(COMPLETED_TASKS_QUEUE_TOPIC,
-                                bootstrap_servers=[os.getenv("KAFKA_BROKER")],
-                                group_id=TASK_MANAGER_CONSUMER_GROUP,
-                                session_timeout_ms=50_000,  # Increase session timeout (default: 10000 ms)
-                                heartbeat_interval_ms=30_000,  # Increase heartbeat interval (default: 3000 ms)
-                                max_poll_interval_ms=600_000,  # Increase to 10 minutes if needed
-                                auto_offset_reset="earliest",
-                                enable_auto_commit=True)
+    consumer = get_kafka_consumer()
     await consumer.start()
     try:
         async for record in consumer:
@@ -114,7 +120,7 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
 
                 data["observation"]["config"] = parse_config_space(data["observation"]["config"])
                 observation = Observation.from_dict(data["observation"],
-                                                    config_space=lp_to_advisor[logical_pipeline_name]["config_space"])
+                                                    config_space=lp_to_advisor[run_num][logical_pipeline_name]["config_space"])
 
                 # Update the advisor of the logical pipeline
                 lp_to_advisor[run_num][logical_pipeline_name]["config_advisor"].update_observation(observation)
@@ -148,6 +154,7 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
             except Exception as err:
                 logger.error(f'Consume error: {err}')
                 await consumer.stop()
+                consumer = get_kafka_consumer()
                 await consumer.start()
     finally:
         await consumer.stop()
