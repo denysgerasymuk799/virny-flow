@@ -1,5 +1,5 @@
 # General experiment parameters
-exp_config_name: "german_experiments4"
+exp_config_name: "german_experiments5"
 dataset: "german"
 sensitive_attrs_for_intervention: ["sex"]
 null_imputers: ["miss_forest"]
