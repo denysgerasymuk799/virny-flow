@@ -21,7 +21,7 @@ async def start_task_generator(exp_config: DefaultMunch, lp_to_advisor: dict, bo
     for run_num in exp_config.run_nums:
         random_state = INIT_RANDOM_STATE + run_num
         bo_advisor_config.random_state = random_state
-        print('#' * 40 + '\n' + f'START TASK GENERATION FOR RUN_NUM={run_num}' + '\n' + '#' * 40)
+        print('#' * 40 + '\n' + f'START TASK GENERATION FOR RUN_NUM={run_num}' + '\n' + '#' * 40, flush=True)
 
         while True:
             if not await task_queue.has_space_for_next_lp(exp_config_name=exp_config.exp_config_name,
@@ -77,7 +77,7 @@ async def create_init_state_for_config(exp_config: DefaultMunch, db_client: Task
     # Terminate if the defined exp_config already was executed
     if await db_client.check_record_exists(query={"exp_config_name": exp_config.exp_config_name, "run_num": run_num}):
         print(f"Experimental config {exp_config.exp_config_name} with run_num = {run_num} already exists in the database. "
-              "Please check the name of your exp_config_name in exp_config.yaml.")
+              "Please check the name of your exp_config_name in exp_config.yaml.", flush=True)
         return
 
     # Step 1: Create all combinations of components to define a list of logical pipelines
@@ -138,4 +138,4 @@ async def create_init_state_for_config(exp_config: DefaultMunch, db_client: Task
                                               "update_datetime": datetime_now,
                                           })
 
-    print(f'The initial state for the {exp_config.exp_config_name} exp_config has been successfully created')
+    print(f'The initial state for the {exp_config.exp_config_name} exp_config has been successfully created', flush=True)

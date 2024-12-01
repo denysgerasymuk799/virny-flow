@@ -25,7 +25,7 @@ def register_routes(app: FastAPI, exp_config: DefaultMunch, task_queue: TaskQueu
 
     @app.on_event("startup")
     async def startup_event():
-        print("Starting up...")
+        print("Starting up...", flush=True)
         db_client.connect()
         task_queue.connect()
 

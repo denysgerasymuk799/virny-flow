@@ -24,14 +24,14 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
     await producer.start()
     for idx, run_num in enumerate(exp_config.run_nums):
         execution_start_time = time.time()
-        print('#' * 40 + '\n' + f'START TASK PROVIDING FOR RUN_NUM={run_num}' + '\n' + '#' * 40)
+        print('#' * 40 + '\n' + f'START TASK PROVIDING FOR RUN_NUM={run_num}' + '\n' + '#' * 40, flush=True)
 
         while True:
             try:
                 num_available_tasks = await task_queue.get_num_available_tasks(exp_config_name=exp_config.exp_config_name, run_num=run_num)
                 if num_available_tasks == 0:
                     if not await task_queue.is_empty(exp_config_name=exp_config.exp_config_name, run_num=run_num):
-                        print("Wait until new tasks come up...")
+                        print("Wait until new tasks come up...", flush=True)
                         time.sleep(10)
                         continue
 
