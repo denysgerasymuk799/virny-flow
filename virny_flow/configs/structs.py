@@ -47,6 +47,9 @@ class LogicalPipeline:
     pipeline_quality_mean: dict
     pipeline_quality_std: dict
     pipeline_execution_cost: float
+    num_completed_pps: int
+    run_num: int
+    random_state: int
 
     @classmethod
     def from_dict(cls, data: dict):
@@ -68,6 +71,8 @@ class PhysicalPipeline:
     null_imputer_params: dict
     fairness_intervention_params: dict
     model_params: dict
+    run_num: int
+    random_state: int
     preprocessing: dict = field(default_factory=lambda: {'cat': 'OneHotEncoder', 'num': 'StandardScaler'})
 
     @classmethod
@@ -87,6 +92,8 @@ class Task:
     objectives: list
     pipeline_quality_mean: dict
     physical_pipeline: PhysicalPipeline
+    run_num: int
+    random_state: int
 
     @classmethod
     def from_dict(cls, data: dict):

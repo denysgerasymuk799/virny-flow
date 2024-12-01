@@ -104,10 +104,10 @@ if __name__ == '__main__':
     # Input variables
     # lp_name = 'miss_forest&DIR&lr_clf'
     # history_filename = 'history_2024-11-21-00-39-13-139162.json'
-    lp_name = 'None&NO_FAIRNESS_INTERVENTION&rf_clf'
-    history_filename = 'history_2024-11-28-14-56-57-090021.json'
+    lp_name = 'miss_forest&DIR&lr_clf'
+    run_num = 2
+    history_filename = 'history_2024-11-30-01-31-27-839847.json'
     surrogate_model_type = 'gp'  # 'gp' or 'prf'
-
     bo_advisor_config = BOAdvisorConfig()
 
     # Read an experimental config
@@ -115,7 +115,7 @@ if __name__ == '__main__':
     exp_config = create_exp_config_obj(exp_config_yaml_path=exp_config_yaml_path)
 
     config_space = create_config_space(lp_name)
-    history_path = f'../history/{exp_config.exp_config_name}/{lp_name}/' + history_filename
+    history_path = f'../history/{exp_config.exp_config_name}/run_num_{str(run_num)}/{lp_name}/' + history_filename
     history = History.load_json(history_path, config_space)
 
     task_info = {

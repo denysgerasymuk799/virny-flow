@@ -2,7 +2,7 @@ from enum import Enum
 
 
 DEBUG_MODE = False
-EXPERIMENT_RUN_SEEDS = [100 * i for i in range(1, 11)]
+INIT_RANDOM_STATE = 100
 NUM_FOLDS_FOR_TUNING = 3
 NO_TASKS = 'NO_TASKS'
 STAGE_SEPARATOR = '&'

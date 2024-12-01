@@ -64,7 +64,8 @@ def validate_config(config_obj):
         "null_imputers": {"type": "list", "required": True},
         "fairness_interventions": {"type": "list", "required": True},
         "models": {"type": "list", "required": True},
-        "random_state": {"type": "integer", "min": 1, "required": True},
+        "num_runs": {"type": "integer", "required": False, "min": 1},
+        "run_nums": {"type": "list", "required": False, "schema": {"type": "integer", "min": 1}},
         "secrets_path": {"type": "string", "required": True},
 
         # Parameters for multi-objective optimisation
@@ -84,9 +85,9 @@ def validate_config(config_obj):
         },
         "max_trials": {"type": "integer", "min": 1, "required": True},
         "num_workers": {"type": "integer", "min": 1, "required": True},
-        "num_pp_candidates": {"type": "integer", "min": 1, "required": False, "default": 10},
-        "queue_size": {"type": "integer", "min": max(config_obj['num_workers'], config_obj['num_pp_candidates']),
-                       "required": False, "default": 2 * max(config_obj['num_workers'], config_obj['num_pp_candidates'])},
+        "num_pp_candidates": {"type": "integer", "min": 2, "required": False, "default": 10},
+        "queue_size": {"type": "integer", "min": config_obj['num_workers'],
+                       "required": False, "default": 3 * config_obj['num_workers']},
         "training_set_fractions_for_halting": {"type": "list", "required": False, "default": [0.5, 0.75, 1.0]},
         "exploration_factor": {"type": "float", "min": 0.0, "max": 1.0, "required": False, "default": 0.5},
         "risk_factor": {"type": "float", "min": 0.0, "max": 1.0, "required": False, "default": 0.5},
@@ -101,17 +102,28 @@ def validate_config(config_obj):
     else:
         raise ValueError("Validation errors in exp_config.yaml:", v.errors)
 
-    # Default arguments
-    if len(config_obj['null_imputers']) == 0:
-        config_obj['null_imputers'] = ['None']
-
     # Other checks
+    if config_obj.get("num_runs", None) is not None and config_obj.get("run_nums", None) is not None:
+        raise ValueError("Only one of two arguments (num_runs, run_nums) should be defined in a config.")
+    if config_obj.get("num_runs", None) is None and config_obj.get("run_nums", None) is None:
+        raise ValueError("One of two arguments (num_runs, run_nums) should be defined in a config.")
+
     objective_total_weight = 0.0
     for objective in config_obj['objectives']:
         objective_total_weight += objective['weight']
 
     if objective_total_weight != 1.0:
         raise ValueError("Objective weights must sum to 1.0")
+
+    if config_obj['num_workers'] < config_obj['num_pp_candidates']:
+        raise ValueError("The number of workers should be greater or equal than the number of physical pipeline candidates for each round")
+
+    # Default arguments
+    if len(config_obj['null_imputers']) == 0:
+        config_obj['null_imputers'] = ['None']
+
+    if config_obj.get("num_runs") is not None:
+        config_obj["run_nums"] = [run_num for run_num in range(1, config_obj["num_runs"] + 1)]
 
     return config_obj
 

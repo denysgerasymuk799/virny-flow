@@ -1,0 +1,24 @@
+# General experiment parameters
+exp_config_name: "diabetes_experiments3"
+dataset: "diabetes"
+sensitive_attrs_for_intervention: ["Gender"]
+null_imputers: []
+fairness_interventions: []
+models: ["rf_clf", "lr_clf"]
+random_state: 42
+secrets_path: "/Users/denys_herasymuk/Research/NYU/VirnyFlow_Project/Code/virny-flow/virny_flow_demo/configs/secrets.env"
+
+# Parameters for optimisation
+ref_point: [0.20, 0.10]
+objectives:
+  - { name: "objective_1", metric: "F1", group: "overall" }
+  - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "Gender" }
+#max_trials: 5
+#num_workers: 4
+#num_pp_candidates: 2
+max_trials: 50
+num_workers: 10
+num_pp_candidates: 5
+training_set_fractions_for_halting: [0.5, 0.75, 1.0]
+exploration_factor: 0.5  # [0.0-1.0]: a factor on how often the system tries unexplored logical pipelines
+risk_factor: 0.5  # [0.0-1.0]: a factor on how much risk we want to take to try a logical pipeline, which might have a high variance

@@ -41,28 +41,42 @@ class TaskQueue:
         # MongoDB will skip re-creating it automatically.
         self.collection.create_index([("task_status", ASCENDING), ("_id", ASCENDING)])
 
-    async def has_space_for_next_lp(self, exp_config_name: str, num_pp_candidates: int):
-        task_count = await self.collection.count_documents({
-            "exp_config_name": exp_config_name,
+    def _get_condition(self, condition: dict, exp_config_name: str, run_num: int):
+        condition["exp_config_name"] = exp_config_name
+        condition["deletion_flag"] = False
+        if run_num is not None:
+            condition["run_num"] = run_num
+        return condition
+
+    async def has_space_for_next_lp(self, exp_config_name: str, num_pp_candidates: int, run_num: int):
+        condition = {
             "task_status": { "$in": [TaskStatus.WAITING.value, TaskStatus.ASSIGNED.value] },
-            "deletion_flag": False,
-        })
+        }
+        condition = self._get_condition(condition=condition,
+                                        exp_config_name=exp_config_name,
+                                        run_num=run_num)
+        task_count = await self.collection.count_documents(condition)
+
         return task_count <= self.max_queue_size - num_pp_candidates
 
-    async def is_empty(self, exp_config_name: str):
-        task_count = await self.collection.count_documents({
-            "exp_config_name": exp_config_name,
+    async def is_empty(self, exp_config_name: str, run_num: int):
+        condition = {
             "task_status": { "$in": [TaskStatus.WAITING.value, TaskStatus.ASSIGNED.value] },
-            "deletion_flag": False,
-        })
+        }
+        condition = self._get_condition(condition=condition,
+                                        exp_config_name=exp_config_name,
+                                        run_num=run_num)
+        task_count = await self.collection.count_documents(condition)
+
         return task_count == 0
 
-    async def get_num_available_tasks(self, exp_config_name: str):
-        task_count = await self.collection.count_documents({
-            "exp_config_name": exp_config_name,
-            "task_status": TaskStatus.WAITING.value,
-            "deletion_flag": False,
-        })
+    async def get_num_available_tasks(self, exp_config_name: str, run_num: int):
+        condition = {"task_status": TaskStatus.WAITING.value}
+        condition = self._get_condition(condition=condition,
+                                        exp_config_name=exp_config_name,
+                                        run_num=run_num)
+        task_count = await self.collection.count_documents(condition)
+
         return task_count
 
     async def enqueue(self, task: Task):
@@ -78,14 +92,19 @@ class TaskQueue:
         await self.collection.insert_one(task_record)
         self._logger.info(f"Enqueued task with UUID: {task.task_uuid}")
 
-    async def dequeue(self, exp_config_name):
+    async def dequeue(self, exp_config_name: str, run_num: int):
         """Remove a task from the queue."""
+        condition = {"task_status": TaskStatus.WAITING.value}
+        condition = self._get_condition(condition=condition,
+                                        exp_config_name=exp_config_name,
+                                        run_num=run_num)
+
         # Find and update the first waiting item to processing status
         task = await self.collection.find_one_and_update(
-            {"exp_config_name": exp_config_name, "task_status": TaskStatus.WAITING.value, "deletion_flag": False},
+            condition,
             {"$set": {"task_status": TaskStatus.ASSIGNED.value,
                       "update_datetime": datetime.now(timezone.utc)}},
-            sort=[("_id", ASCENDING)]
+            sort=[("_id", ASCENDING), ("run_num", ASCENDING)]
         )
         if task:
             self._logger.info(f"Dequeued task with UUID: {task['task_uuid']}")
@@ -97,10 +116,15 @@ class TaskQueue:
             self._logger.info("Queue is empty.")
             return {"_id": None, "task_uuid": NO_TASKS}
 
-    async def complete_task(self, exp_config_name: str, task_uuid: str):
+    async def complete_task(self, exp_config_name: str, task_uuid: str, run_num: int):
+        condition = {"task_uuid": task_uuid}
+        condition = self._get_condition(condition=condition,
+                                        exp_config_name=exp_config_name,
+                                        run_num=run_num)
+
         """Mark a task as completed."""
         resp = await self.collection.update_one(
-            {"exp_config_name": exp_config_name, "task_uuid": task_uuid},
+            condition,
             {"$set": {"task_status": TaskStatus.DONE.value,
                       "update_datetime": datetime.now(timezone.utc)}}
         )

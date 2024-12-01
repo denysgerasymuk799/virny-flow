@@ -1,5 +1,4 @@
 import os
-import time
 import warnings
 
 from munch import DefaultMunch
@@ -21,7 +20,6 @@ def worker_interface(exp_config: DefaultMunch, virny_flow_address: str, dataset_
                                            null_imputation_config=null_imputation_config,
                                            fairness_intervention_config=fairness_intervention_config,
                                            models_config=models_config)
-
     # Get an initial task
     worker = Worker(address=virny_flow_address, secrets_path=exp_config.secrets_path)
     task_dct = worker.get_task()
@@ -33,15 +31,15 @@ def worker_interface(exp_config: DefaultMunch, virny_flow_address: str, dataset_
             # Can be useful when the job sends you an email when it is done.
             print('Queue is empty. Shutting down the worker...', flush=True)
             return
-
         else:
             task = Task.from_dict(task_dct)
 
             # Use PipelineEvaluator to execute the task
-            observation = pipeline_evaluator.execute_task(task=task, seed=exp_config.random_state)
+            observation = pipeline_evaluator.execute_task(task=task, seed=task.random_state)
 
             if observation:
                 worker.complete_task(exp_config_name=task.exp_config_name,
+                                     run_num=task.run_num,
                                      task_uuid=task.task_uuid,
                                      physical_pipeline_uuid=task.physical_pipeline.physical_pipeline_uuid,
                                      logical_pipeline_uuid=task.physical_pipeline.logical_pipeline_uuid,

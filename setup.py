@@ -10,7 +10,7 @@ from codecs import open
 from os import path
 
 NAME = 'virny_flow'
-DESCRIPTION = "Python library for the responsible development of robust ML pipelines"
+DESCRIPTION = "Design space for responsible model development in Python"
 LONG_DESCRIPTION_CONTENT_TYPE = "text/markdown"
 URL = "https://github.com/denysgerasymuk799/virny-flow/"
 EMAILS = "denis.gerasymuk799@gmail.com"
@@ -27,7 +27,7 @@ about: dict = {}
 with open(os.path.join(HERE, NAME, "__version__.py")) as f:
     exec(f.read(), about)
 
-with pathlib.Path('lib_base_packages.txt').open() as lib_base_packages_txt:
+with pathlib.Path('requirements.txt').open() as lib_base_packages_txt:
     base_packages = [
         str(requirement)
         for requirement

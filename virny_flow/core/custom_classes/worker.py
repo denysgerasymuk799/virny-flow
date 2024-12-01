@@ -24,15 +24,15 @@ class Worker:
         self.consumer = KafkaConsumer(
             NEW_TASKS_QUEUE_TOPIC,
             group_id=WORKER_CONSUMER_GROUP,
-            # group_id='new-consumer-group',
             bootstrap_servers=os.getenv("KAFKA_BROKER"),
             api_version=(0, 10, 1),
             value_deserializer=lambda v: json.loads(v.decode('utf-8')),
             enable_auto_commit=True,
             auto_offset_reset="earliest",
-            session_timeout_ms=50_000,  # Increase session timeout (default: 10000 ms)
-            heartbeat_interval_ms=10_000,  # Increase heartbeat interval (default: 3000 ms)
+            session_timeout_ms=300_000,  # Increase session timeout (default: 10000 ms)
+            heartbeat_interval_ms=20_000,  # Increase heartbeat interval (default: 3000 ms)
             max_poll_interval_ms=600_000, # Up to 10 minutes to process a batch of messages
+            request_timeout_ms=330_000,
         )
         self.producer = KafkaProducer(
             bootstrap_servers=os.getenv("KAFKA_BROKER"),
@@ -56,10 +56,11 @@ class Worker:
             self._logger.error(f'Failed to retrieve a new task. Error occurred: {e}')
 
 
-    def complete_task(self, exp_config_name: str, task_uuid: str, physical_pipeline_uuid: str,
+    def complete_task(self, exp_config_name: str, run_num: int, task_uuid: str, physical_pipeline_uuid: str,
                       logical_pipeline_uuid: str, logical_pipeline_name: str, observation: Observation):
         message = {
             "exp_config_name": exp_config_name,
+            "run_num": run_num,
             "task_uuid": task_uuid,
             "physical_pipeline_uuid": physical_pipeline_uuid,
             "logical_pipeline_uuid": logical_pipeline_uuid,
@@ -69,4 +70,4 @@ class Worker:
 
         self.producer.send(COMPLETED_TASKS_QUEUE_TOPIC, value=message).add_errback(on_send_error)
         self.producer.flush()
-        self._logger.info(f"New task with UUID {task_uuid} was completed and sent to COMPLETED_TASKS_QUEUE_TOPIC")
+        self._logger.info(f"New task with UUID = {task_uuid} and run_num = {run_num} was completed and sent to COMPLETED_TASKS_QUEUE_TOPIC")

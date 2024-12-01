@@ -14,6 +14,7 @@ from .ml_lifecycle import MLLifecycle
 from virny_flow.core.utils.common_helpers import create_base_flow_dataset
 from virny_flow.core.utils.pipeline_utils import get_dis_group_condition, nested_dict_from_flat
 from virny_flow.core.preprocessing import preprocess_base_flow_dataset
+from virny_flow.core.custom_classes.core_db_client import CoreDBClient
 from virny_flow.core.fairness_interventions.preprocessors import remove_disparate_impact, apply_learning_fair_representations
 from virny_flow.core.fairness_interventions.postprocessors import get_eq_odds_postprocessor, get_reject_option_classification_postprocessor
 from virny_flow.core.fairness_interventions.inprocessors import get_adversarial_debiasing_wrapper_config, get_exponentiated_gradient_reduction_wrapper
@@ -24,12 +25,14 @@ from virny_flow.configs.constants import (ErrorRepairMethod, STAGE_SEPARATOR, NO
 from virny_flow.task_manager.domain_logic.bayesian_optimization import get_objective_losses
 
 
-def get_best_compound_pp_quality(session, db, logical_pipeline_uuid: str, exp_config_name: str, use_init_best_score: bool):
+def get_best_compound_pp_quality(session, db: CoreDBClient, logical_pipeline_uuid: str, exp_config_name: str,
+                                 run_num: int, use_init_best_score: bool):
     # Read best_compound_pp_quality for lp uuid and pipeline_quality_mean for each objective
     logical_pipeline_record = db.read_one_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
                                                 session=session,
                                                 query={"logical_pipeline_uuid": logical_pipeline_uuid,
-                                                       "exp_config_name": exp_config_name})
+                                                       "exp_config_name": exp_config_name,
+                                                       "run_num": run_num})
     # Since the first batch for a new logical pipeline does not have pipeline_quality_mean, we need to use another table
     # to save best_compound_pp_quality and use it for pruning unpromising pipelines in batch 1
     best_compound_pp_quality = logical_pipeline_record.get('init_best_compound_pp_quality', 0) if use_init_best_score \
@@ -38,13 +41,15 @@ def get_best_compound_pp_quality(session, db, logical_pipeline_uuid: str, exp_co
     return best_compound_pp_quality
 
 
-def adaptive_execution_transaction(session, db, task: Task, exp_config_name: str, cur_test_compound_pp_quality: float,
-                                   cur_test_compound_pp_improvement: float, use_init_best_score: bool):
+def adaptive_execution_transaction(session, db: CoreDBClient, task: Task, exp_config_name: str,
+                                   cur_test_compound_pp_quality: float, cur_test_compound_pp_improvement: float,
+                                   use_init_best_score: bool):
     # Read best_compound_pp_quality for lp uuid and pipeline_quality_mean for each objective
     best_compound_pp_quality = get_best_compound_pp_quality(session=session,
                                                             db=db,
                                                             logical_pipeline_uuid=task.physical_pipeline.logical_pipeline_uuid,
                                                             exp_config_name=exp_config_name,
+                                                            run_num=task.run_num,
                                                             use_init_best_score=use_init_best_score)
 
     if cur_test_compound_pp_quality > best_compound_pp_quality:
@@ -63,6 +68,7 @@ def adaptive_execution_transaction(session, db, task: Task, exp_config_name: str
         db.update_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
                         session=session,
                         condition={"exp_config_name": exp_config_name,
+                                   "run_num": task.run_num,
                                    "logical_pipeline_uuid": task.physical_pipeline.logical_pipeline_uuid},
                         update_val_dct=update_val_dct)
 
@@ -106,6 +112,7 @@ class PipelineEvaluator(MLLifecycle):
                                                                      objectives=task.objectives,
                                                                      pipeline_quality_mean=pipeline_quality_mean,
                                                                      exp_config_name=self.exp_config_name,
+                                                                     run_num=task.run_num,
                                                                      use_init_best_score=use_init_best_score,
                                                                      seed=seed)
         for (cur_test_compound_pp_quality, cur_test_compound_pp_improvement,
@@ -136,12 +143,12 @@ class PipelineEvaluator(MLLifecycle):
         custom_tbl_fields_dct['model_init_seed'] = seed
         custom_tbl_fields_dct['experiment_seed'] = seed
         custom_tbl_fields_dct['exp_config_name'] = self.exp_config_name
+        custom_tbl_fields_dct['run_num'] = task.run_num
         custom_tbl_fields_dct['null_imputer_name'] = null_imputer_name
         custom_tbl_fields_dct['fairness_intervention_name'] = fairness_intervention_name
 
         self.save_virny_metrics_in_db(model_metrics_df=test_multiple_models_metrics_df,
                                       custom_tbl_fields_dct=custom_tbl_fields_dct)
-
         # End the session
         session.end_session()
 
@@ -151,13 +158,13 @@ class PipelineEvaluator(MLLifecycle):
         return observation
 
     def execute_adaptive_pipeline(self, physical_pipeline: PhysicalPipeline, objectives: list, pipeline_quality_mean: dict,
-                                  exp_config_name: str, use_init_best_score: bool, seed: int):
+                                  exp_config_name: str, use_init_best_score: bool, run_num: int, seed: int):
         data_loader = copy.deepcopy(self.init_data_loader)
         X_train_val, X_test, y_train_val, y_test = self._split_dataset(data_loader, seed)
 
+        observation = None
         test_compound_pp_quality = None
         test_compound_pp_improvement = None
-        observation = None
         test_multiple_models_metrics_df = None
         for training_set_fraction in self.training_set_fractions_for_halting:
             print('training_set_fraction:', training_set_fraction)
@@ -188,6 +195,7 @@ class PipelineEvaluator(MLLifecycle):
                                                                     db=self._db,
                                                                     logical_pipeline_uuid=physical_pipeline.logical_pipeline_uuid,
                                                                     exp_config_name=exp_config_name,
+                                                                    run_num=run_num,
                                                                     use_init_best_score=use_init_best_score)
             print("train_compound_pp_quality, train_compound_pp_improvement:", train_compound_pp_quality, train_compound_pp_improvement)
             print("test_compound_pp_quality, test_compound_pp_improvement:", test_compound_pp_quality, test_compound_pp_improvement)
