@@ -20,6 +20,7 @@ class TaskManager:
         self.bo_advisor_config.num_objectives = len(exp_config.objectives)
 
         self.app = FastAPI()
+        self.uvicorn_server = None  # initialize to pass to register_routes()
         self.db_client = TaskManagerDBClient(secrets_path)
         self.task_queue = TaskQueue(secrets_path=secrets_path,
                                     max_queue_size=exp_config.queue_size)
