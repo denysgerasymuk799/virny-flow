@@ -30,8 +30,9 @@ class Worker:
             enable_auto_commit=True,
             auto_offset_reset="earliest",
             session_timeout_ms=300_000,  # Increase session timeout (default: 10000 ms)
-            heartbeat_interval_ms=30_000,  # Increase heartbeat interval (default: 3000 ms)
+            heartbeat_interval_ms=20_000,  # Increase heartbeat interval (default: 3000 ms)
             max_poll_interval_ms=600_000, # Up to 10 minutes to process a batch of messages
+            request_timeout_ms=60_000,
         )
         self.producer = KafkaProducer(
             bootstrap_servers=os.getenv("KAFKA_BROKER"),
