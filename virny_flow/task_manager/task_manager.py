@@ -20,7 +20,7 @@ class TaskManager:
         self.bo_advisor_config.num_objectives = len(exp_config.objectives)
 
         self.app = FastAPI()
-        self.uvicorn_server = None  # initialize to pass to register_routes()
+        self.uvicorn_server = uvicorn.Server(uvicorn.Config(self.app, host=self.host, port=self.port))  # initialize to pass to register_routes()
         self.db_client = TaskManagerDBClient(secrets_path)
         self.task_queue = TaskQueue(secrets_path=secrets_path,
                                     max_queue_size=exp_config.queue_size)
@@ -36,8 +36,8 @@ class TaskManager:
                         lp_to_advisor=self._lp_to_advisor,
                         bo_advisor_config=self.bo_advisor_config)
 
-        # Start server after defining endpoints
-        self.uvicorn_server = uvicorn.Server(uvicorn.Config(self.app, host=self.host, port=self.port))
+        # Redefine uvicorn_server.config to initialize endpoints
+        self.uvicorn_server.config = uvicorn.Config(self.app, host=self.host, port=self.port)
 
     def run(self):
         # The actual server runner using Uvicorn

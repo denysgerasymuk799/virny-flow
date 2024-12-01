@@ -83,8 +83,12 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
                     terminate_consumer_json_msg = json.dumps(terminate_consumer_msg)
                     await producer.send_and_wait(topic=COMPLETED_TASKS_QUEUE_TOPIC,
                                                  value=terminate_consumer_json_msg.encode('utf-8'))
-                    # Terminate TaskManager web-server
-                    uvicorn_server.should_exit = True
+                    try:
+                        # Terminate TaskManager web-server
+                        uvicorn_server.should_exit = True
+                    except Exception as e:
+                        logger.error(f'Error during uvicorn server termination: {e}')
+
                     # Terminate TaskProvider
                     break
 
