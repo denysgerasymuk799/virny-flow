@@ -101,7 +101,7 @@ def get_kafka_consumer():
     return AIOKafkaConsumer(COMPLETED_TASKS_QUEUE_TOPIC,
                             bootstrap_servers=[os.getenv("KAFKA_BROKER")],
                             group_id=TASK_MANAGER_CONSUMER_GROUP,
-                            session_timeout_ms=50_000,  # Increase session timeout (default: 10000 ms)
+                            session_timeout_ms=300_000,  # Increase session timeout (default: 10000 ms)
                             heartbeat_interval_ms=30_000,  # Increase heartbeat interval (default: 3000 ms)
                             max_poll_interval_ms=600_000,  # Increase to 10 minutes if needed
                             auto_offset_reset="earliest",
