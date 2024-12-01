@@ -84,18 +84,35 @@ FAIRNESS_INTERVENTION_CONFIG_SPACE = {
         "fi__Ax": UniformFloatHyperparameter("fi__Ax", 0.01, 0.02),
         "fi__Ay": UniformFloatHyperparameter("fi__Ay", 1.0, 1.1),
         "fi__Az": UniformFloatHyperparameter("fi__Az", 50.0, 51.0),
-    }
-    # FairnessIntervention.AD.value: {"scope_name": "debiased_classifier",
-    #                                 "adversary_loss_weight": 0.1, "num_epochs": 50, "batch_size": 128,
-    #                                 "classifier_num_hidden_units": 200, "debias": True},
-    # FairnessIntervention.EGR.value: {"constraints": "DemographicParity",
-    #                                  "eps": 0.01, "max_iter": 50, "nu": None, "eta0": 2.0,
-    #                                  "run_linprog_step": True, "drop_prot_attr": True,
-    #                                  "estimator_params": {"C": 1.0, "solver": "lbfgs"}},
-    # FairnessIntervention.EOP.value: {},
-    # FairnessIntervention.ROC.value: {"low_class_thresh": 0.01, "high_class_thresh": 0.99, "num_class_thresh": 100,
-    #                                  "num_ROC_margin": 50, "metric_name": "Statistical parity difference",
-    #                                  "metric_ub": 0.05, "metric_lb": -0.05},
+    },
+    # FairnessIntervention.AD.value: {
+    #     "fi__scope_name": CategoricalHyperparameter("fi__scope_name", ["adversarial_debiasing"]),
+    #     "fi__adversary_loss_weight": UniformFloatHyperparameter("fi__adversary_loss_weight", 0.1, 0.5),
+    #     "fi__num_epochs": UniformIntegerHyperparameter("fi__num_epochs", 50, 100, q=10),
+    #     "fi__batch_size": CategoricalHyperparameter("fi__batch_size", [64, 128, 256]),
+    #     "fi__classifier_num_hidden_units": CategoricalHyperparameter("fi__classifier_num_hidden_units", [100, 200, 300]),
+    #     "fi__debias": CategoricalHyperparameter("fi__debias", [True, False]),
+    # },
+    # FairnessIntervention.EGR.value: {
+    #     "fi__constraints": CategoricalHyperparameter("fi__constraints", ["DemographicParity"]),
+    #     "fi__eps": UniformFloatHyperparameter("fi__eps", 0.01, 0.1),
+    #     "fi__max_iter": UniformIntegerHyperparameter("fi__max_iter", 50, 100, q=10),
+    #     "fi__nu": CategoricalHyperparameter("fi__nu", [None]),
+    #     "fi__eta0": UniformFloatHyperparameter("fi__eta0", 1.0, 2.0),
+    #     "fi__run_linprog_step": CategoricalHyperparameter("fi__run_linprog_step", [True, False]),
+    #     "fi__drop_prot_attr": CategoricalHyperparameter("fi__drop_prot_attr", [True, False]),
+    #     "fi__estimator_params": CategoricalHyperparameter("fi__estimator_params", [{"C": 1.0, "solver": "lbfgs"}]),
+    # },           
+    FairnessIntervention.EOP.value: {},
+    # FairnessIntervention.ROC.value: {
+    #     "low_class_thresh": UniformFloatHyperparameter("low_class_thresh", 0.01, 0.1),
+    #     "high_class_thresh": UniformFloatHyperparameter("high_class_thresh", 0.9, 0.99),
+    #     "num_class_thresh": UniformIntegerHyperparameter("num_class_thresh", 50, 100, q=10),
+    #     "num_ROC_margin": UniformIntegerHyperparameter("num_ROC_margin", 20, 50, q=5),
+    #     "metric_name": CategoricalHyperparameter("metric_name", ["Statistical parity difference"]),
+    #     "metric_ub": UniformFloatHyperparameter("metric_ub", 0.05, 0.1),
+    #     "metric_lb": UniformFloatHyperparameter("metric_lb", -0.1, -0.05),
+    # }
 }
 
 
