@@ -29,8 +29,8 @@ class Worker:
             value_deserializer=lambda v: json.loads(v.decode('utf-8')),
             enable_auto_commit=True,
             auto_offset_reset="earliest",
-            session_timeout_ms=50_000,  # Increase session timeout (default: 10000 ms)
-            heartbeat_interval_ms=10_000,  # Increase heartbeat interval (default: 3000 ms)
+            session_timeout_ms=300_000,  # Increase session timeout (default: 10000 ms)
+            heartbeat_interval_ms=30_000,  # Increase heartbeat interval (default: 3000 ms)
             max_poll_interval_ms=600_000, # Up to 10 minutes to process a batch of messages
         )
         self.producer = KafkaProducer(
