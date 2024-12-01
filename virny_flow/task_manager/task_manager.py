@@ -4,7 +4,6 @@ from munch import DefaultMunch
 
 from .routes import register_routes
 from .database.task_manager_db_client import TaskManagerDBClient
-from virny_flow.core.utils.custom_logger import get_logger
 from virny_flow.configs.structs import BOAdvisorConfig
 from virny_flow.core.custom_classes.task_queue import TaskQueue
 
@@ -21,6 +20,7 @@ class TaskManager:
         self.bo_advisor_config.num_objectives = len(exp_config.objectives)
 
         self.app = FastAPI()
+        self.uvicorn_server = uvicorn.Server(uvicorn.Config(self.app, host=self.host, port=self.port))
         self.db_client = TaskManagerDBClient(secrets_path)
         self.task_queue = TaskQueue(secrets_path=secrets_path,
                                     max_queue_size=exp_config.queue_size)
@@ -31,10 +31,11 @@ class TaskManager:
         register_routes(app=self.app,
                         exp_config=self.exp_config,
                         db_client=self.db_client,
+                        uvicorn_server=self.uvicorn_server,
                         task_queue=self.task_queue,
                         lp_to_advisor=self._lp_to_advisor,
                         bo_advisor_config=self.bo_advisor_config)
 
     def run(self):
-        """The actual server runner using Uvicorn."""
-        uvicorn.run(self.app, host=self.host, port=self.port)
+        # The actual server runner using Uvicorn
+        self.uvicorn_server.run()

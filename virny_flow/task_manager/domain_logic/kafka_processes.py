@@ -11,11 +11,12 @@ from .bayesian_optimization import parse_config_space
 from ..database.task_manager_db_client import TaskManagerDBClient
 from virny_flow.core.utils.custom_logger import get_logger
 from virny_flow.core.custom_classes.task_queue import TaskQueue
-from virny_flow.configs.constants import (TASK_MANAGER_CONSUMER_GROUP, NEW_TASKS_QUEUE_TOPIC, LOGICAL_PIPELINE_SCORES_TABLE,
+from virny_flow.configs.constants import (TASK_MANAGER_CONSUMER_GROUP, NEW_TASKS_QUEUE_TOPIC, LOGICAL_PIPELINE_SCORES_TABLE, NO_TASKS,
                                           EXP_CONFIG_HISTORY_TABLE, COMPLETED_TASKS_QUEUE_TOPIC, PHYSICAL_PIPELINE_OBSERVATIONS_TABLE)
 
 
-async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDBClient, task_queue: TaskQueue):
+async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDBClient, task_queue: TaskQueue,
+                              uvicorn_server):
     termination_flag = False
     logger = get_logger('TaskProvider')
     producer = AIOKafkaProducer(bootstrap_servers=os.getenv("KAFKA_BROKER"))
@@ -77,6 +78,14 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
                         await producer.start()
 
                 if termination_flag:
+                    # Terminate CostModelUpdater
+                    terminate_consumer_msg = {"exp_config_name": exp_config.exp_config_name, "run_num": run_num, "task_uuid": NO_TASKS}
+                    terminate_consumer_json_msg = json.dumps(terminate_consumer_msg)
+                    await producer.send_and_wait(topic=COMPLETED_TASKS_QUEUE_TOPIC,
+                                                 value=terminate_consumer_json_msg.encode('utf-8'))
+                    # Terminate TaskManager web-server
+                    uvicorn_server.should_exit = True
+                    # Terminate TaskProvider
                     break
 
             except Exception as err:
@@ -114,6 +123,9 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
                 exp_config_name = data["exp_config_name"]
                 run_num = data["run_num"]
                 task_uuid = data["task_uuid"]
+                if task_uuid == NO_TASKS:
+                    break
+
                 physical_pipeline_uuid = data["physical_pipeline_uuid"]
                 logical_pipeline_uuid = data["logical_pipeline_uuid"]
                 logical_pipeline_name = data["logical_pipeline_name"]
