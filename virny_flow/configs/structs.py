@@ -40,6 +40,7 @@ class LogicalPipeline:
     components: dict
     risk_factor: float
     num_trials: int
+    max_trials: int
     score: float
     best_physical_pipeline_uuid: str
     best_compound_pp_quality: float

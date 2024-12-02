@@ -1,5 +1,4 @@
 import time
-import uuid
 import base64
 from munch import DefaultMunch
 from dataclasses import asdict
@@ -105,6 +104,7 @@ async def create_init_state_for_config(exp_config: DefaultMunch, db_client: Task
                         components=logical_pipeline['components'],
                         risk_factor=exp_config.risk_factor,
                         num_trials=0,
+                        max_trials=exp_config.max_trials,
                         score=0.0,
                         best_physical_pipeline_uuid=None,
                         best_compound_pp_quality=0.0,
