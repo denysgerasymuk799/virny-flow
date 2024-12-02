@@ -52,7 +52,7 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
                         if idx + 1 == len(exp_config.run_nums):
                             # If all work is done, set num_available_tasks to num_workers and get new tasks from task_queue.
                             # When task_queue is empty, it will return NO_TASKS, and it will be sent to each worker.
-                            num_available_tasks = exp_config.num_workers
+                            num_available_tasks = exp_config.num_workers * 2  # Multiply by 2 to be sure to shutdown all the workers
                             termination_flag = True
                         else:
                             break  # Start processing tasks for another run_num
