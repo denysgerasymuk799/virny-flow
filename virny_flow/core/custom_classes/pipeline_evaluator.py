@@ -31,7 +31,7 @@ def get_best_compound_pp_quality(session, db: CoreDBClient, exp_config_name: str
                                                    session=session,
                                                    query={"exp_config_name": exp_config_name,
                                                           "run_num": run_num})
-    best_compound_pp_quality = exp_config_metadata_record.get('best_compound_pp_quality', 0.0)
+    best_compound_pp_quality = exp_config_metadata_record['best_compound_pp_quality']
 
     return best_compound_pp_quality
 

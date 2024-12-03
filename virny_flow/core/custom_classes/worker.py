@@ -30,7 +30,7 @@ def initialize_consumer():
                 auto_offset_reset="earliest",
                 session_timeout_ms=300_000,  # Increase session timeout (default: 10000 ms)
                 heartbeat_interval_ms=20_000,  # Increase heartbeat interval (default: 3000 ms)
-                max_poll_interval_ms=600_000, # Up to 10 minutes to process a batch of messages
+                max_poll_interval_ms=1_800_000, # Up to 30 minutes to process a batch of messages
                 max_poll_records=1,
                 request_timeout_ms=330_000,
             )
@@ -67,20 +67,21 @@ class Worker:
         )
 
     def get_task(self):
-        try:
-            # Since an execution of one task can take hours, it is better to re-initialize a consumer to get each new task
-            consumer = initialize_consumer()
-            while True:
-                for msg_obj in consumer:
-                    task_dct = msg_obj.value
-                    if task_dct.get('task_uuid') is not None:
-                        consumer.close()
-                        self._logger.info(f"New task with UUID {task_dct['task_uuid']} was taken.")
-                        return task_dct
+        while True:
+            try:
+                # Since an execution of one task can take hours, it is better to re-initialize a consumer to get each new task
+                consumer = initialize_consumer()
+                while True:
+                    for msg_obj in consumer:
+                        task_dct = msg_obj.value
+                        if task_dct.get('task_uuid') is not None:
+                            consumer.close()
+                            self._logger.info(f"New task with UUID {task_dct['task_uuid']} was taken.")
+                            return task_dct
 
-        except ValueError as e:
-            self._logger.error(f'Failed to retrieve a new task. Error occurred: {e}')
-
+            except ValueError as e:
+                self._logger.error(f'Failed to retrieve a new task. Error occurred: {e}')
+                time.sleep(10)
 
     def complete_task(self, exp_config_name: str, run_num: int, task_uuid: str, physical_pipeline_uuid: str,
                       logical_pipeline_uuid: str, logical_pipeline_name: str, observation: Observation):
