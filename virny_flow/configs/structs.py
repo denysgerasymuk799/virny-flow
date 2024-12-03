@@ -42,9 +42,6 @@ class LogicalPipeline:
     num_trials: int
     max_trials: int
     score: float
-    best_physical_pipeline_uuid: str
-    best_compound_pp_quality: float
-    best_compound_pp_improvement: float
     pipeline_quality_mean: dict
     pipeline_quality_std: dict
     pipeline_execution_cost: float

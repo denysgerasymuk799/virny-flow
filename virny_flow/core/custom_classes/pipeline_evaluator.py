@@ -21,55 +21,40 @@ from virny_flow.core.fairness_interventions.inprocessors import get_adversarial_
 from virny_flow.core.custom_classes.core_db_client import run_transaction_with_retry, commit_with_retry
 from virny_flow.configs.structs import Task, PhysicalPipeline
 from virny_flow.configs.constants import (ErrorRepairMethod, STAGE_SEPARATOR, NO_FAIRNESS_INTERVENTION, ALL_EXPERIMENT_METRICS_TABLE,
-                                          FairnessIntervention, LOGICAL_PIPELINE_SCORES_TABLE)
+                                          FairnessIntervention, EXP_CONFIG_HISTORY_TABLE)
 from virny_flow.task_manager.domain_logic.bayesian_optimization import get_objective_losses
 
 
-def get_best_compound_pp_quality(session, db: CoreDBClient, logical_pipeline_uuid: str, exp_config_name: str,
-                                 run_num: int, use_init_best_score: bool):
-    # Read best_compound_pp_quality for lp uuid and pipeline_quality_mean for each objective
-    logical_pipeline_record = db.read_one_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
-                                                session=session,
-                                                query={"logical_pipeline_uuid": logical_pipeline_uuid,
-                                                       "exp_config_name": exp_config_name,
-                                                       "run_num": run_num})
-    # Since the first batch for a new logical pipeline does not have pipeline_quality_mean, we need to use another table
-    # to save best_compound_pp_quality and use it for pruning unpromising pipelines in batch 1
-    best_compound_pp_quality = logical_pipeline_record.get('init_best_compound_pp_quality', 0) if use_init_best_score \
-                                        else logical_pipeline_record['best_compound_pp_quality']
+def get_best_compound_pp_quality(session, db: CoreDBClient, exp_config_name: str, run_num: int):
+    # Read best_compound_pp_quality for exp_config_name and run_num
+    exp_config_metadata_record = db.read_one_query(collection_name=EXP_CONFIG_HISTORY_TABLE,
+                                                   session=session,
+                                                   query={"exp_config_name": exp_config_name,
+                                                          "run_num": run_num})
+    best_compound_pp_quality = exp_config_metadata_record.get('best_compound_pp_quality', 0.0)
 
     return best_compound_pp_quality
 
 
 def adaptive_execution_transaction(session, db: CoreDBClient, task: Task, exp_config_name: str,
-                                   cur_test_compound_pp_quality: float, cur_test_compound_pp_improvement: float,
-                                   use_init_best_score: bool):
+                                   cur_test_compound_pp_quality: float):
     # Read best_compound_pp_quality for lp uuid and pipeline_quality_mean for each objective
     best_compound_pp_quality = get_best_compound_pp_quality(session=session,
                                                             db=db,
-                                                            logical_pipeline_uuid=task.physical_pipeline.logical_pipeline_uuid,
                                                             exp_config_name=exp_config_name,
-                                                            run_num=task.run_num,
-                                                            use_init_best_score=use_init_best_score)
+                                                            run_num=task.run_num)
 
     if cur_test_compound_pp_quality > best_compound_pp_quality:
         best_compound_pp_quality = cur_test_compound_pp_quality
 
         # Update best_compound_pp_quality in DB in best_physical_pipeline_observations
-        if use_init_best_score:
-            update_val_dct = {"init_best_compound_pp_quality": best_compound_pp_quality,
-                              "init_best_compound_pp_improvement": cur_test_compound_pp_improvement,
-                              "init_best_physical_pipeline_uuid": task.physical_pipeline.physical_pipeline_uuid}
-        else:
-            update_val_dct = {"best_compound_pp_quality": best_compound_pp_quality,
-                              "best_compound_pp_improvement": cur_test_compound_pp_improvement,
-                              "best_physical_pipeline_uuid": task.physical_pipeline.physical_pipeline_uuid}
+        update_val_dct = {"best_compound_pp_quality": best_compound_pp_quality,
+                          "best_physical_pipeline_uuid": task.physical_pipeline.physical_pipeline_uuid}
 
-        db.update_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
+        db.update_query(collection_name=EXP_CONFIG_HISTORY_TABLE,
                         session=session,
                         condition={"exp_config_name": exp_config_name,
-                                   "run_num": task.run_num,
-                                   "logical_pipeline_uuid": task.physical_pipeline.logical_pipeline_uuid},
+                                   "run_num": task.run_num},
                         update_val_dct=update_val_dct)
 
 
@@ -101,22 +86,14 @@ class PipelineEvaluator(MLLifecycle):
     def execute_task(self, task: Task, seed: int):
         self._db.connect()
 
-        pipeline_quality_mean = task.pipeline_quality_mean
-        use_init_best_score = True if set(pipeline_quality_mean.values()) == {0.0} else False
-        print("\n\nuse_init_best_score:", use_init_best_score)
-        print("pipeline_quality_mean:", pipeline_quality_mean)
-
         # Start a client session
         session = self._db.client.start_session()
         adaptive_pipeline_generator = self.execute_adaptive_pipeline(physical_pipeline=task.physical_pipeline,
                                                                      objectives=task.objectives,
-                                                                     pipeline_quality_mean=pipeline_quality_mean,
                                                                      exp_config_name=self.exp_config_name,
                                                                      run_num=task.run_num,
-                                                                     use_init_best_score=use_init_best_score,
                                                                      seed=seed)
-        for (cur_test_compound_pp_quality, cur_test_compound_pp_improvement,
-             observation, test_multiple_models_metrics_df) in adaptive_pipeline_generator:
+        for (cur_test_compound_pp_quality, observation, test_multiple_models_metrics_df) in adaptive_pipeline_generator:
             try:
                 session.start_transaction()
                 run_transaction_with_retry(adaptive_execution_transaction,
@@ -124,9 +101,7 @@ class PipelineEvaluator(MLLifecycle):
                                            db=self._db,
                                            task=task,
                                            exp_config_name=self.exp_config_name,
-                                           cur_test_compound_pp_quality=cur_test_compound_pp_quality,
-                                           cur_test_compound_pp_improvement=cur_test_compound_pp_improvement,
-                                           use_init_best_score=use_init_best_score)
+                                           cur_test_compound_pp_quality=cur_test_compound_pp_quality)
                 commit_with_retry(session)
             except Exception as e:
                 print(f"Transaction aborted: {e}")
@@ -157,14 +132,13 @@ class PipelineEvaluator(MLLifecycle):
 
         return observation
 
-    def execute_adaptive_pipeline(self, physical_pipeline: PhysicalPipeline, objectives: list, pipeline_quality_mean: dict,
-                                  exp_config_name: str, use_init_best_score: bool, run_num: int, seed: int):
+    def execute_adaptive_pipeline(self, physical_pipeline: PhysicalPipeline, objectives: list,
+                                  exp_config_name: str, run_num: int, seed: int):
         data_loader = copy.deepcopy(self.init_data_loader)
         X_train_val, X_test, y_train_val, y_test = self._split_dataset(data_loader, seed)
 
         observation = None
         test_compound_pp_quality = None
-        test_compound_pp_improvement = None
         test_multiple_models_metrics_df = None
         for training_set_fraction in self.training_set_fractions_for_halting:
             print('training_set_fraction:', training_set_fraction)
@@ -184,32 +158,26 @@ class PipelineEvaluator(MLLifecycle):
                                                                                    seed=seed)
             # Calculate pipeline quality and improvement based on the train and test losses
             train_compound_pp_quality, test_compound_pp_quality = 0.0, 0.0
-            train_compound_pp_improvement, test_compound_pp_improvement = 0.0, 0.0
             for idx, objective in enumerate(objectives):
                 train_compound_pp_quality += objective["weight"] * train_reversed_objectives[idx]
                 test_compound_pp_quality += objective["weight"] * test_reversed_objectives[idx]
-                train_compound_pp_improvement += train_reversed_objectives[idx] - pipeline_quality_mean[objective["name"]]
-                test_compound_pp_improvement += test_reversed_objectives[idx] - pipeline_quality_mean[objective["name"]]
 
             best_compound_pp_quality = get_best_compound_pp_quality(session=None,
                                                                     db=self._db,
-                                                                    logical_pipeline_uuid=physical_pipeline.logical_pipeline_uuid,
                                                                     exp_config_name=exp_config_name,
-                                                                    run_num=run_num,
-                                                                    use_init_best_score=use_init_best_score)
-            print("train_compound_pp_quality, train_compound_pp_improvement:", train_compound_pp_quality, train_compound_pp_improvement)
-            print("test_compound_pp_quality, test_compound_pp_improvement:", test_compound_pp_quality, test_compound_pp_improvement)
+                                                                    run_num=run_num)
+            print("train_compound_pp_quality, test_compound_pp_quality:", train_compound_pp_quality, test_compound_pp_quality)
             print("best_compound_pp_quality:", best_compound_pp_quality)
             if test_compound_pp_quality > best_compound_pp_quality:
                 best_compound_pp_quality = test_compound_pp_quality
 
-            yield test_compound_pp_quality, test_compound_pp_improvement, observation, test_multiple_models_metrics_df
+            yield test_compound_pp_quality, observation, test_multiple_models_metrics_df
 
             if train_compound_pp_quality < best_compound_pp_quality:
                 self._logger.info("Pruning the physical pipeline...")
-                return test_compound_pp_quality, test_compound_pp_improvement, observation, test_multiple_models_metrics_df
+                return test_compound_pp_quality, observation, test_multiple_models_metrics_df
 
-        return test_compound_pp_quality, test_compound_pp_improvement, observation, test_multiple_models_metrics_df
+        return test_compound_pp_quality, observation, test_multiple_models_metrics_df
 
     def execute_pipeline(self, X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.DataFrame, y_test: pd.DataFrame,
                          physical_pipeline: PhysicalPipeline, objectives: list, seed: int):
