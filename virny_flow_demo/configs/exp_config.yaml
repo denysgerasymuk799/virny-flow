@@ -13,10 +13,10 @@ secrets_path: "/Users/denys_herasymuk/Research/NYU/VirnyFlow_Project/Code/virny-
 # Parameters for optimisation
 ref_point: [0.20, 0.10]
 objectives:
-  - { name: "objective_1", metric: "F1", group: "overall", weight: 0.25 }
-  - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "sex", weight: 0.75 }
-max_trials: 5
-num_workers: 4
+  - { name: "objective_1", metric: "F1", group: "overall", weight: 0.5 }
+  - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "sex", weight: 0.5 }
+max_trials: 3
+num_workers: 3
 num_pp_candidates: 2
 training_set_fractions_for_halting: [0.5, 0.75, 1.0]
 exploration_factor: 0.5

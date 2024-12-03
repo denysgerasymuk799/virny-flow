@@ -52,7 +52,7 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
                         if idx + 1 == len(exp_config.run_nums):
                             # If all work is done, set num_available_tasks to num_workers and get new tasks from task_queue.
                             # When task_queue is empty, it will return NO_TASKS, and it will be sent to each worker.
-                            num_available_tasks = exp_config.num_workers
+                            num_available_tasks = exp_config.num_workers * 2  # Multiply by 2 to be sure to shutdown all the workers
                             termination_flag = True
                         else:
                             break  # Start processing tasks for another run_num
@@ -108,6 +108,7 @@ def get_kafka_consumer():
                             session_timeout_ms=300_000,  # Increase session timeout (default: 10000 ms)
                             heartbeat_interval_ms=20_000,  # Increase heartbeat interval (default: 3000 ms)
                             max_poll_interval_ms=600_000,  # Increase to 10 minutes if needed
+                            max_poll_records=1,
                             request_timeout_ms=330_000,
                             auto_offset_reset="earliest",
                             enable_auto_commit=True)
