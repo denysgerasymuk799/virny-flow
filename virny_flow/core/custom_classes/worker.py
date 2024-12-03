@@ -11,10 +11,6 @@ from virny_flow.core.utils.custom_logger import get_logger
 from virny_flow.core.utils.pipeline_utils import observation_to_dict
 
 
-def on_send_error(exc_info):
-    print(f'ERROR Producer: Got errback -- {exc_info}')
-
-
 def initialize_consumer():
     max_retries = 5  # Maximum number of retries
     backoff_factor = 2  # Exponential backoff factor (e.g., 2, 4, 8 seconds)
@@ -105,7 +101,7 @@ class Worker:
         while retry_count < max_retries:
             try:
                 # Attempt to send the message
-                self.producer.send(COMPLETED_TASKS_QUEUE_TOPIC, value=message).add_errback(on_send_error)
+                self.producer.send(COMPLETED_TASKS_QUEUE_TOPIC, value=message)
                 self.producer.flush()
                 self._logger.info(f"New task with UUID = {task_uuid} and run_num = {run_num} was completed and sent to COMPLETED_TASKS_QUEUE_TOPIC")
                 break  # Exit the loop if sending is successful
