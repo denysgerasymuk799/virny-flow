@@ -12,10 +12,10 @@ LOG_COLORS = {
 }
 
 FIELD_COLORS = {
-    "asctime": Fore.LIGHTCYAN_EX,  # Grey
-    "filename": Fore.LIGHTCYAN_EX,  # Grey
-    "name": Fore.LIGHTCYAN_EX,  # Grey
-    "lineno": Fore.LIGHTCYAN_EX,  # Grey
+    "asctime": Fore.LIGHTCYAN_EX,
+    "filename": Fore.LIGHTCYAN_EX,
+    "name": Fore.LIGHTCYAN_EX,
+    "lineno": Fore.LIGHTCYAN_EX,
 }
 
 class ColorFormatter(logging.Formatter):
