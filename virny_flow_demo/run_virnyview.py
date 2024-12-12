@@ -1,5 +1,4 @@
 import pathlib
-from virny.utils.custom_initializers import create_config_obj
 from virny.custom_classes.metrics_interactive_visualizer import MetricsInteractiveVisualizer
 
 from virny_flow.core.utils.common_helpers import create_exp_config_obj
@@ -13,7 +12,7 @@ if __name__ == '__main__':
     exp_config = create_exp_config_obj(exp_config_yaml_path=exp_config_yaml_path)
 
     data_loader = DATASET_CONFIG[exp_config.dataset]['data_loader'](**DATASET_CONFIG[exp_config.dataset]['data_loader_kwargs'])
-    virny_config = create_config_obj(DATASET_CONFIG[exp_config.dataset]['virny_config_path'])
+    virny_config = exp_config.virny_args
     all_metrics_df = prepare_metrics_for_virnyview(secrets_path=exp_config.secrets_path,
                                                    exp_config_name=exp_config.exp_config_name)
 

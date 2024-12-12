@@ -46,7 +46,7 @@ def create_exp_config_obj(exp_config_yaml_path: str):
     pprint(config_dct)
     print()
     config_obj = DefaultMunch.fromDict(config_dct)
-    config_obj.objectives = [dict(obj) for obj in config_obj.objectives]
+    config_obj.optimisation_args.objectives = [dict(obj) for obj in config_obj.optimisation_args.objectives]
 
     return config_obj
 
@@ -57,40 +57,61 @@ def validate_config(config_obj):
     """
     # Define the schema for the configuration
     schema = {
-        # General experiment parameters
-        "exp_config_name": {"type": "string", "required": True},
-        "dataset": {"type": "string", "required": True},
-        "sensitive_attrs_for_intervention": {"type": "list", "required": True},
-        "null_imputers": {"type": "list", "required": True},
-        "fairness_interventions": {"type": "list", "required": True},
-        "models": {"type": "list", "required": True},
-        "num_runs": {"type": "integer", "required": False, "min": 1},
-        "run_nums": {"type": "list", "required": False, "schema": {"type": "integer", "min": 1}},
-        "secrets_path": {"type": "string", "required": True},
-
-        # Parameters for multi-objective optimisation
-        "ref_point": {"type": "list", "required": False},
-        "objectives": {
-            "type": "list",
-            "required": True,
-            "schema": {  # Schema for each dictionary in the list
-                "type": "dict",
-                "schema": {
-                    "name": {"type": "string", "required": True},
-                    "metric": {"type": "string", "required": True},
-                    "group": {"type": "string", "required": True},
-                    "weight": {"type": "float", "required": False, "default": 0.5},
-                }
+        "common_args": {
+            "type": "dict",
+            "schema": {
+                "exp_config_name": {"type": "string", "required": True},
+                "num_runs": {"type": "integer", "required": False, "min": 1},
+                "run_nums": {"type": "list", "required": False, "schema": {"type": "integer", "min": 1}},
+                "secrets_path": {"type": "string", "required": True},
             }
         },
-        "max_trials": {"type": "integer", "min": 1, "required": True},
-        "num_workers": {"type": "integer", "min": 1, "required": True},
-        "num_pp_candidates": {"type": "integer", "min": 2, "required": False, "default": 10},
-        "queue_size": {"type": "integer", "min": config_obj['num_workers'],
-                       "required": False, "default": 3 * config_obj['num_workers']},
-        "training_set_fractions_for_halting": {"type": "list", "required": False, "default": [0.5, 0.75, 1.0]},
-        "exploration_factor": {"type": "float", "min": 0.0, "max": 1.0, "required": False, "default": 0.5},
-        "risk_factor": {"type": "float", "min": 0.0, "max": 1.0, "required": False, "default": 0.5},
+        "pipeline_args": {
+            "type": "dict",
+            "schema": {
+                "dataset": {"type": "string", "required": True},
+                "sensitive_attrs_for_intervention": {"type": "list", "required": True},
+                "null_imputers": {"type": "list", "required": True},
+                "fairness_interventions": {"type": "list", "required": True},
+                "models": {"type": "list", "required": True},
+            }
+        },
+        "optimisation_args": {
+            "type": "dict",
+            "schema": {
+                "ref_point": {"type": "list", "required": False},
+                "objectives": {
+                    "type": "list",
+                    "required": True,
+                    "schema": {  # Schema for each dictionary in the list
+                        "type": "dict",
+                        "schema": {
+                            "name": {"type": "string", "required": True},
+                            "metric": {"type": "string", "required": True},
+                            "group": {"type": "string", "required": True},
+                            "weight": {"type": "float", "required": False, "default": 0.5},
+                        }
+                    }
+                },
+                "max_trials": {"type": "integer", "min": 1, "required": True},
+                "num_workers": {"type": "integer", "min": 1, "required": True},
+                "num_pp_candidates": {"type": "integer", "min": 2, "required": False, "default": 10},
+                "queue_size": {"type": "integer", "min": config_obj['optimisation_args']['num_workers'],
+                               "required": False, "default": 3 * config_obj['optimisation_args']['num_workers']},
+                "training_set_fractions_for_halting": {"type": "list", "required": False, "default": [0.5, 0.75, 1.0]},
+                "exploration_factor": {"type": "float", "min": 0.0, "max": 1.0, "required": False, "default": 0.5},
+                "risk_factor": {"type": "float", "min": 0.0, "max": 1.0, "required": False, "default": 0.5},
+            }
+        },
+        "virny_args": {
+            "type": "dict",
+            "schema": {
+                "dataset_name": {"type": "string", "required": True},
+                "bootstrap_fraction": {"type": "float", "min": 0.0, "max": 1.0, "required": True},
+                "n_estimators": {"type": "integer", "min": 2, "required": True},
+                "sensitive_attributes_dct": {"type": "dict", "allow_unknown": True, "schema": {}, "required": True},
+            }
+        },
     }
 
     # Initialize the validator
@@ -103,27 +124,29 @@ def validate_config(config_obj):
         raise ValueError("Validation errors in exp_config.yaml:", v.errors)
 
     # Other checks
-    if config_obj.get("num_runs", None) is not None and config_obj.get("run_nums", None) is not None:
+    if (config_obj["common_args"].get("num_runs", None) is not None and
+            config_obj["common_args"].get("run_nums", None) is not None):
         raise ValueError("Only one of two arguments (num_runs, run_nums) should be defined in a config.")
-    if config_obj.get("num_runs", None) is None and config_obj.get("run_nums", None) is None:
+    if (config_obj["common_args"].get("num_runs", None) is None and
+            config_obj["common_args"].get("run_nums", None) is None):
         raise ValueError("One of two arguments (num_runs, run_nums) should be defined in a config.")
 
     objective_total_weight = 0.0
-    for objective in config_obj['objectives']:
+    for objective in config_obj['optimisation_args']['objectives']:
         objective_total_weight += objective['weight']
 
     if objective_total_weight != 1.0:
         raise ValueError("Objective weights must sum to 1.0")
 
-    if config_obj['num_workers'] < config_obj['num_pp_candidates']:
+    if config_obj['optimisation_args']['num_workers'] < config_obj['optimisation_args']['num_pp_candidates']:
         raise ValueError("The number of workers should be greater or equal than the number of physical pipeline candidates for each round")
 
     # Default arguments
-    if len(config_obj['null_imputers']) == 0:
-        config_obj['null_imputers'] = ['None']
+    if len(config_obj['pipeline_args']['null_imputers']) == 0:
+        config_obj['pipeline_args']['null_imputers'] = ['None']
 
-    if config_obj.get("num_runs") is not None:
-        config_obj["run_nums"] = [run_num for run_num in range(1, config_obj["num_runs"] + 1)]
+    if config_obj["common_args"].get("num_runs") is not None:
+        config_obj["common_args"]["run_nums"] = [run_num for run_num in range(1, config_obj["common_args"]["num_runs"] + 1)]
 
     return config_obj
 
@@ -191,3 +214,25 @@ def create_virny_base_flow_datasets(data_loader, dataset_sensitive_attrs,
     ))
 
     return main_base_flow_dataset, extra_base_flow_datasets
+
+
+def flatten_dict(d, parent_key='', sep='.'):
+    """
+    Flattens a nested dictionary into a single-level dictionary.
+
+    Args:
+    - d (dict): The dictionary to flatten.
+    - parent_key (str): The base key to prefix (used in recursion).
+    - sep (str): Separator for concatenating nested keys.
+
+    Returns:
+    - dict: A flattened dictionary.
+    """
+    items = []
+    for k, v in d.items():
+        new_key = f"{parent_key}{sep}{k}" if parent_key else k
+        if isinstance(v, dict):
+            items.extend(flatten_dict(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)

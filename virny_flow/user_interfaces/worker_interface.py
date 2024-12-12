@@ -21,7 +21,7 @@ def worker_interface(exp_config: DefaultMunch, virny_flow_address: str, dataset_
                                            fairness_intervention_config=fairness_intervention_config,
                                            models_config=models_config)
     # Get an initial task
-    worker = Worker(address=virny_flow_address, secrets_path=exp_config.secrets_path)
+    worker = Worker(address=virny_flow_address, secrets_path=exp_config.common_args.secrets_path)
     task_dct = worker.get_task()
 
     # Infinite while loop for task execution

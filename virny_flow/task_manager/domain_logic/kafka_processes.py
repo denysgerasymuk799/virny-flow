@@ -22,37 +22,37 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
     producer = AIOKafkaProducer(bootstrap_servers=os.getenv("KAFKA_BROKER"))
 
     await producer.start()
-    for idx, run_num in enumerate(exp_config.run_nums):
+    for idx, run_num in enumerate(exp_config.common_args.run_nums):
         execution_start_time = time.time()
         print('#' * 40 + '\n' + f'START TASK PROVIDING FOR RUN_NUM={run_num}' + '\n' + '#' * 40, flush=True)
 
         while True:
             try:
-                num_available_tasks = await task_queue.get_num_available_tasks(exp_config_name=exp_config.exp_config_name, run_num=run_num)
+                num_available_tasks = await task_queue.get_num_available_tasks(exp_config_name=exp_config.common_args.exp_config_name, run_num=run_num)
                 if num_available_tasks == 0:
-                    if not await task_queue.is_empty(exp_config_name=exp_config.exp_config_name, run_num=run_num):
+                    if not await task_queue.is_empty(exp_config_name=exp_config.common_args.exp_config_name, run_num=run_num):
                         print("Wait until new tasks come up...", flush=True)
                         time.sleep(10)
                         continue
 
                     # Check termination factor: Get all logical pipelines, which have num_trials less than max_trials.
-                    query = {"num_trials": {"$lt": exp_config.max_trials}}
+                    query = {"num_trials": {"$lt": exp_config.optimisation_args.max_trials}}
                     logical_pipeline_records = await db_client.read_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
-                                                                          exp_config_name=exp_config.exp_config_name,
+                                                                          exp_config_name=exp_config.common_args.exp_config_name,
                                                                           run_num=run_num,
                                                                           query=query)
                     if len(logical_pipeline_records) == 0:
                         # Save execution time of all pipelines for the define experimental config
                         exp_config_execution_time = time.time() - execution_start_time
                         await db_client.update_query(collection_name=EXP_CONFIG_HISTORY_TABLE,
-                                                     exp_config_name=exp_config.exp_config_name,
+                                                     exp_config_name=exp_config.common_args.exp_config_name,
                                                      run_num=run_num,
                                                      condition={},
                                                      update_val_dct={"exp_config_execution_time": exp_config_execution_time})
-                        if idx + 1 == len(exp_config.run_nums):
+                        if idx + 1 == len(exp_config.common_args.run_nums):
                             # If all work is done, set num_available_tasks to num_workers and get new tasks from task_queue.
                             # When task_queue is empty, it will return NO_TASKS, and it will be sent to each worker.
-                            num_available_tasks = exp_config.num_workers * 2  # Multiply by 2 to be sure to shutdown all the workers
+                            num_available_tasks = exp_config.optimisation_args.num_workers * 2  # Multiply by 2 to be sure to shutdown all the workers
                             termination_flag = True
                         else:
                             break  # Start processing tasks for another run_num
@@ -63,7 +63,7 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
 
                 # Add new tasks to the NewTaskQueue topic in Kafka
                 for i in range(num_available_tasks):
-                    new_high_priority_task = await task_queue.dequeue(exp_config_name=exp_config.exp_config_name, run_num=run_num)
+                    new_high_priority_task = await task_queue.dequeue(exp_config_name=exp_config.common_args.exp_config_name, run_num=run_num)
                     json_message = json.dumps(new_high_priority_task)  # Serialize to JSON
                     logger.info(f'New task was retrieved, UUID: {new_high_priority_task["task_uuid"]}')
 
@@ -79,7 +79,7 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
 
                 if termination_flag:
                     # Terminate CostModelUpdater
-                    terminate_consumer_msg = {"exp_config_name": exp_config.exp_config_name, "run_num": run_num, "task_uuid": NO_TASKS}
+                    terminate_consumer_msg = {"exp_config_name": exp_config.common_args.exp_config_name, "run_num": run_num, "task_uuid": NO_TASKS}
                     terminate_consumer_json_msg = json.dumps(terminate_consumer_msg)
                     await producer.send_and_wait(topic=COMPLETED_TASKS_QUEUE_TOPIC,
                                                  value=terminate_consumer_json_msg.encode('utf-8'))
@@ -159,7 +159,7 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
                                                       })
                 # Update score of the selected logical pipeline
                 await update_logical_pipeline_score_model(exp_config_name=exp_config_name,
-                                                          objectives_lst=exp_config.objectives,
+                                                          objectives_lst=exp_config.optimisation_args.objectives,
                                                           observation=observation,
                                                           physical_pipeline_uuid=physical_pipeline_uuid,
                                                           logical_pipeline_uuid=logical_pipeline_uuid,

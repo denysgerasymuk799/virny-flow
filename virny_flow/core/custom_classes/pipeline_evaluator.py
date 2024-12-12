@@ -67,21 +67,22 @@ class PipelineEvaluator(MLLifecycle):
         """
         Constructor defining default variables
         """
-        super().__init__(exp_config_name=exp_config.exp_config_name,
-                         dataset_name=exp_config.dataset,
-                         secrets_path=exp_config.secrets_path,
+        super().__init__(exp_config_name=exp_config.common_args.exp_config_name,
+                         dataset_name=exp_config.pipeline_args.dataset,
+                         secrets_path=exp_config.common_args.secrets_path,
                          dataset_config=dataset_config,
-                         models_config=models_config)
+                         models_config=models_config,
+                         virny_config=exp_config.virny_args)
 
         self.exp_config = exp_config
         self.null_imputation_config = null_imputation_config
         self.fairness_intervention_config = fairness_intervention_config
 
-        if self.init_data_loader.full_df.shape[0] * (1 - dataset_config[exp_config.dataset]['test_set_fraction']) < 1000:
+        if self.init_data_loader.full_df.shape[0] * (1 - dataset_config[exp_config.pipeline_args.dataset]['test_set_fraction']) < 1000:
             print('Skip halting since a training set is less than 1000 rows')
             self.training_set_fractions_for_halting = [1.0]
         else:
-            self.training_set_fractions_for_halting = exp_config.training_set_fractions_for_halting
+            self.training_set_fractions_for_halting = exp_config.optimisation_args.training_set_fractions_for_halting
 
     def execute_task(self, task: Task, seed: int):
         self._db.connect()
@@ -294,7 +295,7 @@ class PipelineEvaluator(MLLifecycle):
 
         if fairness_intervention_name != NO_FAIRNESS_INTERVENTION:
             # Create a binary column for the fairness intervention
-            input_sensitive_attrs_for_intervention = self.exp_config.sensitive_attrs_for_intervention
+            input_sensitive_attrs_for_intervention = self.exp_config.pipeline_args.sensitive_attrs_for_intervention
             binary_sensitive_attr_for_intervention = '&'.join(input_sensitive_attrs_for_intervention) + '_binary'
 
             # Create train and test sensitive attr dfs
@@ -343,7 +344,7 @@ class PipelineEvaluator(MLLifecycle):
         }
 
         # Prepare fairness in-processor or post-processor if needed
-        sensitive_attribute = '&'.join(self.exp_config.sensitive_attrs_for_intervention) + '_binary'
+        sensitive_attribute = '&'.join(self.exp_config.pipeline_args.sensitive_attrs_for_intervention) + '_binary'
         privileged_groups = [{sensitive_attribute: 1}]
         unprivileged_groups = [{sensitive_attribute: 0}]
         if fairness_intervention_name == FairnessIntervention.EOP.value:

@@ -16,16 +16,16 @@ class TaskManager:
 
         # Initialize BO Advisor
         self.bo_advisor_config = BOAdvisorConfig()
-        self.bo_advisor_config.ref_point = exp_config.ref_point
-        self.bo_advisor_config.num_objectives = len(exp_config.objectives)
+        self.bo_advisor_config.ref_point = exp_config.optimisation_args.ref_point
+        self.bo_advisor_config.num_objectives = len(exp_config.optimisation_args.objectives)
 
         self.app = FastAPI()
         self.uvicorn_server = uvicorn.Server(uvicorn.Config(self.app, host=self.host, port=self.port))  # initialize to pass to register_routes()
         self.db_client = TaskManagerDBClient(secrets_path)
         self.task_queue = TaskQueue(secrets_path=secrets_path,
-                                    max_queue_size=exp_config.queue_size)
+                                    max_queue_size=exp_config.optimisation_args.queue_size)
         # Separate MO-BO optimizer for each run_num and logical pipeline
-        self._lp_to_advisor = {run_num: dict() for run_num in exp_config.run_nums}
+        self._lp_to_advisor = {run_num: dict() for run_num in exp_config.common_args.run_nums}
 
         # Register routes from the routes module
         register_routes(app=self.app,
