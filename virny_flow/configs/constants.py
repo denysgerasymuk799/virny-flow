@@ -1,7 +1,8 @@
 from enum import Enum
 
 
-EXPERIMENT_RUN_SEEDS = [100 * i for i in range(1, 11)]
+DEBUG_MODE = False
+INIT_RANDOM_STATE = 100
 NUM_FOLDS_FOR_TUNING = 3
 NO_TASKS = 'NO_TASKS'
 STAGE_SEPARATOR = '&'
@@ -15,6 +16,15 @@ PHYSICAL_PIPELINE_OBSERVATIONS_TABLE = 'physical_pipeline_observations'
 ALL_EXPERIMENT_METRICS_TABLE = 'all_experiment_metrics'
 TASK_QUEUE_TABLE = 'task_queue'
 EXP_CONFIG_HISTORY_TABLE = 'exp_config_history'
+
+
+# ====================================================================
+# Kafka Constants
+# ====================================================================
+NEW_TASKS_QUEUE_TOPIC = 'NewTasksQueue'
+COMPLETED_TASKS_QUEUE_TOPIC = 'CompletedTasksQueue'
+TASK_MANAGER_CONSUMER_GROUP = "task_manager_consumer_group"
+WORKER_CONSUMER_GROUP = "worker_consumer_group"
 
 
 # ====================================================================

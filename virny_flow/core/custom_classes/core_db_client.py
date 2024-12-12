@@ -1,14 +1,68 @@
 import os
 import pathlib
 import certifi
+import random
+import time
 import pandas as pd
 
 from dotenv import load_dotenv
 from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure, OperationFailure
 
 
 def get_secrets_path(secrets_file_name: str):
     return pathlib.Path(__file__).parent.joinpath('..', '..', 'configs', secrets_file_name)
+
+
+def run_transaction_with_retry(txn_func, session, max_retries=5, **kwargs):
+    attempts = 0  # Count the number of attempts
+
+    while attempts < max_retries:
+        try:
+            result = txn_func(session, **kwargs)  # Perform the transaction
+            print("Transaction completed successfully.")
+            return result  # Exit the loop if the transaction is successful
+        except (ConnectionFailure, OperationFailure) as exc:
+            attempts += 1  # Increment the attempt counter
+            print(f"Transaction aborted. Attempt {attempts} of {max_retries}. Exception: {exc}")
+
+            # If transient error, retry the whole transaction
+            if exc.has_error_label("TransientTransactionError"):
+                if attempts < max_retries:
+                    sleep_time = random.choice([3 * i for i in range(1, 6)])
+                    print(f"TransientTransactionError detected. Retrying in {sleep_time:.2f} seconds...")
+                    time.sleep(sleep_time)  # Sleep for a random interval
+                    continue
+                else:
+                    print("Max retries reached. Transaction failed.")
+                    raise
+            else:
+                raise  # Re-raise the exception if it's not transient
+
+
+def commit_with_retry(session):
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            # Commit uses write concern set at transaction start.
+            session.commit_transaction()
+            print("Transaction committed.")
+            return
+        except (ConnectionFailure, OperationFailure) as exc:
+            # Can retry commit
+            if exc.has_error_label("UnknownTransactionCommitResult"):
+                print(f"Attempt {attempt + 1} of {max_retries}: UnknownTransactionCommitResult, retrying commit operation ...")
+                # Sleep for a small random time before retrying
+                sleep_time = random.choice([3 * i for i in range(1, 6)])
+                time.sleep(sleep_time)
+                continue
+            else:
+                print("Error during commit, not retryable.")
+                raise
+
+    if attempt == max_retries - 1:
+        print("Max retry attempts reached. Transaction could not be committed.")
+        raise
 
 
 class CoreDBClient:
@@ -31,6 +85,23 @@ class CoreDBClient:
     def execute_write_query(self, records, collection_name):
         collection = self._get_collection(collection_name)
         collection.insert_many(records)
+
+    def update_query(self, collection_name: str, condition: dict, update_val_dct: dict, session = None):
+        collection = self._get_collection(collection_name)
+        condition['deletion_flag'] = False
+
+        # Update many documents
+        result = collection.update_many(
+            condition,  # Filter to match the document
+            {"$set": update_val_dct},  # Update operation
+            session = session
+        )
+        return result.modified_count
+
+    def read_one_query(self, collection_name: str, query: dict, sort_param: list = None, session = None):
+        collection = self._get_collection(collection_name)
+        query['deletion_flag'] = False
+        return collection.find_one(query, sort=sort_param, session=session)
 
     def execute_read_query(self, collection_name: str, query: dict):
         collection = self._get_collection(collection_name)

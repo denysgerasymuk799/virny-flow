@@ -20,10 +20,9 @@ def worker_interface(exp_config: DefaultMunch, virny_flow_address: str, dataset_
                                            null_imputation_config=null_imputation_config,
                                            fairness_intervention_config=fairness_intervention_config,
                                            models_config=models_config)
-
     # Get an initial task
-    worker = Worker(address=virny_flow_address)
-    task_dct = worker.get_task(exp_config.exp_config_name)
+    worker = Worker(address=virny_flow_address, secrets_path=exp_config.secrets_path)
+    task_dct = worker.get_task()
 
     # Infinite while loop for task execution
     while True:
@@ -36,9 +35,11 @@ def worker_interface(exp_config: DefaultMunch, virny_flow_address: str, dataset_
             task = Task.from_dict(task_dct)
 
             # Use PipelineEvaluator to execute the task
-            observation = pipeline_evaluator.execute_task(task=task, seed=exp_config.random_state)
+            observation = pipeline_evaluator.execute_task(task=task, seed=task.random_state)
+
             if observation:
                 worker.complete_task(exp_config_name=task.exp_config_name,
+                                     run_num=task.run_num,
                                      task_uuid=task.task_uuid,
                                      physical_pipeline_uuid=task.physical_pipeline.physical_pipeline_uuid,
                                      logical_pipeline_uuid=task.physical_pipeline.logical_pipeline_uuid,
@@ -47,4 +48,4 @@ def worker_interface(exp_config: DefaultMunch, virny_flow_address: str, dataset_
             print('\n\n', flush=True)
 
         # Request a new task in VirnyFlow
-        task_dct = worker.get_task(exp_config.exp_config_name)
+        task_dct = worker.get_task()

@@ -5,6 +5,8 @@ import base64
 import yaml
 import pandas as pd
 
+from pprint import pprint
+from cerberus import Validator
 from munch import DefaultMunch
 from virny.custom_classes.base_dataset import BaseFlowDataset
 
@@ -39,8 +41,89 @@ def create_exp_config_obj(exp_config_yaml_path: str):
     with open(exp_config_yaml_path) as f:
         config_dct = yaml.load(f, Loader=yaml.FullLoader)
 
+    config_dct = validate_config(config_dct)
+    print('Input experiment config:')
+    pprint(config_dct)
+    print()
     config_obj = DefaultMunch.fromDict(config_dct)
     config_obj.objectives = [dict(obj) for obj in config_obj.objectives]
+
+    return config_obj
+
+
+def validate_config(config_obj):
+    """
+    Validate parameters types, values, ranges and set optional parameters in config yaml file.
+    """
+    # Define the schema for the configuration
+    schema = {
+        # General experiment parameters
+        "exp_config_name": {"type": "string", "required": True},
+        "dataset": {"type": "string", "required": True},
+        "sensitive_attrs_for_intervention": {"type": "list", "required": True},
+        "null_imputers": {"type": "list", "required": True},
+        "fairness_interventions": {"type": "list", "required": True},
+        "models": {"type": "list", "required": True},
+        "num_runs": {"type": "integer", "required": False, "min": 1},
+        "run_nums": {"type": "list", "required": False, "schema": {"type": "integer", "min": 1}},
+        "secrets_path": {"type": "string", "required": True},
+
+        # Parameters for multi-objective optimisation
+        "ref_point": {"type": "list", "required": False},
+        "objectives": {
+            "type": "list",
+            "required": True,
+            "schema": {  # Schema for each dictionary in the list
+                "type": "dict",
+                "schema": {
+                    "name": {"type": "string", "required": True},
+                    "metric": {"type": "string", "required": True},
+                    "group": {"type": "string", "required": True},
+                    "weight": {"type": "float", "required": False, "default": 0.5},
+                }
+            }
+        },
+        "max_trials": {"type": "integer", "min": 1, "required": True},
+        "num_workers": {"type": "integer", "min": 1, "required": True},
+        "num_pp_candidates": {"type": "integer", "min": 2, "required": False, "default": 10},
+        "queue_size": {"type": "integer", "min": config_obj['num_workers'],
+                       "required": False, "default": 3 * config_obj['num_workers']},
+        "training_set_fractions_for_halting": {"type": "list", "required": False, "default": [0.5, 0.75, 1.0]},
+        "exploration_factor": {"type": "float", "min": 0.0, "max": 1.0, "required": False, "default": 0.5},
+        "risk_factor": {"type": "float", "min": 0.0, "max": 1.0, "required": False, "default": 0.5},
+    }
+
+    # Initialize the validator
+    v = Validator(schema)
+
+    # Validate the configuration
+    if v.validate(config_obj):
+        config_obj = v.normalized(config_obj)  # Enforce defaults
+    else:
+        raise ValueError("Validation errors in exp_config.yaml:", v.errors)
+
+    # Other checks
+    if config_obj.get("num_runs", None) is not None and config_obj.get("run_nums", None) is not None:
+        raise ValueError("Only one of two arguments (num_runs, run_nums) should be defined in a config.")
+    if config_obj.get("num_runs", None) is None and config_obj.get("run_nums", None) is None:
+        raise ValueError("One of two arguments (num_runs, run_nums) should be defined in a config.")
+
+    objective_total_weight = 0.0
+    for objective in config_obj['objectives']:
+        objective_total_weight += objective['weight']
+
+    if objective_total_weight != 1.0:
+        raise ValueError("Objective weights must sum to 1.0")
+
+    if config_obj['num_workers'] < config_obj['num_pp_candidates']:
+        raise ValueError("The number of workers should be greater or equal than the number of physical pipeline candidates for each round")
+
+    # Default arguments
+    if len(config_obj['null_imputers']) == 0:
+        config_obj['null_imputers'] = ['None']
+
+    if config_obj.get("num_runs") is not None:
+        config_obj["run_nums"] = [run_num for run_num in range(1, config_obj["num_runs"] + 1)]
 
     return config_obj
 

@@ -120,24 +120,25 @@ def get_models_params_for_tuning(models_tuning_seed):
             'model': RandomForestClassifier,
             'default_kwargs': {'random_state': models_tuning_seed},
             'config_space': {
-                'model__n_estimators': CategoricalHyperparameter("model__n_estimators", [50, 100]),
-                # 'n_estimators': [50, 100, 200, 500],
-                # 'max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
-                # 'min_samples_split': [2, 5, 10],
-                # 'min_samples_leaf': [1, 2, 4],
-                # 'bootstrap': [True, False]
+                # 'model__n_estimators': CategoricalHyperparameter("model__n_estimators", [50, 100]),
+                'model__n_estimators': CategoricalHyperparameter("model__n_estimators", [50, 100, 200, 500]),
+                'model__max_depth': CategoricalHyperparameter("model__max_depth", [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 'None']),
+                'model__min_samples_split': CategoricalHyperparameter("model__min_samples_split", [2, 5, 10]),
+                'model__min_samples_leaf': CategoricalHyperparameter("model__min_samples_leaf", [1, 2, 4]),
+                'model__bootstrap': CategoricalHyperparameter("model__bootstrap", [True, False]),
             }
         },
-        # 'lgbm_clf': {
-        #     'model': LGBMClassifier(random_state=models_tuning_seed, n_jobs=48, num_threads=48),
-        #     'config_space': {
-        #         'n_estimators': [50, 100, 200, 500],
-        #         'max_depth' : [i for i in range(3, 10)] + [-1],
-        #         'num_leaves' : [int(x) for x in np.linspace(start = 20, stop = 3000, num = 8)],
-        #         'min_data_in_leaf' : [int(x) for x in np.linspace(start = 100, stop = 1000, num = 8)],
-        #         'verbosity': [-1]
-        #     }
-        # },
+        'lgbm_clf': {
+            'model': LGBMClassifier,
+            'default_kwargs': {'random_state': models_tuning_seed, 'n_jobs': 48, 'num_threads': 48},
+            'config_space': {
+                'model__n_estimators': CategoricalHyperparameter("model__n_estimators", [50, 100, 200, 500]),
+                'model__max_depth': CategoricalHyperparameter("model__max_depth", [3, 4, 5, 6, 7, 8, 9, -1]),
+                'model__num_leaves': CategoricalHyperparameter("model__num_leaves", [int(x) for x in np.linspace(start = 20, stop = 3000, num = 8)]),
+                'model__min_data_in_leaf': CategoricalHyperparameter("model__min_data_in_leaf", [int(x) for x in np.linspace(start = 100, stop = 1000, num = 8)]),
+                'model__verbosity': CategoricalHyperparameter("model__verbosity", [-1]),
+            }
+        },
         # 'mlp_clf': {
         #     'model': MLPClassifier(hidden_layer_sizes=(100,100,), random_state=models_tuning_seed, max_iter=1000),
         #     'config_space': {

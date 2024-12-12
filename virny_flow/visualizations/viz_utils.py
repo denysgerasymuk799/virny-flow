@@ -14,24 +14,49 @@ def prepare_metrics_for_virnyview(secrets_path: str, exp_config_name: str):
         {
             "$match": {
                 "exp_config_name": exp_config_name,
+                "deletion_flag": False
             }
         },
-        # Step 2: Group to get the maximum `compound_pp_improvement` per `exp_config_name` and `logical_pipeline_uuid`
+        # Step 2: Group by exp_config_name, logical_pipeline_uuid, and physical_pipeline_uuid
+        # to calculate the average compound_pp_quality
         {
             "$group": {
                 "_id": {
                     "exp_config_name": "$exp_config_name",
-                    "logical_pipeline_uuid": "$logical_pipeline_uuid"
+                    "logical_pipeline_uuid": "$logical_pipeline_uuid",
+                    "physical_pipeline_uuid": "$physical_pipeline_uuid"
                 },
-                "max_compound_pp_improvement": { "$max": "$compound_pp_improvement" },
-                "doc": { "$first": "$$ROOT" }  # Capture the full document with max improvement
+                "avg_compound_pp_quality": { "$avg": "$compound_pp_quality" }
             }
         },
-        # Step 3: Replace root with the captured document
+        # Step 3: Group to get the maximum `avg_compound_pp_quality` per `exp_config_name` and `logical_pipeline_uuid`
         {
-            "$replaceRoot": { "newRoot": "$doc" }
+            "$group": {
+                "_id": {
+                    "exp_config_name": "$_id.exp_config_name",
+                    "logical_pipeline_uuid": "$_id.logical_pipeline_uuid"
+                },
+                "max_compound_pp_quality": { "$max": "$avg_compound_pp_quality" },
+                "best_pipeline_doc": {
+                    "$first": {
+                        "physical_pipeline_uuid": "$_id.physical_pipeline_uuid",
+                        "avg_compound_pp_quality": "$avg_compound_pp_quality"
+                    }
+                }
+            }
         },
-        # Step 4: Join with `all_experiment_metrics` based on `physical_pipeline_uuid`
+        # Step 4: Replace root with the captured document
+        {
+            "$replaceRoot": {
+                "newRoot": {
+                    "exp_config_name": "$_id.exp_config_name",
+                    "logical_pipeline_uuid": "$_id.logical_pipeline_uuid",
+                    "physical_pipeline_uuid": "$best_pipeline_doc.physical_pipeline_uuid",
+                    "avg_compound_pp_quality": "$best_pipeline_doc.avg_compound_pp_quality"
+                }
+            }
+        },
+        # Step 5: Join with `all_experiment_metrics` based on `physical_pipeline_uuid`
         {
             "$lookup": {
                 "from": ALL_EXPERIMENT_METRICS_TABLE,
@@ -49,18 +74,18 @@ def prepare_metrics_for_virnyview(secrets_path: str, exp_config_name: str):
                 "as": "experiment_metrics"
             }
         },
-        # Step 5: Unwind to get one document per metric in `all_experiment_metrics`
+        # Step 6: Unwind to get one document per metric in `all_experiment_metrics`
         {
             "$unwind": "$experiment_metrics"
         },
-        # Step 6: Project only the fields you need (optional)
+        # Step 7: Project only the fields you need (optional)
         {
             "$project": {
                 "_id": 0,
                 "exp_config_name": 1,
                 "logical_pipeline_uuid": 1,
                 "physical_pipeline_uuid": 1,
-                "compound_pp_improvement": 1,
+                "compound_pp_quality": 1,
                 "experiment_metrics.logical_pipeline_name": 1,
                 "experiment_metrics.dataset_name": 1,
                 "experiment_metrics.null_imputer_name": 1,
@@ -95,6 +120,6 @@ def prepare_metrics_for_virnyview(secrets_path: str, exp_config_name: str):
     pivoted_all_metrics_df = all_metrics_df.pivot(columns='Subgroup', values='Metric_Value',
                                                   index=[col for col in all_metrics_df.columns
                                                          if col not in ('Subgroup', 'Metric_Value')]).reset_index()
-
     db_client.close()
+
     return pivoted_all_metrics_df

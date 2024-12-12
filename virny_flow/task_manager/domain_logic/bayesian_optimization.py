@@ -109,8 +109,8 @@ def get_objective_losses(metrics_dct: dict, objectives: list, model_name: str, s
 
     # OpenBox minimizes the objective
     losses = []
+    reversed_objectives = []
     for objective in objectives:
-        print("objective:", objective)
         metric, group = objective['metric'], objective['group']
         if group == "overall":
             metric_value = model_overall_metrics_df[model_overall_metrics_df.Metric == metric][group].values[0]
@@ -128,8 +128,9 @@ def get_objective_losses(metrics_dct: dict, objectives: list, model_name: str, s
             loss = abs(1 - metric_value)
 
         losses.append(loss)
+        reversed_objectives.append(1 - loss)
 
-    result = dict(objectives=losses)
+    result = dict(objectives=losses, reversed_objectives=reversed_objectives)
     return result
 
 
@@ -139,6 +140,10 @@ def get_config_advisor(logical_pipeline, bo_advisor_config):
     for stage in StageName:
         components = logical_pipeline.components
         if stage == StageName.null_imputation:
+            # None imputer does not have config space
+            if components[stage.value] == 'None':
+                continue
+
             stage_config_space = NULL_IMPUTATION_CONFIG[components[stage.value]]['config_space']
         elif stage == StageName.fairness_intervention:
             # NO_FAIRNESS_INTERVENTION does not have config space
@@ -176,10 +181,12 @@ def get_config_advisor(logical_pipeline, bo_advisor_config):
 
 
 def select_next_physical_pipelines(logical_pipeline: LogicalPipeline, lp_to_advisor: dict,
-                                   bo_advisor_config: BOAdvisorConfig, exp_config: DefaultMunch):
+                                   bo_advisor_config: BOAdvisorConfig, exp_config: DefaultMunch,
+                                   run_num: int, random_state: int):
     config_advisor, config_space = (
-        (lp_to_advisor[logical_pipeline.logical_pipeline_name]["config_advisor"], lp_to_advisor[logical_pipeline.logical_pipeline_name]["config_space"])
-            if lp_to_advisor.get(logical_pipeline.logical_pipeline_name, None) is not None
+        (lp_to_advisor[run_num][logical_pipeline.logical_pipeline_name]["config_advisor"],
+         lp_to_advisor[run_num][logical_pipeline.logical_pipeline_name]["config_space"])
+            if lp_to_advisor[run_num].get(logical_pipeline.logical_pipeline_name, None) is not None
             else get_config_advisor(logical_pipeline, bo_advisor_config))
 
     # Create physical pipelines based on MO-BO suggestions
@@ -198,14 +205,19 @@ def select_next_physical_pipelines(logical_pipeline: LogicalPipeline, lp_to_advi
                                              suggestion=suggestion,
                                              null_imputer_params=null_imputer_params,
                                              fairness_intervention_params=fairness_intervention_params,
-                                             model_params=model_params)
+                                             model_params=model_params,
+                                             run_num=run_num,
+                                             random_state=random_state)
         physical_pipelines.append(physical_pipeline)
 
     new_tasks = [Task(task_uuid=str(uuid.uuid4()),
                       exp_config_name=exp_config.exp_config_name,
                       objectives=exp_config.objectives,
-                      physical_pipeline=physical_pipeline)
+                      pipeline_quality_mean=logical_pipeline.pipeline_quality_mean,  # Used for halting
+                      physical_pipeline=physical_pipeline,
+                      run_num=run_num,
+                      random_state=random_state)
                  for physical_pipeline in physical_pipelines]
-    lp_to_advisor[logical_pipeline.logical_pipeline_name] = {"config_advisor": config_advisor, "config_space": config_space}
-
+    lp_to_advisor[run_num][logical_pipeline.logical_pipeline_name] = {"config_advisor": config_advisor,
+                                                                      "config_space": config_space}
     return new_tasks
