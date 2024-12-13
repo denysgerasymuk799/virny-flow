@@ -1,4 +1,0 @@
-dataset_name: diabetes
-bootstrap_fraction: 0.8
-n_estimators: 50
-sensitive_attributes_dct: {'Gender': 'Female'}
