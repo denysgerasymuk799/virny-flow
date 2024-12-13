@@ -31,6 +31,7 @@ class MLLifecycle:
         self.num_folds_for_tuning = NUM_FOLDS_FOR_TUNING
         self.test_set_fraction = dataset_config[dataset_name]['test_set_fraction']
         self.virny_config = virny_config
+        self.virny_config.dataset_name = dataset_name
         self.dataset_sensitive_attrs = [col for col in self.virny_config.sensitive_attributes_dct.keys() if '&' not in col]
         self.init_data_loader = dataset_config[dataset_name]['data_loader'](**dataset_config[dataset_name]['data_loader_kwargs'])
 

@@ -106,7 +106,6 @@ def validate_config(config_obj):
         "virny_args": {
             "type": "dict",
             "schema": {
-                "dataset_name": {"type": "string", "required": True},
                 "bootstrap_fraction": {"type": "float", "min": 0.0, "max": 1.0, "required": True},
                 "n_estimators": {"type": "integer", "min": 2, "required": True},
                 "sensitive_attributes_dct": {"type": "dict", "allow_unknown": True, "schema": {}, "required": True},

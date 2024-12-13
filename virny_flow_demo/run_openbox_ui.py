@@ -115,12 +115,12 @@ if __name__ == '__main__':
     exp_config = create_exp_config_obj(exp_config_yaml_path=exp_config_yaml_path)
 
     config_space = create_config_space(lp_name)
-    history_path = f'../history/{exp_config.exp_config_name}/run_num_{str(run_num)}/{lp_name}/' + history_filename
+    history_path = f'../history/{exp_config.common_args.exp_config_name}/run_num_{str(run_num)}/{lp_name}/' + history_filename
     history = History.load_json(history_path, config_space)
 
     task_info = {
         'advisor_type': 'default',
-        'max_runs': exp_config.max_trials,
+        'max_runs': exp_config.optimisation_args.max_trials,
         'max_runtime_per_trial': bo_advisor_config.max_runtime_per_trial,
         'surrogate_type': surrogate_model_type,
         'constraint_surrogate_type': None,
