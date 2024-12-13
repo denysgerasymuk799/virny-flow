@@ -8,7 +8,7 @@ from .domain_logic.kafka_processes import start_task_provider, start_cost_model_
 from .domain_logic.initial_configuration import start_task_generator, create_init_state_for_config
 from virny_flow.configs.structs import BOAdvisorConfig
 from virny_flow.core.custom_classes.task_queue import TaskQueue
-
+from .domain_logic.utils import clean_unnecessary_metrics, get_logical_pipeline_names
 
 cors = {
     'Content-Type': 'application/json',
@@ -51,7 +51,13 @@ def register_routes(app: FastAPI, exp_config: DefaultMunch, task_queue: TaskQueu
                                                      task_queue=task_queue))
 
     @app.on_event("shutdown")
-    def shutdown_event():
+    async def shutdown_event():
         print("Shutting down...")
+        # Clean unnecessary records to save storage
+        await clean_unnecessary_metrics(db_client = db_client,
+                                        exp_config_name = exp_config.common_args.exp_config_name,
+                                        run_nums = exp_config.common_args.run_nums,
+                                        lps = get_logical_pipeline_names(exp_config.pipeline_args),
+                                        groups = list(exp_config.virny_args.sensitive_attributes_dct.keys()))
         db_client.close()
         task_queue.close()

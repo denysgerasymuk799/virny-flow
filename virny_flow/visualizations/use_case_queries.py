@@ -29,8 +29,8 @@ DISPARITY_METRIC_METADATA = {
 }
 
 
-def get_best_pps_per_lp_and_run_num(db_client: CoreDBClient, exp_config_name: str):
-    pipeline = [
+def get_best_pps_per_lp_and_run_num_query(exp_config_name: str):
+    return [
         # Step 1: Filter documents in PHYSICAL_PIPELINE_OBSERVATIONS_TABLE with the defined exp_config_name
         {
             "$match": {
@@ -112,6 +112,10 @@ def get_best_pps_per_lp_and_run_num(db_client: CoreDBClient, exp_config_name: st
             }
         }
     ]
+
+
+def get_best_pps_per_lp_and_run_num(db_client: CoreDBClient, exp_config_name: str):
+    pipeline = get_best_pps_per_lp_and_run_num_query(exp_config_name)
 
     # Run the aggregation pipeline
     results = list(db_client.client[db_client.db_name][PHYSICAL_PIPELINE_OBSERVATIONS_TABLE].aggregate(pipeline))

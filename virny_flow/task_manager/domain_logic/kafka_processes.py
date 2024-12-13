@@ -129,7 +129,10 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
                 exp_config_name = data["exp_config_name"]
                 run_num = data["run_num"]
                 task_uuid = data["task_uuid"]
+
+                # Check termination state
                 if task_uuid == NO_TASKS:
+                    logger.info('Shutting down Cost Model Updater...')
                     break
 
                 physical_pipeline_uuid = data["physical_pipeline_uuid"]

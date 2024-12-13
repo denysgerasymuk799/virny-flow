@@ -1,7 +1,12 @@
 import yaml
+import base64
+import pandas as pd
 from munch import DefaultMunch
 
-from virny_flow.configs.constants import ErrorRepairMethod, FairnessIntervention, MLModels
+from virny_flow.configs.constants import ErrorRepairMethod, FairnessIntervention, MLModels, \
+    PHYSICAL_PIPELINE_OBSERVATIONS_TABLE, ALL_EXPERIMENT_METRICS_TABLE, NO_FAIRNESS_INTERVENTION, STAGE_SEPARATOR
+from virny_flow.task_manager.database.task_manager_db_client import TaskManagerDBClient
+from virny_flow.visualizations.use_case_queries import get_best_pps_per_lp_and_run_num_query
 
 
 def is_in_enum(val, enum_obj):
@@ -70,3 +75,47 @@ def create_exp_config_obj(config_yaml_path: str):
     validate_config(config_obj)
 
     return config_obj
+
+
+def get_logical_pipeline_names(pipeline_args):
+    logical_pipelines = []
+    for null_imputer in pipeline_args.null_imputers:
+        for fairness_intervention in pipeline_args.fairness_interventions + [NO_FAIRNESS_INTERVENTION]:
+            for model in pipeline_args.models:
+                logical_pipeline = f'{null_imputer}{STAGE_SEPARATOR}{fairness_intervention}{STAGE_SEPARATOR}{model}'
+                logical_pipelines.append(logical_pipeline)
+
+    return logical_pipelines
+
+
+async def clean_unnecessary_metrics(db_client: TaskManagerDBClient, exp_config_name: str,
+                                    lps: list, run_nums: list, groups: list):
+    print('Cleaning unnecessary metrics...')
+    num_groups = len(groups) * 2 + 1
+
+    # Find uuids of the best pp per exp_config, lp, and run_num
+    pipeline_query = get_best_pps_per_lp_and_run_num_query(exp_config_name)
+    subquery = pipeline_query[:3] # We need just three first steps to get best pp uuids
+    cursor = db_client.client[db_client.db_name][PHYSICAL_PIPELINE_OBSERVATIONS_TABLE].aggregate(subquery)
+    results = await cursor.to_list(length=None)
+    results_df = pd.json_normalize(results)
+
+    for lp in lps:
+        lp_uuid = base64.b64encode(lp.encode()).decode()
+        for run_num in run_nums:
+            filtered_df = results_df[(results_df["exp_config_name"] == exp_config_name) &
+                                     (results_df["run_num"] == run_num) &
+                                     (results_df["logical_pipeline_uuid"] == lp_uuid)]
+            if filtered_df.empty:
+                print(f"lp - {lp}, run_num - {run_num}: No pps", flush=True)
+                continue
+
+            # Delete all other pps for the defined exp_config, lp, and run_num
+            pp_uuid = filtered_df["physical_pipeline_uuid"].iloc[0]
+            num_deleted_records = await db_client.delete_query(collection_name=ALL_EXPERIMENT_METRICS_TABLE,
+                                                               exp_config_name=exp_config_name,
+                                                               run_num=run_num,
+                                                               condition={"logical_pipeline_name": lp,
+                                                                          "physical_pipeline_uuid": {"$ne": pp_uuid}})
+            num_deleted_pipelines = num_deleted_records / 18 / num_groups
+            print(f"lp: {lp}, run_num: {run_num}, num_deleted_pipelines: {num_deleted_pipelines}", flush=True)

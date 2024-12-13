@@ -107,24 +107,31 @@ class PipelineEvaluator(MLLifecycle):
             except Exception as e:
                 print(f"Transaction aborted: {e}")
                 session.abort_transaction()
+                session = self._db.client.start_session()
 
         # Write virny metrics from the latest halting round into database
-        null_imputer_name, fairness_intervention_name, model_name = task.physical_pipeline.logical_pipeline_name.split(STAGE_SEPARATOR)
-        custom_tbl_fields_dct = dict()
-        custom_tbl_fields_dct['session_uuid'] = self._session_uuid
-        custom_tbl_fields_dct['task_uuid'] = task.task_uuid
-        custom_tbl_fields_dct['physical_pipeline_uuid'] = task.physical_pipeline.physical_pipeline_uuid
-        custom_tbl_fields_dct['logical_pipeline_name'] = task.physical_pipeline.logical_pipeline_name
-        custom_tbl_fields_dct['dataset_split_seed'] = seed
-        custom_tbl_fields_dct['model_init_seed'] = seed
-        custom_tbl_fields_dct['experiment_seed'] = seed
-        custom_tbl_fields_dct['exp_config_name'] = self.exp_config_name
-        custom_tbl_fields_dct['run_num'] = task.run_num
-        custom_tbl_fields_dct['null_imputer_name'] = null_imputer_name
-        custom_tbl_fields_dct['fairness_intervention_name'] = fairness_intervention_name
+        # if cur_test_compound_pp_quality is greater than best_compound_pp_quality
+        best_compound_pp_quality = get_best_compound_pp_quality(session=session,
+                                                                db=self._db,
+                                                                exp_config_name=self.exp_config_name,
+                                                                run_num=task.run_num)
+        if cur_test_compound_pp_quality >= best_compound_pp_quality:
+            null_imputer_name, fairness_intervention_name, model_name = task.physical_pipeline.logical_pipeline_name.split(STAGE_SEPARATOR)
+            custom_tbl_fields_dct = dict()
+            custom_tbl_fields_dct['session_uuid'] = self._session_uuid
+            custom_tbl_fields_dct['task_uuid'] = task.task_uuid
+            custom_tbl_fields_dct['physical_pipeline_uuid'] = task.physical_pipeline.physical_pipeline_uuid
+            custom_tbl_fields_dct['logical_pipeline_name'] = task.physical_pipeline.logical_pipeline_name
+            custom_tbl_fields_dct['dataset_split_seed'] = seed
+            custom_tbl_fields_dct['model_init_seed'] = seed
+            custom_tbl_fields_dct['experiment_seed'] = seed
+            custom_tbl_fields_dct['exp_config_name'] = self.exp_config_name
+            custom_tbl_fields_dct['run_num'] = task.run_num
+            custom_tbl_fields_dct['null_imputer_name'] = null_imputer_name
+            custom_tbl_fields_dct['fairness_intervention_name'] = fairness_intervention_name
 
-        self.save_virny_metrics_in_db(model_metrics_df=test_multiple_models_metrics_df,
-                                      custom_tbl_fields_dct=custom_tbl_fields_dct)
+            self.save_virny_metrics_in_db(model_metrics_df=test_multiple_models_metrics_df,
+                                          custom_tbl_fields_dct=custom_tbl_fields_dct)
         # End the session
         session.end_session()
 

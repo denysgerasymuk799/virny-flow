@@ -6,15 +6,15 @@ common_args:
 pipeline_args:
   dataset: "folk_emp"
   sensitive_attrs_for_intervention: [ "SEX&RAC1P" ]
-  null_imputers: [ "miss_forest" ]
-  fairness_interventions: [ "DIR" ]
-  models: [ "dt_clf", "lr_clf" ]
+  null_imputers: []
+  fairness_interventions: ["DIR"]
+  models: ["lr_clf", "rf_clf", "lgbm_clf"]
 
 optimisation_args:
   ref_point: [0.20, 0.10]
   objectives:
-    - { name: "objective_1", metric: "F1", group: "overall", weight: 0.5 }
-    - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "SEX&RAC1P", weight: 0.5 }
+    - { name: "objective_1", metric: "F1", group: "overall", weight: 0.25 }
+    - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "SEX&RAC1P", weight: 0.75 }
   max_trials: 3
   num_workers: 3
   num_pp_candidates: 2
