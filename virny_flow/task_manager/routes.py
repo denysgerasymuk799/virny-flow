@@ -57,7 +57,6 @@ def register_routes(app: FastAPI, exp_config: DefaultMunch, task_queue: TaskQueu
         await clean_unnecessary_metrics(db_client = db_client,
                                         exp_config_name = exp_config.common_args.exp_config_name,
                                         run_nums = exp_config.common_args.run_nums,
-                                        lps = get_logical_pipeline_names(exp_config.pipeline_args),
-                                        groups = list(exp_config.virny_args.sensitive_attributes_dct.keys()))
+                                        lps = get_logical_pipeline_names(exp_config.pipeline_args))
         db_client.close()
         task_queue.close()

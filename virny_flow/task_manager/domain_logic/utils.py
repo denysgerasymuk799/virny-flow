@@ -88,10 +88,8 @@ def get_logical_pipeline_names(pipeline_args):
     return logical_pipelines
 
 
-async def clean_unnecessary_metrics(db_client: TaskManagerDBClient, exp_config_name: str,
-                                    lps: list, run_nums: list, groups: list):
+async def clean_unnecessary_metrics(db_client: TaskManagerDBClient, exp_config_name: str, lps: list, run_nums: list):
     print('Cleaning unnecessary metrics...')
-    num_groups = len(groups) * 2 + 1
 
     # Find uuids of the best pp per exp_config, lp, and run_num
     pipeline_query = get_best_pps_per_lp_and_run_num_query(exp_config_name)
@@ -112,10 +110,9 @@ async def clean_unnecessary_metrics(db_client: TaskManagerDBClient, exp_config_n
 
             # Delete all other pps for the defined exp_config, lp, and run_num
             pp_uuid = filtered_df["physical_pipeline_uuid"].iloc[0]
-            num_deleted_records = await db_client.delete_query(collection_name=ALL_EXPERIMENT_METRICS_TABLE,
-                                                               exp_config_name=exp_config_name,
-                                                               run_num=run_num,
-                                                               condition={"logical_pipeline_name": lp,
-                                                                          "physical_pipeline_uuid": {"$ne": pp_uuid}})
-            num_deleted_pipelines = num_deleted_records / 18 / num_groups
-            print(f"lp: {lp}, run_num: {run_num}, num_deleted_pipelines: {num_deleted_pipelines}", flush=True)
+            print(f"Deleting unnecessary records for lp - {lp} and run_num - {run_num}")
+            await db_client.delete_query(collection_name=ALL_EXPERIMENT_METRICS_TABLE,
+                                         exp_config_name=exp_config_name,
+                                         run_num=run_num,
+                                         condition={"logical_pipeline_name": lp,
+                                                    "physical_pipeline_uuid": {"$ne": pp_uuid}})

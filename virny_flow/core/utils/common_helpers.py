@@ -9,6 +9,10 @@ from pprint import pprint
 from cerberus import Validator
 from munch import DefaultMunch
 from virny.custom_classes.base_dataset import BaseFlowDataset
+from virny.utils.common_helpers import validate_config as validate_virny_config
+from virny.configs.constants import ComputationMode
+
+from virny_flow.configs.constants import STABILITY_AND_UNCERTAINTY_METRICS
 
 
 def generate_guid(ordered_hierarchy_lst: list):
@@ -47,6 +51,8 @@ def create_exp_config_obj(exp_config_yaml_path: str):
     print()
     config_obj = DefaultMunch.fromDict(config_dct)
     config_obj.optimisation_args.objectives = [dict(obj) for obj in config_obj.optimisation_args.objectives]
+    config_obj.virny_args.dataset_name = config_obj.pipeline_args.dataset
+    validate_virny_config(config_obj.virny_args)
 
     return config_obj
 
@@ -106,8 +112,8 @@ def validate_config(config_obj):
         "virny_args": {
             "type": "dict",
             "schema": {
-                "bootstrap_fraction": {"type": "float", "min": 0.0, "max": 1.0, "required": True},
-                "n_estimators": {"type": "integer", "min": 2, "required": True},
+                "bootstrap_fraction": {"type": "float", "min": 0.0, "max": 1.0, "required": False},
+                "n_estimators": {"type": "integer", "min": 2, "required": False},
                 "sensitive_attributes_dct": {"type": "dict", "allow_unknown": True, "schema": {}, "required": True},
             }
         },
@@ -129,6 +135,19 @@ def validate_config(config_obj):
     if (config_obj["common_args"].get("num_runs", None) is None and
             config_obj["common_args"].get("run_nums", None) is None):
         raise ValueError("One of two arguments (num_runs, run_nums) should be defined in a config.")
+
+    objective_names = set([objective["metric"].lower() for objective in config_obj["optimisation_args"]["objectives"]])
+    if len(objective_names.intersection(set(STABILITY_AND_UNCERTAINTY_METRICS))) == 0:
+        config_obj['virny_args']['computation_mode'] = ComputationMode.NO_BOOTSTRAP.value
+    else:
+        if config_obj["virny_args"].get("bootstrap_fraction", None) is None \
+                    or config_obj['virny_args']['bootstrap_fraction'] < 0.0 \
+                    or config_obj['virny_args']['bootstrap_fraction'] > 1.0:
+            raise ValueError('virny_args.bootstrap_fraction must be float in [0.0, 1.0] range')
+
+        if config_obj["virny_args"].get("n_estimators", None) is None \
+                or config_obj['virny_args']['n_estimators'] <= 1:
+            raise ValueError('virny_args.n_estimators must be integer greater than 1')
 
     objective_total_weight = 0.0
     for objective in config_obj['optimisation_args']['objectives']:
