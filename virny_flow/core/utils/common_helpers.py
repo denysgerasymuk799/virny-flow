@@ -136,8 +136,9 @@ def validate_config(config_obj):
             config_obj["common_args"].get("run_nums", None) is None):
         raise ValueError("One of two arguments (num_runs, run_nums) should be defined in a config.")
 
-    objective_names = set([objective["metric"].lower() for objective in config_obj["optimisation_args"]["objectives"]])
-    if len(objective_names.intersection(set(STABILITY_AND_UNCERTAINTY_METRICS))) == 0:
+    # Disable bootstrap if stability and uncertainty metrics are not in objectives
+    objective_names = set([objective["metric"].strip().lower() for objective in config_obj["optimisation_args"]["objectives"]])
+    if len(objective_names.intersection(set([m.lower() for m in STABILITY_AND_UNCERTAINTY_METRICS]))) == 0:
         config_obj['virny_args']['computation_mode'] = ComputationMode.NO_BOOTSTRAP.value
     else:
         if config_obj["virny_args"].get("bootstrap_fraction", None) is None \
