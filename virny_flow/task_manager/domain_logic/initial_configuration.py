@@ -61,14 +61,25 @@ async def start_task_generator(exp_config: DefaultMunch, lp_to_advisor: dict, bo
                                                        run_num=run_num,
                                                        random_state=random_state)
 
-            # Step 3: Update the number of trials for the logical pipeline
+            # Step 3: Update parameters of BO optimisation for the logical pipeline
+            if next_logical_pipeline.num_trials == 0:
+                config_advisor = lp_to_advisor[run_num][next_logical_pipeline.logical_pipeline_name]["config_advisor"]
+                await db_client.update_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
+                                             exp_config_name=exp_config.common_args.exp_config_name,
+                                             run_num=run_num,
+                                             condition={"logical_pipeline_uuid": next_logical_pipeline.logical_pipeline_uuid},
+                                             update_val_dct={"surrogate_type": config_advisor.surrogate_type,
+                                                             "acq_type": config_advisor.acq_type,
+                                                             "acq_optimizer_type": config_advisor.acq_optimizer_type})
+
+            # Step 4: Update the number of trials for the logical pipeline
             await db_client.increment_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
                                             exp_config_name=exp_config.common_args.exp_config_name,
                                             run_num=run_num,
                                             condition={"logical_pipeline_uuid": next_logical_pipeline.logical_pipeline_uuid},
                                             increment_val_dct={"num_trials": len(new_tasks)})
 
-            # Step 4: Add new tasks to the Task Queue in the database
+            # Step 5: Add new tasks to the Task Queue in the database
             for task in new_tasks:
                 await task_queue.enqueue(task)
 
@@ -111,6 +122,9 @@ async def create_init_state_for_config(exp_config: DefaultMunch, db_client: Task
                         pipeline_quality_std={objective['name']: 0.0 for objective in exp_config.optimisation_args.objectives},
                         pipeline_execution_cost=0.0,
                         num_completed_pps=0,
+                        surrogate_type=None,
+                        acq_type=None,
+                        acq_optimizer_type=None,
                         run_num=run_num,
                         random_state=random_state)
         for idx, logical_pipeline in enumerate(logical_pipelines)]
