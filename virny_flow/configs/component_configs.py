@@ -151,6 +151,8 @@ def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
             'trainer_config': TrainerConfig(batch_size=512,
                                             max_epochs=100,
                                             seed=models_tuning_seed,
+                                            early_stopping=None,
+                                            checkpoints=None,
                                             load_best=False,
                                             trainer_kwargs=dict(enable_model_summary=False, # Turning off model summary
                                                                 log_every_n_steps=None,

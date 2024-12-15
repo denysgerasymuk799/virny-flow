@@ -8,7 +8,7 @@ from .domain_logic.kafka_processes import start_task_provider, start_cost_model_
 from .domain_logic.initial_configuration import start_task_generator, create_init_state_for_config
 from virny_flow.configs.structs import BOAdvisorConfig
 from virny_flow.core.custom_classes.task_queue import TaskQueue
-from .domain_logic.utils import clean_unnecessary_metrics, get_logical_pipeline_names
+
 
 cors = {
     'Content-Type': 'application/json',

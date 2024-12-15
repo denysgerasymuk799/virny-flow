@@ -111,8 +111,9 @@ async def clean_unnecessary_metrics(db_client: TaskManagerDBClient, exp_config_n
             # Delete all other pps for the defined exp_config, lp, and run_num
             pp_uuid = filtered_df["physical_pipeline_uuid"].iloc[0]
             print(f"Deleting unnecessary records for lp - {lp} and run_num - {run_num}")
-            await db_client.delete_query(collection_name=ALL_EXPERIMENT_METRICS_TABLE,
-                                         exp_config_name=exp_config_name,
-                                         run_num=run_num,
-                                         condition={"logical_pipeline_name": lp,
-                                                    "physical_pipeline_uuid": {"$ne": pp_uuid}})
+            if pp_uuid is not None:
+                await db_client.delete_query(collection_name=ALL_EXPERIMENT_METRICS_TABLE,
+                                             exp_config_name=exp_config_name,
+                                             run_num=run_num,
+                                             condition={"logical_pipeline_name": lp,
+                                                        "physical_pipeline_uuid": {"$ne": pp_uuid}})
