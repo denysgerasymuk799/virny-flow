@@ -240,6 +240,7 @@ class PipelineEvaluator(MLLifecycle):
                                                sensitive_attributes_dct=self.virny_config.sensitive_attributes_dct)
         print("test_objectives:", test_objectives)
         train_reversed_objectives = train_objectives.pop("reversed_objectives")
+        test_original_objectives = test_objectives.pop("original_objectives")
         test_reversed_objectives = test_objectives.pop("reversed_objectives")
 
         objective_values, constraints, extra_info = parse_result(copy.copy(test_objectives))
@@ -251,6 +252,7 @@ class PipelineEvaluator(MLLifecycle):
             elapsed_time=elapsed_time,
             extra_info=extra_info,
         )
+        observation.extra_info["original_objectives"] = test_original_objectives
         observation.extra_info["reversed_objectives"] = test_reversed_objectives
         observation.extra_info["exp_config_objectives"] = objectives
 
