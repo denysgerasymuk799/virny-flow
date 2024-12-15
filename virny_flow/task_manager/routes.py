@@ -30,7 +30,7 @@ def register_routes(app: FastAPI, exp_config: DefaultMunch, task_queue: TaskQueu
         task_queue.connect()
 
         # Create an optimized execution plan
-        for run_num in exp_config.run_nums:
+        for run_num in exp_config.common_args.run_nums:
             await create_init_state_for_config(exp_config=exp_config, db_client=db_client, run_num=run_num)
 
         # Start a background process that adds new tasks to the queue in the database if it has available space
@@ -51,7 +51,7 @@ def register_routes(app: FastAPI, exp_config: DefaultMunch, task_queue: TaskQueu
                                                      task_queue=task_queue))
 
     @app.on_event("shutdown")
-    def shutdown_event():
+    async def shutdown_event():
         print("Shutting down...")
         db_client.close()
         task_queue.close()

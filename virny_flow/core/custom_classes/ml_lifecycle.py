@@ -5,7 +5,6 @@ import pandas as pd
 
 from datetime import datetime
 from sklearn.model_selection import train_test_split
-from virny.utils.custom_initializers import create_config_obj
 
 from virny_flow.configs.component_configs import NULL_IMPUTATION_CONFIG
 from virny_flow.configs.constants import NUM_FOLDS_FOR_TUNING, ErrorRepairMethod
@@ -21,7 +20,7 @@ class MLLifecycle:
     Class encapsulates all required ML lifecycle steps to run different experiments
     """
     def __init__(self, exp_config_name: str, dataset_name: str, secrets_path: str,
-                 dataset_config: dict, models_config: dict):
+                 dataset_config: dict, models_config: dict, virny_config):
         """
         Constructor defining default variables
         """
@@ -31,7 +30,8 @@ class MLLifecycle:
 
         self.num_folds_for_tuning = NUM_FOLDS_FOR_TUNING
         self.test_set_fraction = dataset_config[dataset_name]['test_set_fraction']
-        self.virny_config = create_config_obj(dataset_config[dataset_name]['virny_config_path'])
+        self.virny_config = virny_config
+        self.virny_config.dataset_name = dataset_name
         self.dataset_sensitive_attrs = [col for col in self.virny_config.sensitive_attributes_dct.keys() if '&' not in col]
         self.init_data_loader = dataset_config[dataset_name]['data_loader'](**dataset_config[dataset_name]['data_loader_kwargs'])
 

@@ -1,13 +1,18 @@
 import copy
 import time
 import pandas as pd
+import pytorch_tabular
 
 from datetime import datetime, timezone
 from munch import DefaultMunch
+from pymongo.write_concern import WriteConcern
+from pymongo.read_concern import ReadConcern
 from openbox.utils.constants import SUCCESS
 from openbox.utils.history import Observation
 from openbox.utils.util_funcs import parse_result
 from sklearn.model_selection import train_test_split
+from pytorch_tabular import TabularModel
+from pytorch_tabular.config import DataConfig
 from virny.user_interfaces import compute_metrics_with_fitted_bootstrap, compute_metrics_with_config
 
 from .ml_lifecycle import MLLifecycle
@@ -67,21 +72,22 @@ class PipelineEvaluator(MLLifecycle):
         """
         Constructor defining default variables
         """
-        super().__init__(exp_config_name=exp_config.exp_config_name,
-                         dataset_name=exp_config.dataset,
-                         secrets_path=exp_config.secrets_path,
+        super().__init__(exp_config_name=exp_config.common_args.exp_config_name,
+                         dataset_name=exp_config.pipeline_args.dataset,
+                         secrets_path=exp_config.common_args.secrets_path,
                          dataset_config=dataset_config,
-                         models_config=models_config)
+                         models_config=models_config,
+                         virny_config=exp_config.virny_args)
 
         self.exp_config = exp_config
         self.null_imputation_config = null_imputation_config
         self.fairness_intervention_config = fairness_intervention_config
 
-        if self.init_data_loader.full_df.shape[0] * (1 - dataset_config[exp_config.dataset]['test_set_fraction']) < 1000:
+        if self.init_data_loader.full_df.shape[0] * (1 - dataset_config[exp_config.pipeline_args.dataset]['test_set_fraction']) < 1000:
             print('Skip halting since a training set is less than 1000 rows')
             self.training_set_fractions_for_halting = [1.0]
         else:
-            self.training_set_fractions_for_halting = exp_config.training_set_fractions_for_halting
+            self.training_set_fractions_for_halting = exp_config.optimisation_args.training_set_fractions_for_halting
 
     def execute_task(self, task: Task, seed: int):
         self._db.connect()
@@ -95,7 +101,8 @@ class PipelineEvaluator(MLLifecycle):
                                                                      seed=seed)
         for (cur_test_compound_pp_quality, observation, test_multiple_models_metrics_df) in adaptive_pipeline_generator:
             try:
-                session.start_transaction()
+                # Simplify read/write concern to avoid transaction errors
+                session.start_transaction(write_concern=WriteConcern(w="majority", j=False), read_concern=ReadConcern("local"))
                 run_transaction_with_retry(adaptive_execution_transaction,
                                            session,
                                            db=self._db,
@@ -106,24 +113,31 @@ class PipelineEvaluator(MLLifecycle):
             except Exception as e:
                 print(f"Transaction aborted: {e}")
                 session.abort_transaction()
+                session = self._db.client.start_session()
 
         # Write virny metrics from the latest halting round into database
-        null_imputer_name, fairness_intervention_name, model_name = task.physical_pipeline.logical_pipeline_name.split(STAGE_SEPARATOR)
-        custom_tbl_fields_dct = dict()
-        custom_tbl_fields_dct['session_uuid'] = self._session_uuid
-        custom_tbl_fields_dct['task_uuid'] = task.task_uuid
-        custom_tbl_fields_dct['physical_pipeline_uuid'] = task.physical_pipeline.physical_pipeline_uuid
-        custom_tbl_fields_dct['logical_pipeline_name'] = task.physical_pipeline.logical_pipeline_name
-        custom_tbl_fields_dct['dataset_split_seed'] = seed
-        custom_tbl_fields_dct['model_init_seed'] = seed
-        custom_tbl_fields_dct['experiment_seed'] = seed
-        custom_tbl_fields_dct['exp_config_name'] = self.exp_config_name
-        custom_tbl_fields_dct['run_num'] = task.run_num
-        custom_tbl_fields_dct['null_imputer_name'] = null_imputer_name
-        custom_tbl_fields_dct['fairness_intervention_name'] = fairness_intervention_name
+        # if cur_test_compound_pp_quality is greater than best_compound_pp_quality
+        best_compound_pp_quality = get_best_compound_pp_quality(session=session,
+                                                                db=self._db,
+                                                                exp_config_name=self.exp_config_name,
+                                                                run_num=task.run_num)
+        if cur_test_compound_pp_quality >= best_compound_pp_quality:
+            null_imputer_name, fairness_intervention_name, model_name = task.physical_pipeline.logical_pipeline_name.split(STAGE_SEPARATOR)
+            custom_tbl_fields_dct = dict()
+            custom_tbl_fields_dct['session_uuid'] = self._session_uuid
+            custom_tbl_fields_dct['task_uuid'] = task.task_uuid
+            custom_tbl_fields_dct['physical_pipeline_uuid'] = task.physical_pipeline.physical_pipeline_uuid
+            custom_tbl_fields_dct['logical_pipeline_name'] = task.physical_pipeline.logical_pipeline_name
+            custom_tbl_fields_dct['dataset_split_seed'] = seed
+            custom_tbl_fields_dct['model_init_seed'] = seed
+            custom_tbl_fields_dct['experiment_seed'] = seed
+            custom_tbl_fields_dct['exp_config_name'] = self.exp_config_name
+            custom_tbl_fields_dct['run_num'] = task.run_num
+            custom_tbl_fields_dct['null_imputer_name'] = null_imputer_name
+            custom_tbl_fields_dct['fairness_intervention_name'] = fairness_intervention_name
 
-        self.save_virny_metrics_in_db(model_metrics_df=test_multiple_models_metrics_df,
-                                      custom_tbl_fields_dct=custom_tbl_fields_dct)
+            self.save_virny_metrics_in_db(model_metrics_df=test_multiple_models_metrics_df,
+                                          custom_tbl_fields_dct=custom_tbl_fields_dct)
         # End the session
         session.end_session()
 
@@ -294,7 +308,7 @@ class PipelineEvaluator(MLLifecycle):
 
         if fairness_intervention_name != NO_FAIRNESS_INTERVENTION:
             # Create a binary column for the fairness intervention
-            input_sensitive_attrs_for_intervention = self.exp_config.sensitive_attrs_for_intervention
+            input_sensitive_attrs_for_intervention = self.exp_config.pipeline_args.sensitive_attrs_for_intervention
             binary_sensitive_attr_for_intervention = '&'.join(input_sensitive_attrs_for_intervention) + '_binary'
 
             # Create train and test sensitive attr dfs
@@ -335,15 +349,42 @@ class PipelineEvaluator(MLLifecycle):
 
         return preprocessed_base_flow_dataset
 
+    def _init_model_config(self, model_name: str, model_params: dict, base_flow_dataset):
+        all_model_params = {**model_params, **self.models_config[model_name]['default_kwargs']}
+        model = self.models_config[model_name]['model'](**all_model_params)
+        if isinstance(model, pytorch_tabular.config.ModelConfig):
+            data_config = DataConfig(
+                target=[
+                    base_flow_dataset.target,
+                ],  # target should always be a list. Multi-targets are only supported for regression. Multi-Task Classification is not implemented
+                continuous_cols=[col for col in base_flow_dataset.X_train_val.columns if col.startswith('num_')],
+                categorical_cols=[col for col in base_flow_dataset.X_train_val.columns if col.startswith('cat_')],
+            )
+            models_dct = {
+                model_name: TabularModel(
+                    data_config=data_config,
+                    model_config=model,
+                    optimizer_config=self.models_config[model_name]['optimizer_config'],
+                    trainer_config=self.models_config[model_name]['trainer_config'],
+                    verbose=False,
+                    suppress_lightning_logger=True,
+                ),
+            }
+        else:
+            models_dct = {
+                model_name: model,
+            }
+
+        return models_dct
+
     def run_model_evaluation_stage(self, main_base_flow_dataset, experiment_seed: int, null_imputer_name: str,
                                    fairness_intervention_name: str, model_name: str, model_params: dict):
-        all_model_params = {**model_params, **self.models_config[model_name]['default_kwargs']}
-        models_dct = {
-            model_name: self.models_config[model_name]['model'](**all_model_params)
-        }
+        models_dct = self._init_model_config(model_name=model_name,
+                                             model_params=model_params,
+                                             base_flow_dataset=main_base_flow_dataset)
 
         # Prepare fairness in-processor or post-processor if needed
-        sensitive_attribute = '&'.join(self.exp_config.sensitive_attrs_for_intervention) + '_binary'
+        sensitive_attribute = '&'.join(self.exp_config.pipeline_args.sensitive_attrs_for_intervention) + '_binary'
         privileged_groups = [{sensitive_attribute: 1}]
         unprivileged_groups = [{sensitive_attribute: 0}]
         if fairness_intervention_name == FairnessIntervention.EOP.value:

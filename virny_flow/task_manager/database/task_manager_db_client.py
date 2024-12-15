@@ -100,6 +100,16 @@ class TaskManagerDBClient:
         print(f"Matched {result.matched_count} document(s) and modified {result.modified_count} document(s).")
         return result.modified_count
 
+    async def delete_query(self, collection_name: str, condition: dict, exp_config_name: str, run_num: int):
+        collection = self._get_collection(collection_name)
+        condition['exp_config_name'] = exp_config_name
+        condition['run_num'] = run_num
+        condition['tag'] = 'OK'
+        result = await collection.delete_many(condition)
+        print(f"Deleted {result.deleted_count} document(s).")
+
+        return result.deleted_count
+
     async def increment_query(self, collection_name: str, condition: dict, increment_val_dct: dict,
                               exp_config_name: str, run_num: int):
         collection = self._get_collection(collection_name)

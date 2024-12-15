@@ -191,7 +191,7 @@ def select_next_physical_pipelines(logical_pipeline: LogicalPipeline, lp_to_advi
 
     # Create physical pipelines based on MO-BO suggestions
     physical_pipelines = []
-    num_new_tasks = min(exp_config.num_pp_candidates, exp_config.max_trials - logical_pipeline.num_trials)
+    num_new_tasks = min(exp_config.optimisation_args.num_pp_candidates, exp_config.optimisation_args.max_trials - logical_pipeline.num_trials)
     for idx in range(num_new_tasks):
         suggestion = get_suggestion(config_advisor)
         null_imputer_params = {k.replace('mvi__', '', 1): v for k, v in suggestion.items() if k.startswith('mvi__')}
@@ -201,7 +201,7 @@ def select_next_physical_pipelines(logical_pipeline: LogicalPipeline, lp_to_advi
         physical_pipeline = PhysicalPipeline(physical_pipeline_uuid=str(uuid.uuid4()),
                                              logical_pipeline_uuid=logical_pipeline.logical_pipeline_uuid,
                                              logical_pipeline_name=logical_pipeline.logical_pipeline_name,
-                                             exp_config_name=exp_config.exp_config_name,
+                                             exp_config_name=exp_config.common_args.exp_config_name,
                                              suggestion=suggestion,
                                              null_imputer_params=null_imputer_params,
                                              fairness_intervention_params=fairness_intervention_params,
@@ -211,8 +211,8 @@ def select_next_physical_pipelines(logical_pipeline: LogicalPipeline, lp_to_advi
         physical_pipelines.append(physical_pipeline)
 
     new_tasks = [Task(task_uuid=str(uuid.uuid4()),
-                      exp_config_name=exp_config.exp_config_name,
-                      objectives=exp_config.objectives,
+                      exp_config_name=exp_config.common_args.exp_config_name,
+                      objectives=exp_config.optimisation_args.objectives,
                       pipeline_quality_mean=logical_pipeline.pipeline_quality_mean,  # Used for halting
                       physical_pipeline=physical_pipeline,
                       run_num=run_num,

@@ -1,23 +1,28 @@
-# General experiment parameters
-exp_config_name: "german_experiments7"
-dataset: "german"
-sensitive_attrs_for_intervention: ["sex"]
-null_imputers: ["miss_forest"]
-fairness_interventions: ["DIR"]
-models: ["dt_clf", "lr_clf"]
-#random_state: 42
-#num_runs: 2
-run_nums: [1, 2]
-secrets_path: "/Users/denys_herasymuk/Research/NYU/VirnyFlow_Project/Code/virny-flow/virny_flow_demo/configs/secrets.env"
+common_args:
+  exp_config_name: "german_experiments4"
+#  run_nums: [1, 2]
+  run_nums: [1]
+  secrets_path: "/Users/denys_herasymuk/Research/NYU/VirnyFlow_Project/Code/virny-flow/virny_flow_demo/configs/secrets.env"
 
-# Parameters for optimisation
-ref_point: [0.20, 0.10]
-objectives:
-  - { name: "objective_1", metric: "F1", group: "overall", weight: 0.5 }
-  - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "sex", weight: 0.5 }
-max_trials: 3
-num_workers: 3
-num_pp_candidates: 2
-training_set_fractions_for_halting: [0.5, 0.75, 1.0]
-exploration_factor: 0.5
-risk_factor: 0.5
+pipeline_args:
+  dataset: "german"
+  sensitive_attrs_for_intervention: [ "sex" ]
+  null_imputers: [ "miss_forest" ]
+  fairness_interventions: [ "DIR" ]
+#  models: [ "dt_clf", "lr_clf" ]
+  models: [ "gandalf_clf" ]
+
+optimisation_args:
+  ref_point: [0.20, 0.10]
+  objectives:
+    - { name: "objective_1", metric: "F1", group: "overall", weight: 0.5 }
+    - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "sex", weight: 0.5 }
+  max_trials: 3
+  num_workers: 3
+  num_pp_candidates: 2
+  training_set_fractions_for_halting: [0.5, 0.75, 1.0]
+  exploration_factor: 0.5
+  risk_factor: 0.5
+
+virny_args:
+  sensitive_attributes_dct: { 'sex': 'female', 'age': [ 19, 20, 21, 22, 23, 24, 25 ], 'sex&age': None }

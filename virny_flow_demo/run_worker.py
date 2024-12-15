@@ -17,4 +17,4 @@ if __name__ == '__main__':
                      dataset_config=DATASET_CONFIG,
                      null_imputation_config=NULL_IMPUTATION_CONFIG,
                      fairness_intervention_config=FAIRNESS_INTERVENTION_CONFIG_SPACE,
-                     models_config=get_models_params_for_tuning(exp_config.random_state))
+                     models_config=get_models_params_for_tuning())
