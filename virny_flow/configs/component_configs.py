@@ -5,8 +5,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from lightgbm import LGBMClassifier
 from openbox.utils.config_space import UniformIntegerHyperparameter, UniformFloatHyperparameter, CategoricalHyperparameter
-from pytorch_tabular.models import GANDALFConfig
-from pytorch_tabular.config import OptimizerConfig, TrainerConfig
+# from pytorch_tabular.models import GANDALFConfig
+# from pytorch_tabular.config import OptimizerConfig, TrainerConfig
 
 from .constants import FairnessIntervention, INIT_RANDOM_STATE
 from .constants import ErrorRepairMethod
@@ -141,27 +141,27 @@ def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
                 'model__verbosity': CategoricalHyperparameter("model__verbosity", [-1]),
             }
         },
-        ####################################################################
-        # Use Pytorch Tabular API to work with tabular neural networks
-        ####################################################################
-        'gandalf_clf': {
-            'model': GANDALFConfig,
-            'default_kwargs': {'seed': models_tuning_seed, 'task': 'classification'},
-            'optimizer_config': OptimizerConfig(),
-            'trainer_config': TrainerConfig(batch_size=512,
-                                            max_epochs=100,
-                                            seed=models_tuning_seed,
-                                            early_stopping=None,
-                                            checkpoints=None,
-                                            load_best=False,
-                                            trainer_kwargs=dict(enable_model_summary=False, # Turning off model summary
-                                                                log_every_n_steps=None,
-                                                                enable_progress_bar=False)),
-            'config_space': {
-                'model__gflu_stages': CategoricalHyperparameter("model__gflu_stages", [i for i in range(2, 31)]),
-                'model__gflu_dropout': CategoricalHyperparameter("model__gflu_dropout", [0.01 * i for i in range(6)]),
-                'model__gflu_feature_init_sparsity': CategoricalHyperparameter("model__gflu_feature_init_sparsity", [0.1 * i for i in range(6)]),
-                'model__learning_rate': CategoricalHyperparameter("model__learning_rate", [1e-3, 1e-4, 1e-5, 1e-6]),
-            },
-        },
+        # ####################################################################
+        # # Use Pytorch Tabular API to work with tabular neural networks
+        # ####################################################################
+        # 'gandalf_clf': {
+        #     'model': GANDALFConfig,
+        #     'default_kwargs': {'seed': models_tuning_seed, 'task': 'classification'},
+        #     'optimizer_config': OptimizerConfig(),
+        #     'trainer_config': TrainerConfig(batch_size=512,
+        #                                     max_epochs=100,
+        #                                     seed=models_tuning_seed,
+        #                                     early_stopping=None,
+        #                                     checkpoints=None,
+        #                                     load_best=False,
+        #                                     trainer_kwargs=dict(enable_model_summary=False, # Turning off model summary
+        #                                                         log_every_n_steps=None,
+        #                                                         enable_progress_bar=False)),
+        #     'config_space': {
+        #         'model__gflu_stages': CategoricalHyperparameter("model__gflu_stages", [i for i in range(2, 31)]),
+        #         'model__gflu_dropout': CategoricalHyperparameter("model__gflu_dropout", [0.01 * i for i in range(6)]),
+        #         'model__gflu_feature_init_sparsity': CategoricalHyperparameter("model__gflu_feature_init_sparsity", [0.1 * i for i in range(6)]),
+        #         'model__learning_rate': CategoricalHyperparameter("model__learning_rate", [1e-3, 1e-4, 1e-5, 1e-6]),
+        #     },
+        # },
     }
