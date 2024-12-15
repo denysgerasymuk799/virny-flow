@@ -1,4 +1,5 @@
 virny@git+https://github.com/DataResponsibly/Virny.git@development
+pytorch-tabular~=1.1.0
 autokeras==1.0.20
 tensorflow==2.17.0
 kmodes==0.12.2

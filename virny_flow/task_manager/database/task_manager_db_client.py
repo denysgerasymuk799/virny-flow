@@ -104,7 +104,7 @@ class TaskManagerDBClient:
         collection = self._get_collection(collection_name)
         condition['exp_config_name'] = exp_config_name
         condition['run_num'] = run_num
-        condition['deletion_flag'] = False
+        condition['tag'] = 'OK'
         result = await collection.delete_many(condition)
         print(f"Deleted {result.deleted_count} document(s).")
 

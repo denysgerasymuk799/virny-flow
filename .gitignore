@@ -6,6 +6,9 @@ virny_flow_env
 .ipynb_checkpoints
 data/*
 results/*
+lightning_logs
+saved_models
+.pt_tmp
 
 # Unignore a specific logs directory
 logs/*
