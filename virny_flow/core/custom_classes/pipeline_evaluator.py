@@ -4,6 +4,8 @@ import pandas as pd
 
 from datetime import datetime, timezone
 from munch import DefaultMunch
+from pymongo.write_concern import WriteConcern
+from pymongo.read_concern import ReadConcern
 from openbox.utils.constants import SUCCESS
 from openbox.utils.history import Observation
 from openbox.utils.util_funcs import parse_result
@@ -96,7 +98,8 @@ class PipelineEvaluator(MLLifecycle):
                                                                      seed=seed)
         for (cur_test_compound_pp_quality, observation, test_multiple_models_metrics_df) in adaptive_pipeline_generator:
             try:
-                session.start_transaction()
+                # Simplify read/write concern to avoid transaction errors
+                session.start_transaction(write_concern=WriteConcern(w="majority", j=False), read_concern=ReadConcern("local"))
                 run_transaction_with_retry(adaptive_execution_transaction,
                                            session,
                                            db=self._db,

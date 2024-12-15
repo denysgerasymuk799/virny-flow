@@ -1,5 +1,5 @@
 common_args:
-  exp_config_name: "german_experiments"
+  exp_config_name: "german_experiments2"
 #  run_nums: [1, 2]
   run_nums: [1]
   secrets_path: "/Users/denys_herasymuk/Research/NYU/VirnyFlow_Project/Code/virny-flow/virny_flow_demo/configs/secrets.env"
