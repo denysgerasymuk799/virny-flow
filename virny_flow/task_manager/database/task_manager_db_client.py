@@ -16,6 +16,7 @@ class TaskManagerDBClient:
         # Provide the mongodb atlas url to connect python to mongodb using pymongo
         self.connection_string = os.getenv("CONNECTION_STRING")
         self.db_name = os.getenv("DB_NAME")
+        print('TM os.getenv("DB_NAME"):', os.getenv("DB_NAME"))
 
         self.client = None
 

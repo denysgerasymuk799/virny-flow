@@ -20,6 +20,7 @@ class TaskQueue:
         # Provide the mongodb atlas url to connect python to mongodb using pymongo
         self.connection_string = os.getenv("CONNECTION_STRING")
         self.db_name = os.getenv("DB_NAME")
+        print('os.getenv("DB_NAME"):', os.getenv("DB_NAME"))
         self.collection_name = TASK_QUEUE_TABLE
 
         self.client = None
