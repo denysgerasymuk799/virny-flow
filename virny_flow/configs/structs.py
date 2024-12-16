@@ -46,6 +46,9 @@ class LogicalPipeline:
     pipeline_quality_std: dict
     pipeline_execution_cost: float
     num_completed_pps: int
+    surrogate_type: str
+    acq_type: str
+    acq_optimizer_type: str
     run_num: int
     random_state: int
 

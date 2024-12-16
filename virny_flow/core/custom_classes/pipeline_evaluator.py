@@ -1,7 +1,7 @@
 import copy
 import time
 import pandas as pd
-import pytorch_tabular
+# import pytorch_tabular
 
 from datetime import datetime, timezone
 from munch import DefaultMunch
@@ -11,8 +11,8 @@ from openbox.utils.constants import SUCCESS
 from openbox.utils.history import Observation
 from openbox.utils.util_funcs import parse_result
 from sklearn.model_selection import train_test_split
-from pytorch_tabular import TabularModel
-from pytorch_tabular.config import DataConfig
+# from pytorch_tabular import TabularModel
+# from pytorch_tabular.config import DataConfig
 from virny.user_interfaces import compute_metrics_with_fitted_bootstrap, compute_metrics_with_config
 
 from .ml_lifecycle import MLLifecycle
@@ -240,6 +240,7 @@ class PipelineEvaluator(MLLifecycle):
                                                sensitive_attributes_dct=self.virny_config.sensitive_attributes_dct)
         print("test_objectives:", test_objectives)
         train_reversed_objectives = train_objectives.pop("reversed_objectives")
+        test_original_objectives = test_objectives.pop("original_objectives")
         test_reversed_objectives = test_objectives.pop("reversed_objectives")
 
         objective_values, constraints, extra_info = parse_result(copy.copy(test_objectives))
@@ -251,6 +252,7 @@ class PipelineEvaluator(MLLifecycle):
             elapsed_time=elapsed_time,
             extra_info=extra_info,
         )
+        observation.extra_info["original_objectives"] = test_original_objectives
         observation.extra_info["reversed_objectives"] = test_reversed_objectives
         observation.extra_info["exp_config_objectives"] = objectives
 
@@ -352,28 +354,32 @@ class PipelineEvaluator(MLLifecycle):
     def _init_model_config(self, model_name: str, model_params: dict, base_flow_dataset):
         all_model_params = {**model_params, **self.models_config[model_name]['default_kwargs']}
         model = self.models_config[model_name]['model'](**all_model_params)
-        if isinstance(model, pytorch_tabular.config.ModelConfig):
-            data_config = DataConfig(
-                target=[
-                    base_flow_dataset.target,
-                ],  # target should always be a list. Multi-targets are only supported for regression. Multi-Task Classification is not implemented
-                continuous_cols=[col for col in base_flow_dataset.X_train_val.columns if col.startswith('num_')],
-                categorical_cols=[col for col in base_flow_dataset.X_train_val.columns if col.startswith('cat_')],
-            )
-            models_dct = {
-                model_name: TabularModel(
-                    data_config=data_config,
-                    model_config=model,
-                    optimizer_config=self.models_config[model_name]['optimizer_config'],
-                    trainer_config=self.models_config[model_name]['trainer_config'],
-                    verbose=False,
-                    suppress_lightning_logger=True,
-                ),
-            }
-        else:
-            models_dct = {
-                model_name: model,
-            }
+        # if isinstance(model, pytorch_tabular.config.ModelConfig):
+        #     data_config = DataConfig(
+        #         target=[
+        #             base_flow_dataset.target,
+        #         ],  # target should always be a list. Multi-targets are only supported for regression. Multi-Task Classification is not implemented
+        #         continuous_cols=[col for col in base_flow_dataset.X_train_val.columns if col.startswith('num_')],
+        #         categorical_cols=[col for col in base_flow_dataset.X_train_val.columns if col.startswith('cat_')],
+        #     )
+        #     models_dct = {
+        #         model_name: TabularModel(
+        #             data_config=data_config,
+        #             model_config=model,
+        #             optimizer_config=self.models_config[model_name]['optimizer_config'],
+        #             trainer_config=self.models_config[model_name]['trainer_config'],
+        #             verbose=False,
+        #             suppress_lightning_logger=True,
+        #         ),
+        #     }
+        # else:
+        #     models_dct = {
+        #         model_name: model,
+        #     }
+
+        models_dct = {
+            model_name: model,
+        }
 
         return models_dct
 

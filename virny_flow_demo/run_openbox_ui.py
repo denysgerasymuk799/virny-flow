@@ -11,7 +11,7 @@ if __name__ == '__main__':
     lp_name = 'miss_forest&DIR&lr_clf'
     run_num = 1
     history_filename = 'history_2024-12-14-23-54-45-330002.json'
-    surrogate_model_type = 'gp'  # 'gp' or 'prf'
+    surrogate_model_type = 'prf'  # 'gp' or 'prf'
     bo_advisor_config = BOAdvisorConfig()
 
     # Read an experimental config
