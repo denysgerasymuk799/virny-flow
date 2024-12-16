@@ -7,7 +7,6 @@ from .database.task_manager_db_client import TaskManagerDBClient
 from .domain_logic.kafka_processes import start_task_provider, start_cost_model_updater
 from .domain_logic.initial_configuration import start_task_generator, create_init_state_for_config
 from virny_flow.configs.structs import BOAdvisorConfig
-from virny_flow.core.custom_classes.task_queue import TaskQueue
 
 
 cors = {
@@ -17,7 +16,7 @@ cors = {
     'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, HEAD, OPTIONS',
 }
 
-def register_routes(app: FastAPI, exp_config: DefaultMunch, task_queue: TaskQueue, db_client: TaskManagerDBClient,
+def register_routes(app: FastAPI, exp_config: DefaultMunch, db_client: TaskManagerDBClient,
                     uvicorn_server, lp_to_advisor: dict, bo_advisor_config: BOAdvisorConfig):
     @app.options("/{full_path:path}")
     async def options():
@@ -26,32 +25,24 @@ def register_routes(app: FastAPI, exp_config: DefaultMunch, task_queue: TaskQueu
     @app.on_event("startup")
     async def startup_event():
         print("Starting up...", flush=True)
-        db_client.connect()
-        task_queue.connect()
 
         # Create an optimized execution plan
+        db_client.connect()
         for run_num in exp_config.common_args.run_nums:
             await create_init_state_for_config(exp_config=exp_config, db_client=db_client, run_num=run_num)
+        db_client.close()
 
         # Start a background process that adds new tasks to the queue in the database if it has available space
         asyncio.create_task(start_task_generator(exp_config=exp_config,
                                                  lp_to_advisor=lp_to_advisor,
-                                                 bo_advisor_config=bo_advisor_config,
-                                                 db_client=db_client,
-                                                 task_queue=task_queue))
+                                                 bo_advisor_config=bo_advisor_config))
         # Start a background process that reads new tasks from the task queue in DB and adds to a Kafka queue
         asyncio.create_task(start_task_provider(exp_config=exp_config,
-                                                db_client=db_client,
-                                                task_queue=task_queue,
                                                 uvicorn_server=uvicorn_server))
         # Start a background process that updates cost models based on completed tasks
         asyncio.create_task(start_cost_model_updater(exp_config=exp_config,
-                                                     lp_to_advisor=lp_to_advisor,
-                                                     db_client=db_client,
-                                                     task_queue=task_queue))
+                                                     lp_to_advisor=lp_to_advisor))
 
     @app.on_event("shutdown")
     async def shutdown_event():
         print("Shutting down...")
-        db_client.close()
-        task_queue.close()

@@ -1,4 +1,4 @@
-import time
+import asyncio
 import base64
 from munch import DefaultMunch
 from dataclasses import asdict
@@ -14,9 +14,13 @@ from virny_flow.configs.constants import (StageName, STAGE_SEPARATOR, NO_FAIRNES
                                           LOGICAL_PIPELINE_SCORES_TABLE, EXP_CONFIG_HISTORY_TABLE)
 
 
-async def start_task_generator(exp_config: DefaultMunch, lp_to_advisor: dict, bo_advisor_config: BOAdvisorConfig,
-                               db_client: TaskManagerDBClient, task_queue: TaskQueue):
+async def start_task_generator(exp_config: DefaultMunch, lp_to_advisor: dict, bo_advisor_config: BOAdvisorConfig):
     logger = get_logger('TaskGenerator')
+    db_client = TaskManagerDBClient(exp_config.common_args.secrets_path)
+    task_queue = TaskQueue(secrets_path=exp_config.common_args.secrets_path,
+                           max_queue_size=exp_config.optimisation_args.queue_size)
+    db_client.connect()
+    task_queue.connect()
 
     for run_num in exp_config.common_args.run_nums:
         random_state = INIT_RANDOM_STATE + run_num
@@ -28,7 +32,7 @@ async def start_task_generator(exp_config: DefaultMunch, lp_to_advisor: dict, bo
                                                           run_num=run_num,
                                                           num_pp_candidates=exp_config.optimisation_args.num_pp_candidates):
                 logger.info("Wait until the queue has enough space for next pp candidates...")
-                time.sleep(10)
+                await asyncio.sleep(10)
                 continue
 
             # Step 1: Get all logical pipelines, which have num_trials less than max_trials
@@ -46,6 +50,9 @@ async def start_task_generator(exp_config: DefaultMunch, lp_to_advisor: dict, bo
                     timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')
                     for lp_name, advisor in lp_to_advisor[run_num].items():
                         advisor["config_advisor"].save_json(filename=f'history/{exp_config.common_args.exp_config_name}/run_num_{str(run_num)}/{lp_name}/history_{timestamp}.json')
+
+                    db_client.close()
+                    task_queue.close()
                     break
 
                 # Skip adding new tasks in case all logical pipelines have reached max_trials
