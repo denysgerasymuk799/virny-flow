@@ -1,5 +1,6 @@
 import os
 import time
+import asyncio
 import json
 from munch import DefaultMunch
 from datetime import datetime, timezone
@@ -15,12 +16,16 @@ from virny_flow.configs.constants import (TASK_MANAGER_CONSUMER_GROUP, NEW_TASKS
                                           EXP_CONFIG_HISTORY_TABLE, COMPLETED_TASKS_QUEUE_TOPIC, PHYSICAL_PIPELINE_OBSERVATIONS_TABLE)
 
 
-async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDBClient, task_queue: TaskQueue,
-                              uvicorn_server):
+async def start_task_provider(exp_config: DefaultMunch, uvicorn_server):
     termination_flag = False
     logger = get_logger('TaskProvider')
-    producer = AIOKafkaProducer(bootstrap_servers=os.getenv("KAFKA_BROKER"))
+    db_client = TaskManagerDBClient(exp_config.common_args.secrets_path)
+    task_queue = TaskQueue(secrets_path=exp_config.common_args.secrets_path,
+                           max_queue_size=exp_config.optimisation_args.queue_size)
+    db_client.connect()
+    task_queue.connect()
 
+    producer = AIOKafkaProducer(bootstrap_servers=os.getenv("KAFKA_BROKER"))
     await producer.start()
     for idx, run_num in enumerate(exp_config.common_args.run_nums):
         execution_start_time = time.time()
@@ -32,7 +37,7 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
                 if num_available_tasks == 0:
                     if not await task_queue.is_empty(exp_config_name=exp_config.common_args.exp_config_name, run_num=run_num):
                         print("Wait until new tasks come up...", flush=True)
-                        time.sleep(10)
+                        await asyncio.sleep(10)
                         continue
 
                     # Check termination factor: Get all logical pipelines, which have num_trials less than max_trials.
@@ -58,7 +63,7 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
                             break  # Start processing tasks for another run_num
                     else:
                         logger.info("Wait until all physical pipelines are executed to terminate all workers...")
-                        time.sleep(10)
+                        await asyncio.sleep(10)
                         continue
 
                 # Add new tasks to the NewTaskQueue topic in Kafka
@@ -90,6 +95,8 @@ async def start_task_provider(exp_config: DefaultMunch, db_client: TaskManagerDB
                         logger.error(f'Error during uvicorn server termination: {e}')
 
                     # Terminate TaskProvider
+                    db_client.close()
+                    task_queue.close()
                     break
 
             except Exception as err:
@@ -114,9 +121,14 @@ def get_kafka_consumer():
                             enable_auto_commit=True)
 
 
-async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict,
-                                   db_client: TaskManagerDBClient, task_queue: TaskQueue):
+async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict):
     logger = get_logger('CostModelUpdater')
+    db_client = TaskManagerDBClient(exp_config.common_args.secrets_path)
+    task_queue = TaskQueue(secrets_path=exp_config.common_args.secrets_path,
+                           max_queue_size=exp_config.optimisation_args.queue_size)
+    db_client.connect()
+    task_queue.connect()
+
     consumer = get_kafka_consumer()
     await consumer.start()
     try:
@@ -133,6 +145,8 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
                 # Check termination state
                 if task_uuid == NO_TASKS:
                     logger.info('Shutting down Cost Model Updater...')
+                    db_client.close()
+                    task_queue.close()
                     break
 
                 physical_pipeline_uuid = data["physical_pipeline_uuid"]
@@ -146,6 +160,13 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
                 # Update the advisor of the logical pipeline
                 lp_to_advisor[run_num][logical_pipeline_name]["config_advisor"].update_observation(observation)
 
+                # Update score of the selected logical pipeline
+                compound_pp_quality = await update_logical_pipeline_score_model(exp_config_name=exp_config_name,
+                                                                                objectives_lst=exp_config.optimisation_args.objectives,
+                                                                                observation=observation,
+                                                                                logical_pipeline_uuid=logical_pipeline_uuid,
+                                                                                db_client=db_client,
+                                                                                run_num=run_num)
                 # Add an observation to DB
                 datetime_now = datetime.now(timezone.utc)
                 await db_client.write_records_into_db(collection_name=PHYSICAL_PIPELINE_OBSERVATIONS_TABLE,
@@ -157,17 +178,10 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
                                                           "physical_pipeline_uuid": physical_pipeline_uuid,
                                                           "logical_pipeline_uuid": logical_pipeline_uuid,
                                                           "logical_pipeline_name": logical_pipeline_name,
+                                                          "compound_pp_quality": compound_pp_quality,
                                                           "create_datetime": datetime_now,
                                                           "update_datetime": datetime_now,
                                                       })
-                # Update score of the selected logical pipeline
-                await update_logical_pipeline_score_model(exp_config_name=exp_config_name,
-                                                          objectives_lst=exp_config.optimisation_args.objectives,
-                                                          observation=observation,
-                                                          physical_pipeline_uuid=physical_pipeline_uuid,
-                                                          logical_pipeline_uuid=logical_pipeline_uuid,
-                                                          db_client=db_client,
-                                                          run_num=run_num)
                 # Complete the task
                 await task_queue.complete_task(exp_config_name=exp_config_name, run_num=run_num, task_uuid=task_uuid)
                 logger.info(f'Task with task_uuid = {task_uuid} and run_num = {run_num} was successfully completed.')
