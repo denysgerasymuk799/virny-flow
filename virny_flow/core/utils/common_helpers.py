@@ -141,6 +141,7 @@ def validate_config(config_obj):
     if len(objective_names.intersection(set([m.lower() for m in STABILITY_AND_UNCERTAINTY_METRICS]))) == 0:
         config_obj['virny_args']['computation_mode'] = ComputationMode.NO_BOOTSTRAP.value
     else:
+        print('Enable bootstrap in Virny')
         if config_obj["virny_args"].get("bootstrap_fraction", None) is None \
                     or config_obj['virny_args']['bootstrap_fraction'] < 0.0 \
                     or config_obj['virny_args']['bootstrap_fraction'] > 1.0:
