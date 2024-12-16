@@ -146,6 +146,13 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
                 # Update the advisor of the logical pipeline
                 lp_to_advisor[run_num][logical_pipeline_name]["config_advisor"].update_observation(observation)
 
+                # Update score of the selected logical pipeline
+                compound_pp_quality = await update_logical_pipeline_score_model(exp_config_name=exp_config_name,
+                                                                                objectives_lst=exp_config.optimisation_args.objectives,
+                                                                                observation=observation,
+                                                                                logical_pipeline_uuid=logical_pipeline_uuid,
+                                                                                db_client=db_client,
+                                                                                run_num=run_num)
                 # Add an observation to DB
                 datetime_now = datetime.now(timezone.utc)
                 await db_client.write_records_into_db(collection_name=PHYSICAL_PIPELINE_OBSERVATIONS_TABLE,
@@ -157,17 +164,10 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
                                                           "physical_pipeline_uuid": physical_pipeline_uuid,
                                                           "logical_pipeline_uuid": logical_pipeline_uuid,
                                                           "logical_pipeline_name": logical_pipeline_name,
+                                                          "compound_pp_quality": compound_pp_quality,
                                                           "create_datetime": datetime_now,
                                                           "update_datetime": datetime_now,
                                                       })
-                # Update score of the selected logical pipeline
-                await update_logical_pipeline_score_model(exp_config_name=exp_config_name,
-                                                          objectives_lst=exp_config.optimisation_args.objectives,
-                                                          observation=observation,
-                                                          physical_pipeline_uuid=physical_pipeline_uuid,
-                                                          logical_pipeline_uuid=logical_pipeline_uuid,
-                                                          db_client=db_client,
-                                                          run_num=run_num)
                 # Complete the task
                 await task_queue.complete_task(exp_config_name=exp_config_name, run_num=run_num, task_uuid=task_uuid)
                 logger.info(f'Task with task_uuid = {task_uuid} and run_num = {run_num} was successfully completed.')

@@ -18,8 +18,7 @@ def get_new_std_based_on_old_std(new_value, old_std, new_mean, old_mean, n):
 
 
 async def update_logical_pipeline_score_model(exp_config_name: str, objectives_lst: list, observation: Observation,
-                                              physical_pipeline_uuid: str, logical_pipeline_uuid: str,
-                                              db_client: TaskManagerDBClient, run_num: int):
+                                              logical_pipeline_uuid: str, db_client: TaskManagerDBClient, run_num: int):
     # Score model: score = pipeline_quality_mean + risk_factor * pipeline_quality_std / pipeline_execution_cost.
 
     # Step 1: Get the logical pipeline from DB.
@@ -76,12 +75,6 @@ async def update_logical_pipeline_score_model(exp_config_name: str, objectives_l
     for idx, objective in enumerate(objectives_lst):
         compound_pp_quality += objective['weight'] * observation.extra_info['reversed_objectives'][idx]
 
-    await db_client.update_query(collection_name=PHYSICAL_PIPELINE_OBSERVATIONS_TABLE,
-                                 exp_config_name=exp_config_name,
-                                 run_num=run_num,
-                                 condition={"physical_pipeline_uuid": physical_pipeline_uuid},
-                                 update_val_dct={"compound_pp_quality": compound_pp_quality})
-
     # Step 5: Update the scores in DB
     await db_client.update_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
                                  exp_config_name=exp_config_name,
@@ -92,3 +85,4 @@ async def update_logical_pipeline_score_model(exp_config_name: str, objectives_l
                                                  "pipeline_quality_std": pipeline_quality_std,
                                                  "pipeline_execution_cost": pipeline_execution_cost,
                                                  "num_completed_pps": logical_pipeline.num_completed_pps + 1})
+    return compound_pp_quality
