@@ -131,7 +131,7 @@ def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
         },
         'lgbm_clf': {
             'model': LGBMClassifier,
-            'default_kwargs': {'random_state': models_tuning_seed, 'n_jobs': 48, 'num_threads': 48, 'verbosity': -1},
+            'default_kwargs': {'random_state': models_tuning_seed, 'n_jobs': 8, 'num_threads': 8, 'verbosity': -1},
             'config_space': {
                 'model__n_estimators': UniformIntegerHyperparameter("model__n_estimators", 50, 1000, q=50),
                 'model__max_depth': CategoricalHyperparameter("model__max_depth", [3, 4, 5, 6, 7, 8, 9, -1]),

@@ -197,6 +197,7 @@ class PipelineEvaluator(MLLifecycle):
                          physical_pipeline: PhysicalPipeline, objectives: list, seed: int):
         # Parse an input physical pipeline
         null_imputer_name, fairness_intervention_name, model_name = physical_pipeline.logical_pipeline_name.split(STAGE_SEPARATOR)
+        print("logical_pipeline_name:", physical_pipeline.logical_pipeline_name)
         null_imputer_params = nested_dict_from_flat(physical_pipeline.null_imputer_params)
         fairness_intervention_params = nested_dict_from_flat(physical_pipeline.fairness_intervention_params)
         model_params = nested_dict_from_flat(physical_pipeline.model_params)

@@ -63,7 +63,6 @@ class Worker:
             acks='all',
             retries=5,
             max_in_flight_requests_per_connection=1,
-            enable_idempotence=True,
             value_serializer=lambda x: json.dumps(x).encode('utf-8')
         )
 
@@ -103,9 +102,9 @@ class Worker:
         while retry_count < max_retries:
             try:
                 # Attempt to send the message
-                future = self.producer.send(COMPLETED_TASKS_QUEUE_TOPIC, value=message)
-                result = future.get(timeout=30)  # Wait for confirmation
-                self._logger.info(f"New task with UUID = {task_uuid} and run_num = {run_num} was completed and sent to {result.topic} [{result.partition}]")
+                self.producer.send(COMPLETED_TASKS_QUEUE_TOPIC, value=message)
+                self.producer.flush()
+                self._logger.info(f"New task with UUID = {task_uuid} and run_num = {run_num} was completed and sent to COMPLETED_TASKS_QUEUE_TOPIC")
                 break  # Exit the loop if sending is successful
             except Exception as e:
                 retry_count += 1
