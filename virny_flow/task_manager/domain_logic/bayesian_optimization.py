@@ -130,7 +130,8 @@ def get_objective_losses(metrics_dct: dict, objectives: list, model_name: str, s
 
         losses.append(loss)
         reversed_objectives.append(1 - loss)
-        weighted_losses.append(objective['weight'] * loss)
+        # weighted_losses.append(objective['weight'] * loss)
+        weighted_losses.append(loss)
 
     result = dict(objectives=weighted_losses, original_objectives=losses, reversed_objectives=reversed_objectives)
     return result
