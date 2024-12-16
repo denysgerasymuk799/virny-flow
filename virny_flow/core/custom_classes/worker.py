@@ -61,8 +61,9 @@ class Worker:
             bootstrap_servers=os.getenv("KAFKA_BROKER"),
             api_version=(0, 10, 1),
             acks='all',
-            retries=3,
+            retries=5,
             max_in_flight_requests_per_connection=1,
+            enable_idempotence=True,
             value_serializer=lambda x: json.dumps(x).encode('utf-8')
         )
 
@@ -102,9 +103,9 @@ class Worker:
         while retry_count < max_retries:
             try:
                 # Attempt to send the message
-                self.producer.send(COMPLETED_TASKS_QUEUE_TOPIC, value=message)
-                self.producer.flush()
-                self._logger.info(f"New task with UUID = {task_uuid} and run_num = {run_num} was completed and sent to COMPLETED_TASKS_QUEUE_TOPIC")
+                future = self.producer.send(COMPLETED_TASKS_QUEUE_TOPIC, value=message)
+                result = future.get(timeout=30)  # Wait for confirmation
+                self._logger.info(f"New task with UUID = {task_uuid} and run_num = {run_num} was completed and sent to {result.topic} [{result.partition}]")
                 break  # Exit the loop if sending is successful
             except Exception as e:
                 retry_count += 1
