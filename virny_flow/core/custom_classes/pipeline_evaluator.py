@@ -94,6 +94,7 @@ class PipelineEvaluator(MLLifecycle):
 
         # Start a client session
         session = self._db.client.start_session()
+        print(f"Running {task.physical_pipeline.logical_pipeline_name} pipeline...")
         adaptive_pipeline_generator = self.execute_adaptive_pipeline(physical_pipeline=task.physical_pipeline,
                                                                      objectives=task.objectives,
                                                                      exp_config_name=self.exp_config_name,
@@ -197,7 +198,6 @@ class PipelineEvaluator(MLLifecycle):
                          physical_pipeline: PhysicalPipeline, objectives: list, seed: int):
         # Parse an input physical pipeline
         null_imputer_name, fairness_intervention_name, model_name = physical_pipeline.logical_pipeline_name.split(STAGE_SEPARATOR)
-        print("logical_pipeline_name:", physical_pipeline.logical_pipeline_name)
         null_imputer_params = nested_dict_from_flat(physical_pipeline.null_imputer_params)
         fairness_intervention_params = nested_dict_from_flat(physical_pipeline.fairness_intervention_params)
         model_params = nested_dict_from_flat(physical_pipeline.model_params)
