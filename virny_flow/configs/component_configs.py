@@ -5,8 +5,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from lightgbm import LGBMClassifier
 from openbox.utils.config_space import UniformIntegerHyperparameter, UniformFloatHyperparameter, CategoricalHyperparameter
+from pytorch_tabular.models import GANDALFConfig
+from pytorch_tabular.config import OptimizerConfig, TrainerConfig
 
-from .constants import FairnessIntervention
+from .constants import FairnessIntervention, INIT_RANDOM_STATE
 from .constants import ErrorRepairMethod
 import virny_flow.core.null_imputers.datawig_imputer as datawig_imputer
 from virny_flow.core.null_imputers.imputation_methods import (impute_with_deletion, impute_with_simple_imputer,
@@ -115,7 +117,7 @@ FAIRNESS_INTERVENTION_CONFIG_SPACE = {
 }
 
 
-def get_models_params_for_tuning(models_tuning_seed):
+def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
     return {
         'dt_clf': {
             'model': DecisionTreeClassifier,
@@ -147,22 +149,47 @@ def get_models_params_for_tuning(models_tuning_seed):
                 'model__bootstrap': CategoricalHyperparameter("model__bootstrap", [True, False])
             }
         },
-        'lgbm_clf': {
-            'model': LGBMClassifier(random_state=models_tuning_seed, n_jobs=48, num_threads=48),
-            'config_space': {
-                'model__n_estimators': CategoricalHyperparameter("model__n_estimators", [50, 100, 200, 500]),
-                'model__max_depth': CategoricalHyperparameter("model__max_depth", [3, 4, 5, 6, 7, 8, 9, -1]),
-                'model__num_leaves': CategoricalHyperparameter("model__num_leaves", [20, 500, 1000, 1500, 2000, 2500, 3000]),
-                'model__min_data_in_leaf': CategoricalHyperparameter("model__min_data_in_leaf", [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]),
-                'model__verbosity': CategoricalHyperparameter("model__verbosity", [-1])
-            }
-        },
         'mlp_clf': {
-            'model': MLPClassifier(hidden_layer_sizes=(100,100,), random_state=models_tuning_seed, max_iter=1000),
+            'model': MLPClassifier,
+            'default_kwargs': {'hidden_layer_sizes': (100,100,). 'random_state': models_tuning_seed. 'max_iter': 1000},
             'config_space': {
                 'model__activation': CategoricalHyperparameter("model__activation", ['logistic', 'tanh', 'relu']),
                 'model__solver': CategoricalHyperparameter("model__solver", ['lbfgs', 'sgd', 'adam']),
                 'model__learning_rate': CategoricalHyperparameter("model__learning_rate", ['constant', 'invscaling', 'adaptive'])
             }
-        }
+        },
+        'lgbm_clf': {
+            'model': LGBMClassifier,
+            'default_kwargs': {'random_state': models_tuning_seed, 'n_jobs': 48, 'num_threads': 48},
+            'config_space': {
+                'model__n_estimators': CategoricalHyperparameter("model__n_estimators", [50, 100, 200, 500]),
+                'model__max_depth': CategoricalHyperparameter("model__max_depth", [3, 4, 5, 6, 7, 8, 9, -1]),
+                'model__num_leaves': CategoricalHyperparameter("model__num_leaves", [int(x) for x in np.linspace(start = 20, stop = 3000, num = 8)]),
+                'model__min_data_in_leaf': CategoricalHyperparameter("model__min_data_in_leaf", [int(x) for x in np.linspace(start = 100, stop = 1000, num = 8)]),
+                'model__verbosity': CategoricalHyperparameter("model__verbosity", [-1]),
+            }
+        },
+        ####################################################################
+        # Use Pytorch Tabular API to work with tabular neural networks
+        ####################################################################
+        'gandalf_clf': {
+            'model': GANDALFConfig,
+            'default_kwargs': {'seed': models_tuning_seed, 'task': 'classification'},
+            'optimizer_config': OptimizerConfig(),
+            'trainer_config': TrainerConfig(batch_size=512,
+                                            max_epochs=100,
+                                            seed=models_tuning_seed,
+                                            early_stopping=None,
+                                            checkpoints=None,
+                                            load_best=False,
+                                            trainer_kwargs=dict(enable_model_summary=False, # Turning off model summary
+                                                                log_every_n_steps=None,
+                                                                enable_progress_bar=False)),
+            'config_space': {
+                'model__gflu_stages': CategoricalHyperparameter("model__gflu_stages", [i for i in range(2, 31)]),
+                'model__gflu_dropout': CategoricalHyperparameter("model__gflu_dropout", [0.01 * i for i in range(6)]),
+                'model__gflu_feature_init_sparsity': CategoricalHyperparameter("model__gflu_feature_init_sparsity", [0.1 * i for i in range(6)]),
+                'model__learning_rate': CategoricalHyperparameter("model__learning_rate", [1e-3, 1e-4, 1e-5, 1e-6]),
+            },
+        },
     }

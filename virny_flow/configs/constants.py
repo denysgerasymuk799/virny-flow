@@ -1,11 +1,26 @@
 from enum import Enum
+from virny.configs.constants import (STD, IQR, JITTER, LABEL_STABILITY,
+                                     ALEATORIC_UNCERTAINTY, EPISTEMIC_UNCERTAINTY, OVERALL_UNCERTAINTY,
+                                     LABEL_STABILITY_RATIO, LABEL_STABILITY_DIFFERENCE, IQR_DIFFERENCE,
+                                     STD_DIFFERENCE, STD_RATIO, JITTER_DIFFERENCE,
+                                     OVERALL_UNCERTAINTY_DIFFERENCE, OVERALL_UNCERTAINTY_RATIO,
+                                     EPISTEMIC_UNCERTAINTY_DIFFERENCE, EPISTEMIC_UNCERTAINTY_RATIO,
+                                     ALEATORIC_UNCERTAINTY_DIFFERENCE, ALEATORIC_UNCERTAINTY_RATIO)
 
 
-EXPERIMENT_RUN_SEEDS = [100 * i for i in range(1, 11)]
+DEBUG_MODE = False
+INIT_RANDOM_STATE = 100
 NUM_FOLDS_FOR_TUNING = 3
 NO_TASKS = 'NO_TASKS'
 STAGE_SEPARATOR = '&'
 NO_FAIRNESS_INTERVENTION = 'NO_FAIRNESS_INTERVENTION'
+STABILITY_AND_UNCERTAINTY_METRICS = [
+    STD, IQR, JITTER, LABEL_STABILITY,
+    ALEATORIC_UNCERTAINTY, EPISTEMIC_UNCERTAINTY, OVERALL_UNCERTAINTY,
+    LABEL_STABILITY_RATIO, LABEL_STABILITY_DIFFERENCE, IQR_DIFFERENCE, STD_DIFFERENCE, STD_RATIO, JITTER_DIFFERENCE,
+    OVERALL_UNCERTAINTY_DIFFERENCE, OVERALL_UNCERTAINTY_RATIO, EPISTEMIC_UNCERTAINTY_DIFFERENCE, EPISTEMIC_UNCERTAINTY_RATIO,
+    ALEATORIC_UNCERTAINTY_DIFFERENCE, ALEATORIC_UNCERTAINTY_RATIO
+]
 
 # ====================================================================
 # MongoDB Constants
@@ -15,6 +30,15 @@ PHYSICAL_PIPELINE_OBSERVATIONS_TABLE = 'physical_pipeline_observations'
 ALL_EXPERIMENT_METRICS_TABLE = 'all_experiment_metrics'
 TASK_QUEUE_TABLE = 'task_queue'
 EXP_CONFIG_HISTORY_TABLE = 'exp_config_history'
+
+
+# ====================================================================
+# Kafka Constants
+# ====================================================================
+NEW_TASKS_QUEUE_TOPIC = 'NewTasksQueue'
+COMPLETED_TASKS_QUEUE_TOPIC = 'CompletedTasksQueue'
+TASK_MANAGER_CONSUMER_GROUP = "task_manager_consumer_group"
+WORKER_CONSUMER_GROUP = "worker_consumer_group"
 
 
 # ====================================================================

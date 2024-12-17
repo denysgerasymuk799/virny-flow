@@ -3,8 +3,6 @@ from dataclasses import dataclass, field, fields
 from sklearn.impute import SimpleImputer
 from openbox.utils.history import History
 
-from virny_flow.configs.constants import TaskStatus
-
 
 @dataclass
 class MixedImputer:
@@ -42,19 +40,17 @@ class LogicalPipeline:
     components: dict
     risk_factor: float
     num_trials: int
+    max_trials: int
     score: float
     pipeline_quality_mean: dict
     pipeline_quality_std: dict
     pipeline_execution_cost: float
-    total_lp_quality_mean_of_means: dict
-    total_lp_quality_std_of_means: dict
-    total_lp_quality_mean_of_stds: dict
-    total_lp_quality_std_of_stds: dict
-    total_lp_mean_of_execution_costs: float
-    total_lp_std_of_execution_costs: float
-    norm_pipeline_quality_mean: dict
-    norm_pipeline_quality_std: dict
-    norm_pipeline_execution_cost: float
+    num_completed_pps: int
+    surrogate_type: str
+    acq_type: str
+    acq_optimizer_type: str
+    run_num: int
+    random_state: int
 
     @classmethod
     def from_dict(cls, data: dict):
@@ -76,6 +72,8 @@ class PhysicalPipeline:
     null_imputer_params: dict
     fairness_intervention_params: dict
     model_params: dict
+    run_num: int
+    random_state: int
     preprocessing: dict = field(default_factory=lambda: {'cat': 'OneHotEncoder', 'num': 'StandardScaler'})
 
     @classmethod
@@ -92,8 +90,11 @@ class PhysicalPipeline:
 class Task:
     task_uuid: str
     exp_config_name: str
-    physical_pipeline: PhysicalPipeline
     objectives: list
+    pipeline_quality_mean: dict
+    physical_pipeline: PhysicalPipeline
+    run_num: int
+    random_state: int
 
     @classmethod
     def from_dict(cls, data: dict):

@@ -1,0 +1,840 @@
+var info={
+  "data": {
+    "num_objectives": 2,
+    "num_constraints": 0,
+    "advance": true,
+    "line_data": [
+      {
+        "best": [
+          [
+            1,
+            0.178782
+          ],
+          [
+            2,
+            0.171171
+          ],
+          [
+            3,
+            0.170306
+          ],
+          [
+            4,
+            0.167785
+          ]
+        ],
+        "infeasible": [],
+        "feasible": [
+          [
+            5,
+            0.169661
+          ]
+        ]
+      },
+      {
+        "best": [
+          [
+            1,
+            0.0
+          ]
+        ],
+        "infeasible": [],
+        "feasible": [
+          [
+            2,
+            0.024972
+          ],
+          [
+            3,
+            0.032203
+          ],
+          [
+            4,
+            0.011638
+          ],
+          [
+            5,
+            0.006667
+          ]
+        ]
+      }
+    ],
+    "cons_line_data": [],
+    "cons_list_rev": [],
+    "parallel_data": {
+      "data": [
+        [
+          1,
+          0.55,
+          0.001,
+          "l2",
+          "newton-cg",
+          true,
+          10,
+          1,
+          2,
+          125,
+          true,
+          10,
+          1,
+          2,
+          125,
+          0.178782,
+          0.0
+        ],
+        [
+          2,
+          0.14405435171466463,
+          1,
+          "None",
+          "saga",
+          false,
+          "None",
+          4,
+          2,
+          100,
+          false,
+          "None",
+          1,
+          2,
+          150,
+          0.171171,
+          0.024972
+        ],
+        [
+          3,
+          0.24917937279884128,
+          0.1,
+          "l2",
+          "newton-cg",
+          false,
+          "None",
+          4,
+          10,
+          50,
+          true,
+          25,
+          4,
+          10,
+          150,
+          0.170306,
+          0.032203
+        ],
+        [
+          4,
+          0.7108143765808651,
+          0.01,
+          "None",
+          "newton-cg",
+          true,
+          75,
+          1,
+          5,
+          100,
+          true,
+          100,
+          2,
+          10,
+          100,
+          0.167785,
+          0.011638
+        ],
+        [
+          5,
+          0.3508117473423473,
+          0.01,
+          "l2",
+          "newton-cg",
+          true,
+          10,
+          1,
+          2,
+          100,
+          false,
+          "None",
+          1,
+          5,
+          150,
+          0.169661,
+          0.006667
+        ]
+      ],
+      "schema": [
+        "Uid",
+        "fi__repair_level",
+        "model__C",
+        "model__penalty",
+        "model__solver",
+        "mvi__RandomForestClassifier__bootstrap",
+        "mvi__RandomForestClassifier__max_depth",
+        "mvi__RandomForestClassifier__min_samples_leaf",
+        "mvi__RandomForestClassifier__min_samples_split",
+        "mvi__RandomForestClassifier__n_estimators",
+        "mvi__RandomForestRegressor__bootstrap",
+        "mvi__RandomForestRegressor__max_depth",
+        "mvi__RandomForestRegressor__min_samples_leaf",
+        "mvi__RandomForestRegressor__min_samples_split",
+        "mvi__RandomForestRegressor__n_estimators",
+        "Objs 1",
+        "Objs 2"
+      ],
+      "visualMap": {
+        "min": 1,
+        "max": 5,
+        "dimension": 0
+      }
+    },
+    "table_list": [
+      [
+        1,
+        [
+          0.178782,
+          0.0
+        ],
+        null,
+        {
+          "fi__repair_level": 0.55,
+          "model__C": 0.001,
+          "model__penalty": "l2",
+          "model__solver": "newton-cg",
+          "mvi__RandomForestClassifier__bootstrap": true,
+          "mvi__RandomForestClassifier__max_depth": 10,
+          "mvi__RandomForestClassifier__min_samples_leaf": 1,
+          "mvi__RandomForestClassifier__min_samples_split": 2,
+          "mvi__RandomForestClassifier__n_estimators": 125,
+          "mvi__RandomForestRegressor__bootstrap": true,
+          "mvi__RandomForestRegressor__max_depth": 10,
+          "mvi__RandomForestRegressor__min_samples_leaf": 1,
+          "mvi__RandomForestRegressor__min_samples_split": 2,
+          "mvi__RandomForestRegressor__n_estimators": 125
+        },
+        "'fi__repair_level': 0.55, 'model__",
+        0,
+        4.005
+      ],
+      [
+        2,
+        [
+          0.171171,
+          0.024972
+        ],
+        null,
+        {
+          "fi__repair_level": 0.14405435171466463,
+          "model__C": 1,
+          "model__penalty": "None",
+          "model__solver": "saga",
+          "mvi__RandomForestClassifier__bootstrap": false,
+          "mvi__RandomForestClassifier__max_depth": "None",
+          "mvi__RandomForestClassifier__min_samples_leaf": 4,
+          "mvi__RandomForestClassifier__min_samples_split": 2,
+          "mvi__RandomForestClassifier__n_estimators": 100,
+          "mvi__RandomForestRegressor__bootstrap": false,
+          "mvi__RandomForestRegressor__max_depth": "None",
+          "mvi__RandomForestRegressor__min_samples_leaf": 1,
+          "mvi__RandomForestRegressor__min_samples_split": 2,
+          "mvi__RandomForestRegressor__n_estimators": 150
+        },
+        "'fi__repair_level': 0.144054351714",
+        0,
+        5.91
+      ],
+      [
+        3,
+        [
+          0.170306,
+          0.032203
+        ],
+        null,
+        {
+          "fi__repair_level": 0.24917937279884128,
+          "model__C": 0.1,
+          "model__penalty": "l2",
+          "model__solver": "newton-cg",
+          "mvi__RandomForestClassifier__bootstrap": false,
+          "mvi__RandomForestClassifier__max_depth": "None",
+          "mvi__RandomForestClassifier__min_samples_leaf": 4,
+          "mvi__RandomForestClassifier__min_samples_split": 10,
+          "mvi__RandomForestClassifier__n_estimators": 50,
+          "mvi__RandomForestRegressor__bootstrap": true,
+          "mvi__RandomForestRegressor__max_depth": 25,
+          "mvi__RandomForestRegressor__min_samples_leaf": 4,
+          "mvi__RandomForestRegressor__min_samples_split": 10,
+          "mvi__RandomForestRegressor__n_estimators": 150
+        },
+        "'fi__repair_level': 0.249179372798",
+        0,
+        3.431
+      ],
+      [
+        4,
+        [
+          0.167785,
+          0.011638
+        ],
+        null,
+        {
+          "fi__repair_level": 0.7108143765808651,
+          "model__C": 0.01,
+          "model__penalty": "None",
+          "model__solver": "newton-cg",
+          "mvi__RandomForestClassifier__bootstrap": true,
+          "mvi__RandomForestClassifier__max_depth": 75,
+          "mvi__RandomForestClassifier__min_samples_leaf": 1,
+          "mvi__RandomForestClassifier__min_samples_split": 5,
+          "mvi__RandomForestClassifier__n_estimators": 100,
+          "mvi__RandomForestRegressor__bootstrap": true,
+          "mvi__RandomForestRegressor__max_depth": 100,
+          "mvi__RandomForestRegressor__min_samples_leaf": 2,
+          "mvi__RandomForestRegressor__min_samples_split": 10,
+          "mvi__RandomForestRegressor__n_estimators": 100
+        },
+        "'fi__repair_level': 0.710814376580",
+        0,
+        3.728
+      ],
+      [
+        5,
+        [
+          0.169661,
+          0.006667
+        ],
+        null,
+        {
+          "fi__repair_level": 0.3508117473423473,
+          "model__C": 0.01,
+          "model__penalty": "l2",
+          "model__solver": "newton-cg",
+          "mvi__RandomForestClassifier__bootstrap": true,
+          "mvi__RandomForestClassifier__max_depth": 10,
+          "mvi__RandomForestClassifier__min_samples_leaf": 1,
+          "mvi__RandomForestClassifier__min_samples_split": 2,
+          "mvi__RandomForestClassifier__n_estimators": 100,
+          "mvi__RandomForestRegressor__bootstrap": false,
+          "mvi__RandomForestRegressor__max_depth": "None",
+          "mvi__RandomForestRegressor__min_samples_leaf": 1,
+          "mvi__RandomForestRegressor__min_samples_split": 5,
+          "mvi__RandomForestRegressor__n_estimators": 150
+        },
+        "'fi__repair_level': 0.350811747342",
+        0,
+        4.354
+      ]
+    ],
+    "pareto_data": {
+      "ref_point": [
+        0.2,
+        0.1
+      ],
+      "hv": [
+        [
+          1,
+          0.002
+        ],
+        [
+          2,
+          0.003
+        ],
+        [
+          3,
+          0.003
+        ],
+        [
+          4,
+          0.003
+        ],
+        [
+          5,
+          0.003
+        ]
+      ],
+      "pareto_point": [
+        [
+          0.17878192534381143,
+          0.0
+        ],
+        [
+          0.1696606786427146,
+          0.00666666666666671
+        ],
+        [
+          0.16778523489932884,
+          0.011638418079096047
+        ]
+      ],
+      "pareto_point_feasible": [
+        [
+          0.17878192534381143,
+          0.0
+        ],
+        [
+          0.1711711711711712,
+          0.024971751412429466
+        ],
+        [
+          0.17030567685589515,
+          0.03220338983050841
+        ],
+        [
+          0.16778523489932884,
+          0.011638418079096047
+        ],
+        [
+          0.1696606786427146,
+          0.00666666666666671
+        ]
+      ],
+      "pareto_point_infeasible": [],
+      "all_points": [
+        [
+          0.17878192534381143,
+          0.0
+        ],
+        [
+          0.1711711711711712,
+          0.024971751412429466
+        ],
+        [
+          0.17030567685589515,
+          0.03220338983050841
+        ],
+        [
+          0.16778523489932884,
+          0.011638418079096047
+        ],
+        [
+          0.1696606786427146,
+          0.00666666666666671
+        ]
+      ]
+    },
+    "task_inf": {
+      "table_field": [
+        "Task Id",
+        "Advisor Type",
+        "Surrogate Type",
+        "Current Run",
+        "Max Runs",
+        "Max Runtime Per Trial"
+      ],
+      "table_data": [
+        "OpenBox",
+        "default",
+        "gp",
+        5,
+        5,
+        null
+      ]
+    },
+    "importance_data": {
+      "X": [
+        [
+          0.55,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          125.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          125.0
+        ],
+        [
+          0.14405435171466463,
+          3.0,
+          1.0,
+          3.0,
+          1.0,
+          5.0,
+          2.0,
+          0.0,
+          100.0,
+          1.0,
+          5.0,
+          0.0,
+          0.0,
+          150.0
+        ],
+        [
+          0.24917937279884128,
+          2.0,
+          0.0,
+          0.0,
+          1.0,
+          5.0,
+          2.0,
+          2.0,
+          50.0,
+          0.0,
+          1.0,
+          2.0,
+          2.0,
+          150.0
+        ],
+        [
+          0.7108143765808651,
+          1.0,
+          1.0,
+          0.0,
+          0.0,
+          3.0,
+          0.0,
+          1.0,
+          100.0,
+          0.0,
+          4.0,
+          1.0,
+          2.0,
+          100.0
+        ],
+        [
+          0.3508117473423473,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          100.0,
+          1.0,
+          5.0,
+          0.0,
+          1.0,
+          150.0
+        ]
+      ],
+      "x": [
+        "fi__repair_level",
+        "model__C",
+        "model__penalty",
+        "model__solver",
+        "mvi__RandomForestClassifier__bootstrap",
+        "mvi__RandomForestClassifier__max_depth",
+        "mvi__RandomForestClassifier__min_samples_leaf",
+        "mvi__RandomForestClassifier__min_samples_split",
+        "mvi__RandomForestClassifier__n_estimators",
+        "mvi__RandomForestRegressor__bootstrap",
+        "mvi__RandomForestRegressor__max_depth",
+        "mvi__RandomForestRegressor__min_samples_leaf",
+        "mvi__RandomForestRegressor__min_samples_split",
+        "mvi__RandomForestRegressor__n_estimators"
+      ],
+      "method": "shap",
+      "data": {
+        "obj 1": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "obj 2": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "con_data": {},
+      "obj_shap_value": [
+        [
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ]
+      ],
+      "con_shap_value": []
+    },
+    "pred_label_data": {
+      "data": [
+        [
+          [
+            0.16973069039227745,
+            0.17878192534381143
+          ],
+          [
+            0.1716333789354375,
+            0.1711711711711712
+          ],
+          [
+            0.17184975251425652,
+            0.17030567685589515
+          ],
+          [
+            0.1724798630033981,
+            0.16778523489932884
+          ],
+          [
+            0.17201100206755165,
+            0.1696606786427146
+          ]
+        ],
+        [
+          [
+            0.01887005649717516,
+            0.0
+          ],
+          [
+            0.012627118644067792,
+            0.024971751412429466
+          ],
+          [
+            0.010819209039548056,
+            0.03220338983050841
+          ],
+          [
+            0.015960451977401147,
+            0.011638418079096047
+          ],
+          [
+            0.01720338983050848,
+            0.00666666666666671
+          ]
+        ]
+      ],
+      "min_array": [
+        0.167,
+        -0.002
+      ],
+      "max_array": [
+        0.179,
+        0.034
+      ]
+    },
+    "grade_data": {
+      "data": [
+        [
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            4,
+            2
+          ]
+        ],
+        [
+          [
+            5,
+            1
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ]
+        ]
+      ],
+      "min": 0,
+      "max": 5
+    },
+    "cons_pred_label_data": null
+  }
+};

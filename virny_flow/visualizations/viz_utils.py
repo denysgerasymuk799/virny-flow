@@ -1,100 +1,97 @@
-import pandas as pd
+from typing import Union
+from openbox import History
+from openbox.visualization.base_visualizer import _parse_option, NullVisualizer
+from openbox.utils.config_space import ConfigurationSpace
 
-from virny_flow.core.custom_classes.core_db_client import CoreDBClient
-from virny_flow.configs.constants import (PHYSICAL_PIPELINE_OBSERVATIONS_TABLE, ALL_EXPERIMENT_METRICS_TABLE,
-                                          NO_FAIRNESS_INTERVENTION)
+from virny_flow.configs.constants import StageName, NO_FAIRNESS_INTERVENTION, STAGE_SEPARATOR
+from virny_flow.configs.component_configs import (NULL_IMPUTATION_CONFIG, FAIRNESS_INTERVENTION_CONFIG_SPACE,
+                                                  get_models_params_for_tuning)
 
 
-def prepare_metrics_for_virnyview(secrets_path: str, exp_config_name: str):
-    db_client = CoreDBClient(secrets_path)
-    db_client.connect()
+def build_visualizer(
+        option: Union[str, bool],
+        history: History,
+        *,
+        logging_dir='logs/',
+        task_info=None,
+        **kwargs,
+):
+    """
+    Build visualizer for optimizer.
 
-    pipeline = [
-        # Step 1: Filter documents in PHYSICAL_PIPELINE_OBSERVATIONS_TABLE with the defined exp_config_name
-        {
-            "$match": {
-                "exp_config_name": exp_config_name,
-            }
-        },
-        # Step 2: Group to get the maximum `compound_pp_improvement` per `exp_config_name` and `logical_pipeline_uuid`
-        {
-            "$group": {
-                "_id": {
-                    "exp_config_name": "$exp_config_name",
-                    "logical_pipeline_uuid": "$logical_pipeline_uuid"
-                },
-                "max_compound_pp_improvement": { "$max": "$compound_pp_improvement" },
-                "doc": { "$first": "$$ROOT" }  # Capture the full document with max improvement
-            }
-        },
-        # Step 3: Replace root with the captured document
-        {
-            "$replaceRoot": { "newRoot": "$doc" }
-        },
-        # Step 4: Join with `all_experiment_metrics` based on `physical_pipeline_uuid`
-        {
-            "$lookup": {
-                "from": ALL_EXPERIMENT_METRICS_TABLE,
-                "let": { "physical_uuid": "$physical_pipeline_uuid" },
-                "pipeline": [
-                    { "$match": {
-                        "$expr": {
-                            "$and": [
-                                { "$eq": ["$physical_pipeline_uuid", "$$physical_uuid"] },
-                                { "$eq": ["$exp_config_name", exp_config_name] }
-                            ]
-                        }
-                    }}
-                ],
-                "as": "experiment_metrics"
-            }
-        },
-        # Step 5: Unwind to get one document per metric in `all_experiment_metrics`
-        {
-            "$unwind": "$experiment_metrics"
-        },
-        # Step 6: Project only the fields you need (optional)
-        {
-            "$project": {
-                "_id": 0,
-                "exp_config_name": 1,
-                "logical_pipeline_uuid": 1,
-                "physical_pipeline_uuid": 1,
-                "compound_pp_improvement": 1,
-                "experiment_metrics.logical_pipeline_name": 1,
-                "experiment_metrics.dataset_name": 1,
-                "experiment_metrics.null_imputer_name": 1,
-                "experiment_metrics.fairness_intervention_name": 1,
-                "experiment_metrics.model_name": 1,
-                "experiment_metrics.subgroup": 1,
-                "experiment_metrics.metric": 1,
-                "experiment_metrics.metric_value": 1,
-                "experiment_metrics.runtime_in_mins": 1,
-            }
-        }
-    ]
+    Parameters
+    ----------
+    option : ['none', 'basic', 'advanced']
+        Visualizer option.
+    history : History
+        History to visualize.
+    logging_dir : str, default='logs/'
+        The directory to save the visualization.
+    task_info : dict, optional
+        Task information for visualizer to use.
+    optimizer : Optimizer, optional
+        Optimizer to extract task_info from.
+    advisor : Advisor, optional
+        Advisor to extract task_info from.
+    kwargs : dict
+        Other arguments for visualizer.
+        For HTMLVisualizer, available arguments are:
+        - auto_open_html : bool, default=False
+            Whether to open html file automatically.
+        - advanced_analysis_options : dict, default=None
+            Advanced analysis options. See `HTMLVisualizer` for details.
 
-    # Run the aggregation pipeline
-    results = list(db_client.client[db_client.db_name][PHYSICAL_PIPELINE_OBSERVATIONS_TABLE].aggregate(pipeline))
+    Returns
+    -------
+    visualizer : BaseVisualizer
+        Visualizer.
+    """
+    option = _parse_option(option)
 
-    # Convert results to a pandas DataFrame
-    all_metrics_df = pd.json_normalize(results)
-    all_metrics_df.columns = [col.replace("experiment_metrics.", "") for col in all_metrics_df.columns]
+    if option == 'none':
+        visualizer = NullVisualizer()
+    elif option in ['basic', 'advanced']:
+        from openbox.visualization.html_visualizer import HTMLVisualizer
+        visualizer = HTMLVisualizer(
+            logging_dir=logging_dir,
+            history=history,
+            task_info=task_info,
+            auto_open_html=kwargs.get('auto_open_html', False),
+            advanced_analysis=(option == 'advanced'),
+            advanced_analysis_options=kwargs.get('advanced_analysis_options'),
+        )
+    else:
+        raise ValueError('Unknown visualizer option: %s' % option)
 
-    # Capitalize column names to be consistent across the whole library
-    new_column_names = []
-    for col in all_metrics_df.columns:
-        new_col_name = '_'.join([c.capitalize() for c in col.split('_')])
-        new_column_names.append(new_col_name)
+    return visualizer
 
-    all_metrics_df.columns = new_column_names
-    all_metrics_df['Model_Name'] = all_metrics_df['Model_Name'] + '__' + all_metrics_df['Null_Imputer_Name'] + '&' + all_metrics_df['Fairness_Intervention_Name']
-    all_metrics_df['Model_Name'] = all_metrics_df['Model_Name'].str.replace(NO_FAIRNESS_INTERVENTION, 'NO_FI')
 
-    # Create columns based on values in the Subgroup column
-    pivoted_all_metrics_df = all_metrics_df.pivot(columns='Subgroup', values='Metric_Value',
-                                                  index=[col for col in all_metrics_df.columns
-                                                         if col not in ('Subgroup', 'Metric_Value')]).reset_index()
+def create_config_space(logical_pipeline_name: str):
+    # Create a config space based on config spaces of each stage
+    config_space = ConfigurationSpace()
+    lp_stages = logical_pipeline_name.split(STAGE_SEPARATOR)
+    components = {
+        StageName.null_imputation.value: lp_stages[0],
+        StageName.fairness_intervention.value: lp_stages[1],
+        StageName.model_evaluation.value: lp_stages[2],
+    }
+    for stage in StageName:
+        if stage == StageName.null_imputation:
+            # None imputer does not have config space
+            if components[stage.value] == 'None':
+                continue
 
-    db_client.close()
-    return pivoted_all_metrics_df
+            stage_config_space = NULL_IMPUTATION_CONFIG[components[stage.value]]['config_space']
+        elif stage == StageName.fairness_intervention:
+            # NO_FAIRNESS_INTERVENTION does not have config space
+            if components[stage.value] == NO_FAIRNESS_INTERVENTION:
+                continue
+
+            stage_config_space = FAIRNESS_INTERVENTION_CONFIG_SPACE[components[stage.value]]
+        else:
+            # We set seed to None since we need only a config space
+            stage_config_space = get_models_params_for_tuning(models_tuning_seed=None)[components[stage.value]]['config_space']
+
+        config_space.add_hyperparameters(list(stage_config_space.values()))
+
+    return config_space

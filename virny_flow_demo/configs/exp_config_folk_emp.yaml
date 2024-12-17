@@ -1,0 +1,28 @@
+common_args:
+  exp_config_name: "cost_model_exp1_folk_emp_w_acc_0_25_w_fair_0_75"
+  run_nums: [1]
+  secrets_path: "/Users/denys_herasymuk/Research/NYU/VirnyFlow_Project/Code/virny-flow/virny_flow_demo/configs/secrets.env"
+
+pipeline_args:
+  dataset: "folk_emp"
+  sensitive_attrs_for_intervention: [ "SEX&RAC1P" ]
+  null_imputers: []
+  fairness_interventions: ["DIR"]
+  models: ["lr_clf", "rf_clf", "lgbm_clf"]
+
+optimisation_args:
+  ref_point: [0.20, 0.10]
+  objectives:
+    - { name: "objective_1", metric: "F1", group: "overall", weight: 0.25 }
+    - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "SEX&RAC1P", weight: 0.75 }
+  max_trials: 3
+  num_workers: 3
+  num_pp_candidates: 2
+  training_set_fractions_for_halting: [0.5, 0.75, 1.0]
+  exploration_factor: 0.5
+  risk_factor: 0.5
+
+virny_args:
+  bootstrap_fraction: 0.8
+  n_estimators: 50
+  sensitive_attributes_dct: {'SEX': '2', 'RAC1P': ['2', '3', '4', '5', '6', '7', '8', '9'], 'SEX&RAC1P': None}

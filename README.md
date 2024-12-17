@@ -3,6 +3,20 @@
 This repository contains the source code, scripts, and datasets for the Shades-of-Null benchmark. The benchmark uses state-of-the-art MVM techniques on a suite of novel evaluation settings on popular fairness benchmark datasets, including multi-mechanism missingness (when several different missingness patterns co-exist in the data) and missingness shift (when the missingness mechanism changes between development/training and deployment/testing), and using a large set of holistic evaluation metrics, including fairness and stability. The benchmark includes functionality for storing experiment results in a database, with MongoDB chosen for our purposes. Additionally, the benchmark is designed to be extensible, allowing researchers to incorporate custom datasets and apply new MVM techniques.
 
 
+## How to start VirnyFlow
+
+```shell
+/virny-flow/virny_flow_demo $ docker-compose up --build
+
+# To stop all container use "docker-compose down --volumes"
+
+# KAFKA_BROKER env variable should be set to localhost:9093
+/virny-flow $ python3 -m virny_flow_demo.run_task_manager
+
+/virny-flow $ python3 -m virny_flow_demo.run_worker
+```
+
+
 ## Setup
 
 Create a virtual environment and install requirements:
@@ -28,6 +42,24 @@ Add MongoDB secrets (optional)
 # Create configs/secrets.env file with database variables
 DB_NAME=your_mongodb_name
 CONNECTION_STRING=your_mongodb_connection_string
+```
+
+Start the system for local debugging:
+```shell
+# Start Kafka
+docker-compose up --build
+
+# Start TaskManager in the root dir
+python3 -m virny_flow_demo.run_task_manager
+
+# Start Worker in the root dir
+python3 -m virny_flow_demo.run_worker
+```
+
+Shutdown the system:
+```shell
+docker-compose down --volumes
+#docker-compose down --volumes && docker system prune -a --volumes -f
 ```
 
 
