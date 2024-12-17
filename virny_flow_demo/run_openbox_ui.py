@@ -2,7 +2,7 @@ import pathlib
 from openbox import History
 
 from virny_flow.configs.structs import BOAdvisorConfig
-from virny_flow.core.utils.common_helpers import create_exp_config_obj
+from virny_flow.core.utils.common_helpers import create_exp_config_obj, read_history_from_db
 from virny_flow.visualizations.viz_utils import build_visualizer, create_config_space
 
 
@@ -14,12 +14,17 @@ if __name__ == '__main__':
     surrogate_model_type = 'prf'  # 'gp' or 'prf'
     bo_advisor_config = BOAdvisorConfig()
 
+    # db secrets path
+    db_secrets_path = pathlib.Path(__file__).parent.joinpath('configs').joinpath('secrets.env')
+    
     # Read an experimental config
     exp_config_yaml_path = pathlib.Path(__file__).parent.joinpath('configs').joinpath('exp_config.yaml')
     exp_config = create_exp_config_obj(exp_config_yaml_path=exp_config_yaml_path)
 
     config_space = create_config_space(lp_name)
     history_path = f'../history/{exp_config.common_args.exp_config_name}/run_num_{str(run_num)}/{lp_name}/' + history_filename
+    read_history_from_db(db_secrets_path, history_path)
+    
     history = History.load_json(history_path, config_space)
 
     task_info = {

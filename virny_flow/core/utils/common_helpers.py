@@ -3,8 +3,10 @@ import hashlib
 import secrets
 import base64
 import yaml
+import json
 import pandas as pd
 
+from datetime import datetime
 from pprint import pprint
 from cerberus import Validator
 from munch import DefaultMunch
@@ -12,6 +14,7 @@ from virny.custom_classes.base_dataset import BaseFlowDataset
 from virny.utils.common_helpers import validate_config as validate_virny_config
 from virny.configs.constants import ComputationMode
 
+from virny_flow.core.custom_classes.core_db_client import CoreDBClient
 from virny_flow.configs.constants import STABILITY_AND_UNCERTAINTY_METRICS
 
 
@@ -255,3 +258,60 @@ def flatten_dict(d, parent_key='', sep='.'):
         else:
             items.append((new_key, v))
     return dict(items)
+
+
+def transform_row_to_observation(row: dict):
+    """Transform a MongoDB row into the desired observation format.
+    
+    Args:
+    - row (dict): A MongoDB row
+    Returns:
+    - dict: An observation
+    """
+    return {
+        "config": row["config"],
+        "objectives": row["objectives"],
+        "constraints": row.get("constraints"),
+        "trial_state": row["trial_state"],
+        "elapsed_time": row["elapsed_time"],
+        "create_time": row["create_time"],
+        "extra_info": {
+            "objectives": row["extra_info"].get("exp_config_objectives", [])
+        }
+    }
+
+
+def read_history_from_db(secrets_path: str, history_path: str):
+    """Fetch all rows and transform them into the final desired structure.
+    
+    Args:
+    - secrets_path (str): Path to the secrets file for the database connection.
+    - history_path (str): Path to save the fetched history
+    
+    Returns:
+    - None
+    """
+    db = CoreDBClient(secrets_path)
+    db.connect()
+    
+    all_rows = db.execute_read_query(collection_name="physical_pipeline_observations", query={})
+    
+    # Transform each row into an observation
+    observations = [transform_row_to_observation(row) for row in all_rows]
+    
+    # Final structured output
+    structured_data = {
+        "task_id": "OpenBox",
+        "num_objectives": len(observations[0]["objectives"]) if observations else 0,
+        "num_constraints": 0,
+        "ref_point": [0.2, 0.1],  # Default or computed ref point
+        "meta_info": {},
+        "global_start_time": datetime.now().isoformat(),
+        "observations": observations
+    }
+    
+    # Save history to a file
+    with open(history_path, 'w') as f:
+        json.dump(structured_data, f)
+        
+    db.close()
