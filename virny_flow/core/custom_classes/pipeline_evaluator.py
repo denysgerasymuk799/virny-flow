@@ -94,6 +94,7 @@ class PipelineEvaluator(MLLifecycle):
 
         # Start a client session
         session = self._db.client.start_session()
+        print(f"Running {task.physical_pipeline.logical_pipeline_name} pipeline...")
         adaptive_pipeline_generator = self.execute_adaptive_pipeline(physical_pipeline=task.physical_pipeline,
                                                                      objectives=task.objectives,
                                                                      exp_config_name=self.exp_config_name,
