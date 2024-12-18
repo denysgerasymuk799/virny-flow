@@ -94,6 +94,7 @@ class PipelineEvaluator(MLLifecycle):
 
         # Start a client session
         session = self._db.client.start_session()
+        print(f"Running {task.physical_pipeline.logical_pipeline_name} pipeline...")
         adaptive_pipeline_generator = self.execute_adaptive_pipeline(physical_pipeline=task.physical_pipeline,
                                                                      objectives=task.objectives,
                                                                      exp_config_name=self.exp_config_name,
@@ -217,6 +218,7 @@ class PipelineEvaluator(MLLifecycle):
                                                                               experiment_seed=seed,
                                                                               fairness_intervention_name=fairness_intervention_name,
                                                                               fairness_intervention_params=fairness_intervention_params)
+
         # Evaluate a model
         (test_multiple_models_metrics_dct,
          train_multiple_models_metrics_dct) = self.run_model_evaluation_stage(main_base_flow_dataset=preprocessed_base_flow_dataset,
@@ -398,18 +400,22 @@ class PipelineEvaluator(MLLifecycle):
             postprocessor_configs = self.fairness_intervention_config[FairnessIntervention.ROC.value]
             postprocessor = get_reject_option_classification_postprocessor(privileged_groups=privileged_groups,
                                                                            unprivileged_groups=unprivileged_groups,
-                                                                           postprocessor_configs=postprocessor_configs)
+                                                                           postprocessor_configs=fairness_intervention_params)
             self.virny_config['postprocessing_sensitive_attribute'] = sensitive_attribute
         else:
             postprocessor = None
             if fairness_intervention_name == FairnessIntervention.EGR.value:
-                models_dct = get_exponentiated_gradient_reduction_wrapper(inprocessor_configs=self.fairness_intervention_config[FairnessIntervention.EGR.value],
+                models_dct = get_exponentiated_gradient_reduction_wrapper(inprocessor_configs=fairness_intervention_params,
                                                                           sensitive_attr_for_intervention=sensitive_attribute)
+                models_dct_key = list(models_dct.keys())[0]
+                models_dct = {model_name: models_dct[models_dct_key]}
             elif fairness_intervention_name == FairnessIntervention.AD.value:
                 models_dct = get_adversarial_debiasing_wrapper_config(privileged_groups=privileged_groups,
                                                                       unprivileged_groups=unprivileged_groups,
-                                                                      inprocessor_configs=self.fairness_intervention_config[FairnessIntervention.AD.value],
+                                                                      inprocessor_configs=fairness_intervention_params,
                                                                       sensitive_attr_for_intervention=sensitive_attribute)
+                models_dct_key = list(models_dct.keys())[0]
+                models_dct = {model_name: models_dct[models_dct_key]}
 
         # Compute metrics for tuned models based on the test set
         self.virny_config.random_state = experiment_seed  # Set random state for the metric computation with Virny

@@ -57,7 +57,6 @@ if __name__ == '__main__':
     # db secrets path
     db_secrets_path = pathlib.Path(__file__).parent.joinpath('configs').joinpath('secrets.env')
     read_history_from_db(db_secrets_path, history_path)
-    
     history = load_history(history_path, config_space, defined_objectives)
 
     task_info = {
