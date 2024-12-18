@@ -1,5 +1,5 @@
 common_args:
-  exp_config_name: "test_diabetes"
+  exp_config_name: "test_case_studies_exp_diabetes_cs2_w_acc_0_5_w_stab_0_5"
   run_nums: [1]
   secrets_path: "/Users/denys_herasymuk/Research/NYU/VirnyFlow_Project/Code/virny-flow/virny_flow_demo/configs/secrets.env"
 
@@ -13,8 +13,8 @@ pipeline_args:
 optimisation_args:
   ref_point: [0.20, 0.20]
   objectives:
-    - { name: "objective_1", metric: "F1", group: "overall", weight: 0.25 }
-    - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "Gender", weight: 0.75 }
+    - { name: "objective_1", metric: "F1", group: "overall", weight: 0.5 }
+    - { name: "objective_2", metric: "Label_Stability", group: "overall", weight: 0.5 }
   max_trials: 20
   num_workers: 8
   num_pp_candidates: 2
@@ -23,4 +23,6 @@ optimisation_args:
   risk_factor: 0.5
 
 virny_args:
+  bootstrap_fraction: 0.8
+  n_estimators: 50
   sensitive_attributes_dct: {'Gender': 'Female'}

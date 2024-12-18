@@ -1,3 +1,4 @@
+import gc
 import copy
 import time
 import pandas as pd
@@ -436,6 +437,12 @@ class PipelineEvaluator(MLLifecycle):
         train_metrics_df['Model_Name'] = model_name
         train_multiple_models_metrics_dct = {model_name: train_metrics_df}
         print(f'Metric computation for {null_imputer_name}&{fairness_intervention_name}&{model_name} was finished\n', flush=True)
+
+        # Clean up memory after executing each pipeline
+        del models_dct
+        if postprocessor is not None:
+            del postprocessor
+        gc.collect()
 
         return test_multiple_models_metrics_dct, train_multiple_models_metrics_dct
 
