@@ -1,5 +1,5 @@
 common_args:
-  exp_config_name: "test_diabetes"
+  exp_config_name: "test_debug"
   run_nums: [1]
   secrets_path: "/Users/denys_herasymuk/Research/NYU/VirnyFlow_Project/Code/virny-flow/virny_flow_demo/configs/secrets.env"
 
@@ -8,7 +8,8 @@ pipeline_args:
   sensitive_attrs_for_intervention: ["Gender"]
   null_imputers: []
   fairness_interventions: []
-  models: ["lr_clf", "rf_clf", "lgbm_clf", "gandalf_clf"]
+#  models: ["lr_clf", "rf_clf", "lgbm_clf", "gandalf_clf"]
+  models: ["gandalf_clf"]
 
 optimisation_args:
   ref_point: [0.20, 0.20]

@@ -101,7 +101,7 @@ def validate_config(config_obj):
                 },
                 "max_trials": {"type": "integer", "min": 1, "required": True},
                 "num_workers": {"type": "integer", "min": 1, "required": True},
-                "num_pp_candidates": {"type": "integer", "min": 2, "required": False, "default": 10},
+                "num_pp_candidates": {"type": "integer", "min": 1, "required": False, "default": 10},
                 "queue_size": {"type": "integer", "min": config_obj['optimisation_args']['num_workers'],
                                "required": False, "default": 3 * config_obj['optimisation_args']['num_workers']},
                 "training_set_fractions_for_halting": {"type": "list", "required": False, "default": [0.5, 0.75, 1.0]},

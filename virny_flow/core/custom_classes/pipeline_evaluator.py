@@ -364,15 +364,17 @@ class PipelineEvaluator(MLLifecycle):
                 continuous_cols=[col for col in base_flow_dataset.X_train_val.columns if col.startswith('num_')],
                 categorical_cols=[col for col in base_flow_dataset.X_train_val.columns if col.startswith('cat_')],
             )
+            tabular_model = TabularModel(
+                data_config=data_config,
+                model_config=model,
+                optimizer_config=self.models_config[model_name]['optimizer_config'],
+                trainer_config=self.models_config[model_name]['trainer_config'],
+                verbose=False,
+                suppress_lightning_logger=True,
+            )
+            tabular_model.logger = False
             models_dct = {
-                model_name: TabularModel(
-                    data_config=data_config,
-                    model_config=model,
-                    optimizer_config=self.models_config[model_name]['optimizer_config'],
-                    trainer_config=self.models_config[model_name]['trainer_config'],
-                    verbose=False,
-                    suppress_lightning_logger=True,
-                ),
+                model_name: tabular_model,
             }
         else:
             models_dct = {
