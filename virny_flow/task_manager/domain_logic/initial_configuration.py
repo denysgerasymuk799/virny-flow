@@ -46,11 +46,6 @@ async def start_task_generator(exp_config: DefaultMunch, lp_to_advisor: dict, bo
             if len(logical_pipeline_records) == 0:
                 # Terminate in case all work is done
                 if await task_queue.is_empty(exp_config_name=exp_config.common_args.exp_config_name, run_num=run_num):
-                    # Save advisor history for each logical pipeline locally
-                    timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')
-                    for lp_name, advisor in lp_to_advisor[run_num].items():
-                        advisor["config_advisor"].save_json(filename=f'history/{exp_config.common_args.exp_config_name}/run_num_{str(run_num)}/{lp_name}/history_{timestamp}.json')
-
                     db_client.close()
                     task_queue.close()
                     break
