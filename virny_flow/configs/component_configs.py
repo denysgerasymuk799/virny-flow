@@ -122,23 +122,21 @@ def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
             'model': RandomForestClassifier,
             'default_kwargs': {'random_state': models_tuning_seed},
             'config_space': {
-                # 'model__n_estimators': CategoricalHyperparameter("model__n_estimators", [50, 100]),
-                'model__n_estimators': CategoricalHyperparameter("model__n_estimators", [50, 100, 200, 500]),
+                'model__n_estimators': UniformIntegerHyperparameter("model__n_estimators", 50, 1000, q=50),
                 'model__max_depth': CategoricalHyperparameter("model__max_depth", [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 'None']),
-                'model__min_samples_split': CategoricalHyperparameter("model__min_samples_split", [2, 5, 10]),
-                'model__min_samples_leaf': CategoricalHyperparameter("model__min_samples_leaf", [1, 2, 4]),
+                'model__min_samples_split': UniformIntegerHyperparameter("model__min_samples_split", 2, 10, q=1),
+                'model__min_samples_leaf': UniformIntegerHyperparameter("model__min_samples_leaf", 1, 5, q=1),
                 'model__bootstrap': CategoricalHyperparameter("model__bootstrap", [True, False]),
             }
         },
         'lgbm_clf': {
             'model': LGBMClassifier,
-            'default_kwargs': {'random_state': models_tuning_seed, 'n_jobs': 48, 'num_threads': 48},
+            'default_kwargs': {'random_state': models_tuning_seed, 'n_jobs': 8, 'num_threads': 8, 'verbosity': -1},
             'config_space': {
-                'model__n_estimators': CategoricalHyperparameter("model__n_estimators", [50, 100, 200, 500]),
+                'model__n_estimators': UniformIntegerHyperparameter("model__n_estimators", 50, 1000, q=50),
                 'model__max_depth': CategoricalHyperparameter("model__max_depth", [3, 4, 5, 6, 7, 8, 9, -1]),
-                'model__num_leaves': CategoricalHyperparameter("model__num_leaves", [int(x) for x in np.linspace(start = 20, stop = 3000, num = 8)]),
-                'model__min_data_in_leaf': CategoricalHyperparameter("model__min_data_in_leaf", [int(x) for x in np.linspace(start = 100, stop = 1000, num = 8)]),
-                'model__verbosity': CategoricalHyperparameter("model__verbosity", [-1]),
+                'model__num_leaves': CategoricalHyperparameter("model__num_leaves", [int(x) for x in np.linspace(start = 20, stop = 3000, num = 20)]),
+                'model__min_data_in_leaf': UniformIntegerHyperparameter("model__min_data_in_leaf", 100, 1000, q=50),
             }
         },
         ####################################################################
@@ -148,7 +146,8 @@ def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
             'model': GANDALFConfig,
             'default_kwargs': {'seed': models_tuning_seed, 'task': 'classification'},
             'optimizer_config': OptimizerConfig(),
-            'trainer_config': TrainerConfig(batch_size=512,
+            'trainer_config': TrainerConfig(accelerator="cpu",
+                                            batch_size=256,
                                             max_epochs=100,
                                             seed=models_tuning_seed,
                                             early_stopping=None,
@@ -158,7 +157,7 @@ def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
                                                                 log_every_n_steps=None,
                                                                 enable_progress_bar=False)),
             'config_space': {
-                'model__gflu_stages': CategoricalHyperparameter("model__gflu_stages", [i for i in range(2, 31)]),
+                'model__gflu_stages': UniformIntegerHyperparameter("model__gflu_stages", 2, 30, q=1),
                 'model__gflu_dropout': CategoricalHyperparameter("model__gflu_dropout", [0.01 * i for i in range(6)]),
                 'model__gflu_feature_init_sparsity': CategoricalHyperparameter("model__gflu_feature_init_sparsity", [0.1 * i for i in range(6)]),
                 'model__learning_rate': CategoricalHyperparameter("model__learning_rate", [1e-3, 1e-4, 1e-5, 1e-6]),
