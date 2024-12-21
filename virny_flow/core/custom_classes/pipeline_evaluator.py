@@ -369,7 +369,8 @@ class PipelineEvaluator(MLLifecycle):
                 model_config=model,
                 optimizer_config=self.models_config[model_name]['optimizer_config'],
                 trainer_config=self.models_config[model_name]['trainer_config'],
-                verbose=False,
+                # verbose=False,
+                verbose=True,
                 suppress_lightning_logger=True,
             )
             tabular_model.logger = False
