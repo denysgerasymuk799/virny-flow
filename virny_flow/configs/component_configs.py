@@ -161,7 +161,8 @@ def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
                                                                 enable_checkpointing=False,
                                                                 # strategy="ddp_spawn",
                                                                 # strategy="single_device",
-                                                                strategy="ddp",
+                                                                # strategy="ddp",
+                                                                strategy="ddp_fork",
                                                                 default_root_dir=None,
                                                                 num_nodes=1)),
             'config_space': {
