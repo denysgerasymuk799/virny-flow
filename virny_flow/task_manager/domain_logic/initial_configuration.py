@@ -96,7 +96,7 @@ async def create_init_state_for_config(exp_config: DefaultMunch, db_client: Task
     if await db_client.check_record_exists(query={"exp_config_name": exp_config.common_args.exp_config_name, "run_num": run_num}):
         print(f"Experimental config {exp_config.common_args.exp_config_name} with run_num = {run_num} already exists in the database. "
               "Please check the name of your exp_config_name in exp_config.yaml.", flush=True)
-        return
+        # return
 
     # Step 1: Create all combinations of components to define a list of logical pipelines
     logical_pipelines = []
@@ -145,18 +145,18 @@ async def create_init_state_for_config(exp_config: DefaultMunch, db_client: Task
                                               "update_datetime": datetime_now,
                                           })
 
-    # Step 3: Save exp_config in exp_config_history
-    exp_config_record = flatten_dict(exp_config.toDict())
-    exp_config_record["random_state"] = random_state
-    await db_client.write_records_into_db(collection_name=EXP_CONFIG_HISTORY_TABLE,
-                                          records=[exp_config_record],
-                                          exp_config_name=exp_config.common_args.exp_config_name,
-                                          run_num=run_num,
-                                          static_values_dct={
-                                              "best_physical_pipeline_uuid": None,
-                                              "best_compound_pp_quality": 0.0,
-                                              "create_datetime": datetime_now,
-                                              "update_datetime": datetime_now,
-                                          })
+    # # Step 3: Save exp_config in exp_config_history
+    # exp_config_record = flatten_dict(exp_config.toDict())
+    # exp_config_record["random_state"] = random_state
+    # await db_client.write_records_into_db(collection_name=EXP_CONFIG_HISTORY_TABLE,
+    #                                       records=[exp_config_record],
+    #                                       exp_config_name=exp_config.common_args.exp_config_name,
+    #                                       run_num=run_num,
+    #                                       static_values_dct={
+    #                                           "best_physical_pipeline_uuid": None,
+    #                                           "best_compound_pp_quality": 0.0,
+    #                                           "create_datetime": datetime_now,
+    #                                           "update_datetime": datetime_now,
+    #                                       })
 
     print(f'The initial state for the {exp_config.common_args.exp_config_name} exp_config has been successfully created', flush=True)
