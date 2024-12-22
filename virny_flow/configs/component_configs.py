@@ -159,7 +159,7 @@ def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
                                                                 log_every_n_steps=None,
                                                                 enable_progress_bar=False,
                                                                 enable_checkpointing=False,
-                                                                strategy=None,
+                                                                strategy="single_device",
                                                                 default_root_dir=None,
                                                                 num_nodes=1)),
             'config_space': {
