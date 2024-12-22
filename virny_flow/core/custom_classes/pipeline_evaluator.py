@@ -1,6 +1,7 @@
 import gc
 import copy
 import time
+import socket
 import pandas as pd
 import pytorch_tabular
 
@@ -40,6 +41,12 @@ def get_best_compound_pp_quality(session, db: CoreDBClient, exp_config_name: str
     best_compound_pp_quality = exp_config_metadata_record['best_compound_pp_quality']
 
     return best_compound_pp_quality
+
+
+def find_free_port():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("", 0))
+        return s.getsockname()[1]
 
 
 def adaptive_execution_transaction(session, db: CoreDBClient, task: Task, exp_config_name: str,
@@ -357,6 +364,12 @@ class PipelineEvaluator(MLLifecycle):
         all_model_params = {**model_params, **self.models_config[model_name]['default_kwargs']}
         model = self.models_config[model_name]['model'](**all_model_params)
         if isinstance(model, pytorch_tabular.config.ModelConfig):
+            import os
+            # Dynamically assign a free port
+            free_port = find_free_port()
+            os.environ["MASTER_PORT"] = str(free_port)
+            print('Free port:', free_port)
+
             data_config = DataConfig(
                 target=[
                     base_flow_dataset.target,
