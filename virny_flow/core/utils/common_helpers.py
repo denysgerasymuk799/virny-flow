@@ -155,7 +155,7 @@ def validate_config(config_obj):
     for objective in config_obj['optimisation_args']['objectives']:
         objective_total_weight += objective['weight']
 
-    if objective_total_weight != 1.0:
+    if not (0.99 <= objective_total_weight <= 1.0):
         raise ValueError("Objective weights must sum to 1.0")
 
     if config_obj['optimisation_args']['num_workers'] < config_obj['optimisation_args']['num_pp_candidates']:
