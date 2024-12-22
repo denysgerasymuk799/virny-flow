@@ -376,7 +376,7 @@ class PipelineEvaluator(MLLifecycle):
                 ],  # target should always be a list. Multi-targets are only supported for regression. Multi-Task Classification is not implemented
                 continuous_cols=[col for col in base_flow_dataset.X_train_val.columns if col.startswith('num_')],
                 categorical_cols=[col for col in base_flow_dataset.X_train_val.columns if col.startswith('cat_')],
-                # num_workers=0,
+                num_workers=0,
             )
             tabular_model = TabularModel(
                 data_config=data_config,
