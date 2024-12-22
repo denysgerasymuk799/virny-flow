@@ -47,13 +47,13 @@ async def start_task_provider(exp_config: DefaultMunch, uvicorn_server):
                                                                           run_num=run_num,
                                                                           query=query)
                     if len(logical_pipeline_records) == 0:
-                        # # Save execution time of all pipelines for the define experimental config
-                        # exp_config_execution_time = time.time() - execution_start_time
-                        # await db_client.update_query(collection_name=EXP_CONFIG_HISTORY_TABLE,
-                        #                              exp_config_name=exp_config.common_args.exp_config_name,
-                        #                              run_num=run_num,
-                        #                              condition={},
-                        #                              update_val_dct={"exp_config_execution_time": exp_config_execution_time})
+                        # Save execution time of all pipelines for the define experimental config
+                        exp_config_execution_time = time.time() - execution_start_time
+                        await db_client.update_query(collection_name=EXP_CONFIG_HISTORY_TABLE,
+                                                     exp_config_name=exp_config.common_args.exp_config_name,
+                                                     run_num=run_num,
+                                                     condition={},
+                                                     update_val_dct={"exp_config_execution_time": exp_config_execution_time})
                         if idx + 1 == len(exp_config.common_args.run_nums):
                             # If all work is done, set num_available_tasks to num_workers and get new tasks from task_queue.
                             # When task_queue is empty, it will return NO_TASKS, and it will be sent to each worker.
