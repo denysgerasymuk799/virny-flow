@@ -157,7 +157,8 @@ def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
                                             load_best=False,
                                             trainer_kwargs=dict(enable_model_summary=False, # Turning off model summary
                                                                 log_every_n_steps=None,
-                                                                enable_progress_bar=False,
+                                                                enable_progress_bar=True,
+                                                                # enable_progress_bar=False,
                                                                 enable_checkpointing=False,
                                                                 # strategy="ddp_spawn",
                                                                 # strategy="single_device",
