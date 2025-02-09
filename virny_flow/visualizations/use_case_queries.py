@@ -38,15 +38,20 @@ def get_best_pps_per_lp_and_run_num_query(exp_config_name: str):
                 "deletion_flag": False
             }
         },
-        # Step 2: Group to get the maximum `compound_pp_quality` per `exp_config_name`, `logical_pipeline_uuid`, and `run_num`
+        # Step 2: Sort by compound_pp_quality in descending order.
+        # Sorting before grouping helps make the first document in each group to have max compound_pp_quality.
+        {
+            "$sort": { "compound_pp_quality": -1 },
+        },
+        # Step 3: Group to get the maximum `compound_pp_quality` per `exp_config_name`, `logical_pipeline_uuid`, and `run_num`
         {
             "$group": {
                 "_id": {
                     "exp_config_name": "$exp_config_name",
                     "run_num": "$run_num",
                     "logical_pipeline_uuid": "$logical_pipeline_uuid",
+                    "logical_pipeline_name": "$logical_pipeline_name",
                 },
-                "max_compound_pp_quality": { "$max": "$compound_pp_quality" },
                 "best_pipeline_doc": {
                     "$first": {
                         "physical_pipeline_uuid": "$physical_pipeline_uuid",
@@ -56,29 +61,31 @@ def get_best_pps_per_lp_and_run_num_query(exp_config_name: str):
                 }
             }
         },
-        # Step 3: Replace root with the captured document
+        # Step 4: Replace root with the captured document
         {
             "$replaceRoot": {
                 "newRoot": {
                     "exp_config_name": "$_id.exp_config_name",
                     "logical_pipeline_uuid": "$_id.logical_pipeline_uuid",
+                    "logical_pipeline_name": "$_id.logical_pipeline_name",
                     "physical_pipeline_uuid": "$best_pipeline_doc.physical_pipeline_uuid",
                     "run_num": "$best_pipeline_doc.run_num",
                     "compound_pp_quality": "$best_pipeline_doc.compound_pp_quality"
                 }
             }
         },
-        # Step 4: Join with `all_experiment_metrics` based on `physical_pipeline_uuid`
+        # Step 5: Join with `all_experiment_metrics` based on `physical_pipeline_uuid`
         {
             "$lookup": {
                 "from": ALL_EXPERIMENT_METRICS_TABLE,
-                "let": { "physical_uuid": "$physical_pipeline_uuid", "physical_run_num": "$run_num" },
+                "let": { "logical_name": "$logical_pipeline_name", "physical_uuid": "$physical_pipeline_uuid", "physical_run_num": "$run_num" },
                 "pipeline": [
                     { "$match": {
                         "$expr": {
                             "$and": [
                                 { "$eq": ["$exp_config_name", exp_config_name] },
                                 { "$eq": ["$run_num", "$$physical_run_num"] },
+                                { "$eq": ["$logical_pipeline_name", "$$logical_name"] },
                                 { "$eq": ["$physical_pipeline_uuid", "$$physical_uuid"] },
                             ]
                         }
@@ -87,11 +94,11 @@ def get_best_pps_per_lp_and_run_num_query(exp_config_name: str):
                 "as": "experiment_metrics"
             }
         },
-        # Step 5: Unwind to get one document per metric in `all_experiment_metrics`
+        # Step 6: Unwind to get one document per metric in `all_experiment_metrics`
         {
             "$unwind": "$experiment_metrics"
         },
-        # Step 6: Project only the fields you need (optional)
+        # Step 7: Project only the fields you need (optional)
         {
             "$project": {
                 "_id": 0,
