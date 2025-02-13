@@ -281,12 +281,11 @@ def transform_row_to_observation(row: dict):
     }
 
 
-def read_history_from_db(secrets_path: str, history_path: str):
+def read_history_from_db(secrets_path: str) -> dict:
     """Fetch all rows and transform them into the final desired structure.
     
     Args:
     - secrets_path (str): Path to the secrets file for the database connection.
-    - history_path (str): Path to save the fetched history
     
     Returns:
     - None
@@ -309,9 +308,7 @@ def read_history_from_db(secrets_path: str, history_path: str):
         "global_start_time": datetime.now().isoformat(),
         "observations": observations
     }
-    
-    # Save history to a file
-    with open(history_path, 'w') as f:
-        json.dump(structured_data, f)
         
     db.close()
+    
+    return structured_data

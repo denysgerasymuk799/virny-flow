@@ -11,11 +11,18 @@ from virny_flow.core.utils.common_helpers import create_exp_config_obj, read_his
 from virny_flow.visualizations.viz_utils import build_visualizer, create_config_space
 
 
-def load_history(filename: str, config_space: ConfigurationSpace, defined_objectives: list) -> 'History':
-    if not os.path.exists(filename):
-        raise FileNotFoundError(f'File not found: {filename}')
-    with open(filename, 'r') as f:
-        data = json.load(f)
+def prepare_history(data: dict, config_space: ConfigurationSpace, defined_objectives: list) -> 'History':
+    """
+    Prepare history object from raw data read from the database.
+
+    Args:
+        data (dict): Data read from the database.
+        config_space (ConfigurationSpace): Configuration space object.
+        defined_objectives (list): List of defined objectives.
+
+    Returns:
+        History: History object for visualizer.
+    """
 
     # Get original losses from weighted losses
     for obs in data["observations"]:
@@ -56,9 +63,11 @@ if __name__ == '__main__':
     
     # db secrets path
     db_secrets_path = pathlib.Path(__file__).parent.joinpath('configs').joinpath('secrets.env')
-    read_history_from_db(db_secrets_path, history_path)
     
-    history = load_history(history_path, config_space, defined_objectives)
+    raw_history = read_history_from_db(db_secrets_path)
+    history = prepare_history(data=raw_history, 
+                              config_space=config_space,
+                              defined_objectives=defined_objectives)
 
     task_info = {
         'advisor_type': 'default',
