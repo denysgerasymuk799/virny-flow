@@ -30,7 +30,7 @@ def get_adversarial_debiasing_wrapper_config(privileged_groups, unprivileged_gro
 
 
 def get_exponentiated_gradient_reduction_wrapper(inprocessor_configs, sensitive_attr_for_intervention):
-    estimator = LogisticRegression(**inprocessor_configs['estimator_params'])
+    estimator = LogisticRegression({"C": 1.0, "solver": "lbfgs"})
     debiased_model = ExponentiatedGradientReduction(estimator=estimator,
                                                     constraints=inprocessor_configs['constraints'],
                                                     eps=inprocessor_configs['eps'],

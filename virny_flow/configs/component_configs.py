@@ -81,18 +81,39 @@ FAIRNESS_INTERVENTION_CONFIG_SPACE = {
     FairnessIntervention.DIR.value: {
         "fi__repair_level": UniformFloatHyperparameter("fi__repair_level", 0.1, 1.0),
     },
-    # FairnessIntervention.LFR.value: {"k": 5, "Ax": 0.01, "Ay": 1.0, "Az": 50.0},
-    # FairnessIntervention.AD.value: {"scope_name": "debiased_classifier",
-    #                                 "adversary_loss_weight": 0.1, "num_epochs": 50, "batch_size": 128,
-    #                                 "classifier_num_hidden_units": 200, "debias": True},
-    # FairnessIntervention.EGR.value: {"constraints": "DemographicParity",
-    #                                  "eps": 0.01, "max_iter": 50, "nu": None, "eta0": 2.0,
-    #                                  "run_linprog_step": True, "drop_prot_attr": True,
-    #                                  "estimator_params": {"C": 1.0, "solver": "lbfgs"}},
-    # FairnessIntervention.EOP.value: {},
-    # FairnessIntervention.ROC.value: {"low_class_thresh": 0.01, "high_class_thresh": 0.99, "num_class_thresh": 100,
-    #                                  "num_ROC_margin": 50, "metric_name": "Statistical parity difference",
-    #                                  "metric_ub": 0.05, "metric_lb": -0.05},
+    FairnessIntervention.LFR.value: {
+        "fi__k": CategoricalHyperparameter("fi__k", [5]),
+        "fi__Ax": CategoricalHyperparameter("fi__Ax", [0.01]),
+        "fi__Ay": CategoricalHyperparameter("fi__Ay", [0.1, 0.5, 1.0, 5.0, 10.0]),
+        "fi__Az": CategoricalHyperparameter("fi__Az", [0.0, 0.1, 0.5, 1.0, 5.0, 10.0]),
+    },
+    FairnessIntervention.AD.value: {
+        "fi__scope_name": CategoricalHyperparameter("fi__scope_name", ["adversarial_debiasing"]),
+        "fi__adversary_loss_weight": UniformFloatHyperparameter("fi__adversary_loss_weight", 0.1, 0.5),
+        "fi__num_epochs": UniformIntegerHyperparameter("fi__num_epochs", 50, 100, q=10),
+        "fi__batch_size": CategoricalHyperparameter("fi__batch_size", [64, 128, 256]),
+        "fi__classifier_num_hidden_units": CategoricalHyperparameter("fi__classifier_num_hidden_units", [100, 200, 300]),
+        "fi__debias": CategoricalHyperparameter("fi__debias", [True, False]),
+    },
+    FairnessIntervention.EGR.value: {
+        "fi__constraints": CategoricalHyperparameter("fi__constraints", ["DemographicParity", "EqualizedOdds"]),
+        "fi__eps": UniformFloatHyperparameter("fi__eps", 0.01, 0.1),
+        "fi__max_iter": UniformIntegerHyperparameter("fi__max_iter", 50, 100, q=10),
+        "fi__nu": CategoricalHyperparameter("fi__nu", [0.1, 0.2, 0.3]),
+        "fi__eta0": UniformFloatHyperparameter("fi__eta0", 1.0, 2.0),
+        "fi__run_linprog_step": CategoricalHyperparameter("fi__run_linprog_step", [True, False]),
+        "fi__drop_prot_attr": CategoricalHyperparameter("fi__drop_prot_attr", [True, False]),
+    },           
+    FairnessIntervention.EOP.value: {},
+    FairnessIntervention.ROC.value: {
+        "low_class_thresh": UniformFloatHyperparameter("low_class_thresh", 0.01, 0.1),
+        "high_class_thresh": UniformFloatHyperparameter("high_class_thresh", 0.9, 0.99),
+        "num_class_thresh": UniformIntegerHyperparameter("num_class_thresh", 50, 100, q=10),
+        "num_ROC_margin": UniformIntegerHyperparameter("num_ROC_margin", 20, 50, q=5),
+        "metric_name": CategoricalHyperparameter("metric_name", ["Statistical parity difference", "Average odds difference", "Equal opportunity difference"]),
+        "metric_ub": UniformFloatHyperparameter("metric_ub", 0.05, 0.1),
+        "metric_lb": UniformFloatHyperparameter("metric_lb", -0.1, -0.05),
+    }
 }
 
 
@@ -103,10 +124,9 @@ def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
             'default_kwargs': {'random_state': models_tuning_seed},
             'config_space': {
                 'model__max_depth': CategoricalHyperparameter("model__max_depth", [5, 10]),
-                # "max_depth": [5, 10, 20, 30],
-                # 'min_samples_leaf': [5, 10, 20, 50, 100],
-                # "max_features": [0.6, 'sqrt'],
-                # "criterion": ["gini", "entropy"]
+                'model__min_samples_leaf': CategoricalHyperparameter("model__min_samples_leaf", [5, 10, 20, 50, 100]),
+                'model__max_features': CategoricalHyperparameter("model__max_features", [0.6, 'sqrt']),
+                'model__criterion': CategoricalHyperparameter("model__criterion", ["gini", "entropy"])
             }
         },
         'lr_clf': {
@@ -122,23 +142,30 @@ def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
             'model': RandomForestClassifier,
             'default_kwargs': {'random_state': models_tuning_seed},
             'config_space': {
-                # 'model__n_estimators': CategoricalHyperparameter("model__n_estimators", [50, 100]),
-                'model__n_estimators': CategoricalHyperparameter("model__n_estimators", [50, 100, 200, 500]),
+                'model__n_estimators': UniformIntegerHyperparameter("model__n_estimators", 50, 1000, q=50),
                 'model__max_depth': CategoricalHyperparameter("model__max_depth", [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 'None']),
-                'model__min_samples_split': CategoricalHyperparameter("model__min_samples_split", [2, 5, 10]),
-                'model__min_samples_leaf': CategoricalHyperparameter("model__min_samples_leaf", [1, 2, 4]),
+                'model__min_samples_split': UniformIntegerHyperparameter("model__min_samples_split", 2, 10, q=1),
+                'model__min_samples_leaf': UniformIntegerHyperparameter("model__min_samples_leaf", 1, 5, q=1),
                 'model__bootstrap': CategoricalHyperparameter("model__bootstrap", [True, False]),
+            }
+        },
+        'mlp_clf': {
+            'model': MLPClassifier,
+            'default_kwargs': {'hidden_layer_sizes': (100,100,). 'random_state': models_tuning_seed. 'max_iter': 1000},
+            'config_space': {
+                'model__activation': CategoricalHyperparameter("model__activation", ['logistic', 'tanh', 'relu']),
+                'model__solver': CategoricalHyperparameter("model__solver", ['lbfgs', 'sgd', 'adam']),
+                'model__learning_rate': CategoricalHyperparameter("model__learning_rate", ['constant', 'invscaling', 'adaptive'])
             }
         },
         'lgbm_clf': {
             'model': LGBMClassifier,
-            'default_kwargs': {'random_state': models_tuning_seed, 'n_jobs': 48, 'num_threads': 48},
+            'default_kwargs': {'random_state': models_tuning_seed, 'n_jobs': 8, 'num_threads': 8, 'verbosity': -1},
             'config_space': {
-                'model__n_estimators': CategoricalHyperparameter("model__n_estimators", [50, 100, 200, 500]),
+                'model__n_estimators': UniformIntegerHyperparameter("model__n_estimators", 50, 1000, q=50),
                 'model__max_depth': CategoricalHyperparameter("model__max_depth", [3, 4, 5, 6, 7, 8, 9, -1]),
-                'model__num_leaves': CategoricalHyperparameter("model__num_leaves", [int(x) for x in np.linspace(start = 20, stop = 3000, num = 8)]),
-                'model__min_data_in_leaf': CategoricalHyperparameter("model__min_data_in_leaf", [int(x) for x in np.linspace(start = 100, stop = 1000, num = 8)]),
-                'model__verbosity': CategoricalHyperparameter("model__verbosity", [-1]),
+                'model__num_leaves': CategoricalHyperparameter("model__num_leaves", [int(x) for x in np.linspace(start = 20, stop = 3000, num = 20)]),
+                'model__min_data_in_leaf': UniformIntegerHyperparameter("model__min_data_in_leaf", 100, 1000, q=50),
             }
         },
         ####################################################################
@@ -148,7 +175,8 @@ def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
             'model': GANDALFConfig,
             'default_kwargs': {'seed': models_tuning_seed, 'task': 'classification'},
             'optimizer_config': OptimizerConfig(),
-            'trainer_config': TrainerConfig(batch_size=512,
+            'trainer_config': TrainerConfig(accelerator="cpu",
+                                            batch_size=256,
                                             max_epochs=100,
                                             seed=models_tuning_seed,
                                             early_stopping=None,
@@ -158,7 +186,7 @@ def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
                                                                 log_every_n_steps=None,
                                                                 enable_progress_bar=False)),
             'config_space': {
-                'model__gflu_stages': CategoricalHyperparameter("model__gflu_stages", [i for i in range(2, 31)]),
+                'model__gflu_stages': UniformIntegerHyperparameter("model__gflu_stages", 2, 30, q=1),
                 'model__gflu_dropout': CategoricalHyperparameter("model__gflu_dropout", [0.01 * i for i in range(6)]),
                 'model__gflu_feature_init_sparsity': CategoricalHyperparameter("model__gflu_feature_init_sparsity", [0.1 * i for i in range(6)]),
                 'model__learning_rate': CategoricalHyperparameter("model__learning_rate", [1e-3, 1e-4, 1e-5, 1e-6]),

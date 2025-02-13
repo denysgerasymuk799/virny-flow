@@ -61,7 +61,7 @@ class Worker:
             bootstrap_servers=os.getenv("KAFKA_BROKER"),
             api_version=(0, 10, 1),
             acks='all',
-            retries=3,
+            retries=5,
             max_in_flight_requests_per_connection=1,
             value_serializer=lambda x: json.dumps(x).encode('utf-8')
         )
