@@ -17,6 +17,7 @@ class TaskManager:
         self.bo_advisor_config = BOAdvisorConfig()
         self.bo_advisor_config.ref_point = exp_config.optimisation_args.ref_point
         self.bo_advisor_config.num_objectives = len(exp_config.optimisation_args.objectives)
+        self.bo_advisor_config.max_trials = exp_config.optimisation_args.max_trials
 
         self.app = FastAPI()
         self.uvicorn_server = uvicorn.Server(uvicorn.Config(self.app, host=self.host, port=self.port))  # initialize to pass to register_routes()
