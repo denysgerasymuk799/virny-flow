@@ -151,7 +151,7 @@ def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
         },
         'mlp_clf': {
             'model': MLPClassifier,
-            'default_kwargs': {'hidden_layer_sizes': (100,100,). 'random_state': models_tuning_seed. 'max_iter': 1000},
+            'default_kwargs': {'hidden_layer_sizes': (100,100,), 'random_state': models_tuning_seed, 'max_iter': 1000},
             'config_space': {
                 'model__activation': CategoricalHyperparameter("model__activation", ['logistic', 'tanh', 'relu']),
                 'model__solver': CategoricalHyperparameter("model__solver", ['lbfgs', 'sgd', 'adam']),

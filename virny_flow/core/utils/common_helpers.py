@@ -15,7 +15,8 @@ from virny.utils.common_helpers import validate_config as validate_virny_config
 from virny.configs.constants import ComputationMode
 
 from virny_flow.core.custom_classes.core_db_client import CoreDBClient
-from virny_flow.configs.constants import STABILITY_AND_UNCERTAINTY_METRICS
+from virny_flow.configs.constants import STABILITY_AND_UNCERTAINTY_METRICS, PHYSICAL_PIPELINE_OBSERVATIONS_TABLE, \
+    LOGICAL_PIPELINE_SCORES_TABLE, EXP_CONFIG_HISTORY_TABLE
 
 
 def generate_guid(ordered_hierarchy_lst: list):
@@ -282,19 +283,35 @@ def transform_row_to_observation(row: dict):
     }
 
 
-def read_history_from_db(secrets_path: str) -> dict:
+def read_history_from_db(secrets_path: str, exp_config_name: str, lp_name: str, run_num: int):
     """Fetch all rows and transform them into the final desired structure.
     
     Args:
     - secrets_path (str): Path to the secrets file for the database connection.
-    
-    Returns:
-    - None
+    - exp_config_name (str): Name of the experiment config to get observations from.
+    - lp_name (str): Name of the logical pipeline to get observations from.
     """
     db = CoreDBClient(secrets_path)
     db.connect()
-    
-    all_rows = db.execute_read_query(collection_name="physical_pipeline_observations", query={})
+
+    exp_config = db.read_one_query(collection_name=EXP_CONFIG_HISTORY_TABLE,
+                                   query={"exp_config_name": exp_config_name,
+                                          "run_num": run_num})
+    defined_objectives = exp_config['optimisation_args.objectives']
+    print("defined_objectives:", defined_objectives)
+
+    logical_pipeline_metadata = db.read_one_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
+                                                  query={"exp_config_name": exp_config_name,
+                                                         "logical_pipeline_name": lp_name,
+                                                         "run_num": run_num})
+    surrogate_model_type = logical_pipeline_metadata['surrogate_type']
+    print("surrogate_model_type:", surrogate_model_type)
+
+    all_rows = db.execute_read_query(collection_name=PHYSICAL_PIPELINE_OBSERVATIONS_TABLE,
+                                     query={"exp_config_name": exp_config_name,
+                                            "logical_pipeline_name": lp_name,
+                                            "run_num": run_num,
+                                            "deletion_flag": False})
     
     # Transform each row into an observation
     observations = [transform_row_to_observation(row) for row in all_rows]
@@ -307,9 +324,9 @@ def read_history_from_db(secrets_path: str) -> dict:
         "ref_point": [0.2, 0.1],  # Default or computed ref point
         "meta_info": {},
         "global_start_time": datetime.now().isoformat(),
-        "observations": observations
+        "observations": observations,
     }
         
     db.close()
     
-    return structured_data
+    return structured_data, defined_objectives, surrogate_model_type

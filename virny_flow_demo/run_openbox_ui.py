@@ -43,28 +43,19 @@ def prepare_history(data: dict, config_space: ConfigurationSpace, defined_object
 
 if __name__ == '__main__':
     # Input variables
-    exp_config_name = 'cost_model_exp1_folk_emp_w_acc_0_25_w_fair_0_75_w_openbox_weights'
-    defined_objectives = [
-        { "name": "objective_1", "metric": "F1", "group": "overall", "weight": 0.25 },
-        { "name": "objective_2", "metric": "Equalized_Odds_TPR", "group": "SEX&RAC1P", "weight": 0.75 }
-    ]
-    lp_name = 'None&DIR&lgbm_clf'
+    exp_config_name = 'case_studies_exp_folk_emp_cs1_w_acc_0_25_w_fair_0_75'
+    lp_name = 'None&NO_FAIRNESS_INTERVENTION&lgbm_clf'
     run_num = 2
-    history_filename = 'history_2024-12-15-18-30-18-476914.json'
-    surrogate_model_type = 'prf'  # 'gp' or 'prf'
-    bo_advisor_config = BOAdvisorConfig()
 
     # Read an experimental config
     exp_config_yaml_path = pathlib.Path(__file__).parent.joinpath('configs').joinpath('exp_config.yaml')
     exp_config = create_exp_config_obj(exp_config_yaml_path=exp_config_yaml_path)
-
-    config_space = create_config_space(lp_name)
-    history_path = f'../logs/history/{exp_config_name}/run_num_{str(run_num)}/{lp_name}/' + history_filename
-    
-    # db secrets path
     db_secrets_path = pathlib.Path(__file__).parent.joinpath('configs').joinpath('secrets.env')
-    
-    raw_history = read_history_from_db(db_secrets_path)
+
+    # Prepare a History object
+    bo_advisor_config = BOAdvisorConfig()
+    config_space = create_config_space(lp_name)
+    raw_history, defined_objectives, surrogate_model_type = read_history_from_db(db_secrets_path, exp_config_name, lp_name, run_num)
     history = prepare_history(data=raw_history, 
                               config_space=config_space,
                               defined_objectives=defined_objectives)
