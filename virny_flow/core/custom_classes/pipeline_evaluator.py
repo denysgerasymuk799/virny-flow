@@ -1,5 +1,8 @@
+import gc
+import os
 import copy
 import time
+import socket
 import pandas as pd
 import pytorch_tabular
 
@@ -39,6 +42,12 @@ def get_best_compound_pp_quality(session, db: CoreDBClient, exp_config_name: str
     best_compound_pp_quality = exp_config_metadata_record['best_compound_pp_quality']
 
     return best_compound_pp_quality
+
+
+def find_free_port():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("", 0))
+        return s.getsockname()[1]
 
 
 def adaptive_execution_transaction(session, db: CoreDBClient, task: Task, exp_config_name: str,
@@ -357,6 +366,11 @@ class PipelineEvaluator(MLLifecycle):
         all_model_params = {**model_params, **self.models_config[model_name]['default_kwargs']}
         model = self.models_config[model_name]['model'](**all_model_params)
         if isinstance(model, pytorch_tabular.config.ModelConfig):
+            # Dynamically assign a free port
+            free_port = find_free_port()
+            os.environ["MASTER_PORT"] = str(free_port)
+            print('Free port:', free_port)
+
             data_config = DataConfig(
                 target=[
                     base_flow_dataset.target,
@@ -364,15 +378,17 @@ class PipelineEvaluator(MLLifecycle):
                 continuous_cols=[col for col in base_flow_dataset.X_train_val.columns if col.startswith('num_')],
                 categorical_cols=[col for col in base_flow_dataset.X_train_val.columns if col.startswith('cat_')],
             )
+            tabular_model = TabularModel(
+                data_config=data_config,
+                model_config=model,
+                optimizer_config=self.models_config[model_name]['optimizer_config'],
+                trainer_config=self.models_config[model_name]['trainer_config'],
+                verbose=False,
+                suppress_lightning_logger=True,
+            )
+            tabular_model.logger = False
             models_dct = {
-                model_name: TabularModel(
-                    data_config=data_config,
-                    model_config=model,
-                    optimizer_config=self.models_config[model_name]['optimizer_config'],
-                    trainer_config=self.models_config[model_name]['trainer_config'],
-                    verbose=False,
-                    suppress_lightning_logger=True,
-                ),
+                model_name: tabular_model,
             }
         else:
             models_dct = {
@@ -441,6 +457,12 @@ class PipelineEvaluator(MLLifecycle):
         train_metrics_df['Model_Name'] = model_name
         train_multiple_models_metrics_dct = {model_name: train_metrics_df}
         print(f'Metric computation for {null_imputer_name}&{fairness_intervention_name}&{model_name} was finished\n', flush=True)
+
+        # Clean up memory after executing each pipeline
+        del models_dct
+        if postprocessor is not None:
+            del postprocessor
+        gc.collect()
 
         return test_multiple_models_metrics_dct, train_multiple_models_metrics_dct
 

@@ -105,7 +105,7 @@ def validate_config(config_obj):
                 },
                 "max_trials": {"type": "integer", "min": 1, "required": True},
                 "num_workers": {"type": "integer", "min": 1, "required": True},
-                "num_pp_candidates": {"type": "integer", "min": 2, "required": False, "default": 10},
+                "num_pp_candidates": {"type": "integer", "min": 1, "required": False, "default": 10},
                 "queue_size": {"type": "integer", "min": config_obj['optimisation_args']['num_workers'],
                                "required": False, "default": 3 * config_obj['optimisation_args']['num_workers']},
                 "training_set_fractions_for_halting": {"type": "list", "required": False, "default": [0.5, 0.75, 1.0]},
@@ -159,7 +159,7 @@ def validate_config(config_obj):
     for objective in config_obj['optimisation_args']['objectives']:
         objective_total_weight += objective['weight']
 
-    if objective_total_weight != 1.0:
+    if not (0.99 <= objective_total_weight <= 1.0):
         raise ValueError("Objective weights must sum to 1.0")
 
     if config_obj['optimisation_args']['num_workers'] < config_obj['optimisation_args']['num_pp_candidates']:

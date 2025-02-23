@@ -176,7 +176,7 @@ def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
             'default_kwargs': {'seed': models_tuning_seed, 'task': 'classification'},
             'optimizer_config': OptimizerConfig(),
             'trainer_config': TrainerConfig(accelerator="cpu",
-                                            batch_size=256,
+                                            batch_size=512,
                                             max_epochs=100,
                                             seed=models_tuning_seed,
                                             early_stopping=None,
@@ -184,7 +184,9 @@ def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
                                             load_best=False,
                                             trainer_kwargs=dict(enable_model_summary=False, # Turning off model summary
                                                                 log_every_n_steps=None,
-                                                                enable_progress_bar=False)),
+                                                                enable_progress_bar=True,
+                                                                enable_checkpointing=False,
+                                                                default_root_dir=None)),
             'config_space': {
                 'model__gflu_stages': UniformIntegerHyperparameter("model__gflu_stages", 2, 30, q=1),
                 'model__gflu_dropout': CategoricalHyperparameter("model__gflu_dropout", [0.01 * i for i in range(6)]),
