@@ -1,21 +1,21 @@
 common_args:
-  exp_config_name: "test_case_studies_exp_diabetes_cs2_w_acc_0_5_w_stab_0_5"
-  run_nums: [1]
+  exp_config_name: "test_case_studies_exp_folk_pubcov_cs2_w_acc_0_75_w_fair_0_25"
+  run_nums: [3]
   secrets_path: "/Users/denys_herasymuk/Research/NYU/VirnyFlow_Project/Code/virny-flow/virny_flow_demo/configs/secrets.env"
 
 pipeline_args:
-  dataset: "diabetes"
-  sensitive_attrs_for_intervention: ["Gender"]
+  dataset: "folk_pubcov"
+  sensitive_attrs_for_intervention: ["RAC1P"]
   null_imputers: []
   fairness_interventions: []
   models: ["lr_clf", "rf_clf", "lgbm_clf"]
 #  models: ["lr_clf", "rf_clf", "lgbm_clf", "gandalf_clf"]
 
 optimisation_args:
-  ref_point: [0.20, 0.20]
+  ref_point: [0.30, 0.10]
   objectives:
-    - { name: "objective_1", metric: "F1", group: "overall", weight: 0.5 }
-    - { name: "objective_2", metric: "Statistical_Parity_Difference", group: "Gender", weight: 0.5 }
+    - { name: "objective_1", metric: "F1", group: "overall", weight: 0.75 }
+    - { name: "objective_2", metric: "Statistical_Parity_Difference", group: "RAC1P", weight: 0.25 }
   max_trials: 10
   num_workers: 8
   num_pp_candidates: 2
@@ -26,4 +26,4 @@ optimisation_args:
 virny_args:
   bootstrap_fraction: 0.8
   n_estimators: 50
-  sensitive_attributes_dct: {'Gender': 'Female'}
+  sensitive_attributes_dct: {'SEX': '2', 'RAC1P': ['2', '3', '4', '5', '6', '7', '8', '9'], 'SEX&RAC1P': None}
