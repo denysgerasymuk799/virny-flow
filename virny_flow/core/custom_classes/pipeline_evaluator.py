@@ -255,6 +255,9 @@ class PipelineEvaluator(MLLifecycle):
         test_reversed_objectives = test_objectives.pop("reversed_objectives")
 
         objective_values, constraints, extra_info = parse_result(copy.copy(test_objectives))
+        print(f"Objectives: {objective_values}")
+        print(f"Constraints: {constraints}")
+        print(f"Extra info: {extra_info}")
         observation = Observation(
             config=physical_pipeline.suggestion,
             objectives=objective_values,
