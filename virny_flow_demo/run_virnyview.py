@@ -8,8 +8,8 @@ from virny_flow_demo.configs.datasets_config import DATASET_CONFIG
 
 if __name__ == '__main__':
     # Read an experimental config
-    # exp_config_yaml_path = pathlib.Path(__file__).parent.joinpath('configs').joinpath('exp_config.yaml')
-    exp_config_yaml_path = pathlib.Path(__file__).parent.joinpath('configs').joinpath('exp_config_folk_pubcov.yaml')
+    exp_config_yaml_path = pathlib.Path(__file__).parent.joinpath('configs').joinpath('exp_config.yaml')
+    # exp_config_yaml_path = pathlib.Path(__file__).parent.joinpath('configs').joinpath('exp_config_folk_pubcov.yaml')
     exp_config = create_exp_config_obj(exp_config_yaml_path=exp_config_yaml_path)
 
     data_loader = DATASET_CONFIG[exp_config.pipeline_args.dataset]['data_loader'](**DATASET_CONFIG[exp_config.pipeline_args.dataset]['data_loader_kwargs'])
