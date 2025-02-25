@@ -1,5 +1,3 @@
-import os
-import json
 import pathlib
 from openbox import History
 from datetime import datetime
@@ -7,7 +5,7 @@ from ConfigSpace import ConfigurationSpace
 from openbox.utils.history import Observation
 
 from virny_flow.configs.structs import BOAdvisorConfig
-from virny_flow.core.utils.common_helpers import create_exp_config_obj, read_history_from_db
+from virny_flow.core.utils.common_helpers import read_history_from_db
 from virny_flow.visualizations.viz_utils import build_visualizer, create_config_space
 
 
@@ -26,8 +24,13 @@ def prepare_history(data: dict, config_space: ConfigurationSpace, defined_object
 
     # Get original losses from weighted losses
     for obs in data["observations"]:
-        obs["objectives"] = [obs["objectives"][0] / defined_objectives[0]['weight'],
-                             obs["objectives"][1] / defined_objectives[1]['weight']]
+        if len(defined_objectives) == 3:
+            obs["objectives"] = [obs["objectives"][0] / defined_objectives[0]['weight'],
+                                 obs["objectives"][1] / defined_objectives[1]['weight'],
+                                 obs["objectives"][2] / defined_objectives[2]['weight']]
+        else:
+            obs["objectives"] = [obs["objectives"][0] / defined_objectives[0]['weight'],
+                                 obs["objectives"][1] / defined_objectives[1]['weight']]
 
     global_start_time = data.pop('global_start_time')
     global_start_time = datetime.fromisoformat(global_start_time)
@@ -43,26 +46,30 @@ def prepare_history(data: dict, config_space: ConfigurationSpace, defined_object
 
 if __name__ == '__main__':
     # Input variables
-    exp_config_name = 'case_studies_exp_folk_emp_cs1_w_acc_0_25_w_fair_0_75'
+    exp_config_name = 'case_studies_exp_folk_pubcov_cs2_w_acc_0_5_w_fair_0_5'
     lp_name = 'None&NO_FAIRNESS_INTERVENTION&lgbm_clf'
-    run_num = 2
+    run_num = 1
+    max_trials = 100
+    ref_point = [0.50, 0.15]
 
     # Read an experimental config
-    exp_config_yaml_path = pathlib.Path(__file__).parent.joinpath('configs').joinpath('exp_config.yaml')
-    exp_config = create_exp_config_obj(exp_config_yaml_path=exp_config_yaml_path)
     db_secrets_path = pathlib.Path(__file__).parent.joinpath('configs').joinpath('secrets.env')
 
     # Prepare a History object
     bo_advisor_config = BOAdvisorConfig()
     config_space = create_config_space(lp_name)
-    raw_history, defined_objectives, surrogate_model_type = read_history_from_db(db_secrets_path, exp_config_name, lp_name, run_num)
-    history = prepare_history(data=raw_history, 
+    raw_history, defined_objectives, surrogate_model_type = read_history_from_db(secrets_path=db_secrets_path,
+                                                                                 exp_config_name=exp_config_name,
+                                                                                 lp_name=lp_name,
+                                                                                 run_num=run_num,
+                                                                                 ref_point=ref_point)
+    history = prepare_history(data=raw_history,
                               config_space=config_space,
                               defined_objectives=defined_objectives)
 
     task_info = {
         'advisor_type': 'default',
-        'max_runs': exp_config.optimisation_args.max_trials,
+        'max_runs': max_trials,
         'max_runtime_per_trial': bo_advisor_config.max_runtime_per_trial,
         'surrogate_type': surrogate_model_type,
         'constraint_surrogate_type': None,
