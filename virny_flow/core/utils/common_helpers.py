@@ -283,7 +283,7 @@ def transform_row_to_observation(row: dict):
     }
 
 
-def read_history_from_db(secrets_path: str, exp_config_name: str, lp_name: str, run_num: int):
+def read_history_from_db(secrets_path: str, exp_config_name: str, lp_name: str, run_num: int, ref_point = [0.2, 0.1]):
     """Fetch all rows and transform them into the final desired structure.
     
     Args:
@@ -321,7 +321,7 @@ def read_history_from_db(secrets_path: str, exp_config_name: str, lp_name: str, 
         "task_id": "OpenBox",
         "num_objectives": len(observations[0]["objectives"]) if observations else 0,
         "num_constraints": 0,
-        "ref_point": [0.2, 0.1],  # Default or computed ref point
+        "ref_point": ref_point,  # Default or computed ref point
         "meta_info": {},
         "global_start_time": datetime.now().isoformat(),
         "observations": observations,
