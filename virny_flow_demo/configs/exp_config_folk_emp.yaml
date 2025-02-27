@@ -1,5 +1,5 @@
 common_args:
-  exp_config_name: "test_folk_emp7"
+  exp_config_name: "test_folk_emp"
   run_nums: [1]
   secrets_path: "/Users/denys_herasymuk/Research/NYU/VirnyFlow_Project/Code/virny-flow/virny_flow_demo/configs/secrets.env"
 
@@ -13,10 +13,8 @@ pipeline_args:
 optimisation_args:
   ref_point: [0.30, 0.10]
   objectives:
-    - { name: "objective_1", metric: "F1", group: "overall", weight: 0.25, constraint: [">= 0.9"] }
-    - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "SEX&RAC1P", weight: 0.75, constraint: [">= -0.2", "<= 0.2"] }
-    # - { name: "objective_1", metric: "F1", group: "overall", weight: 0.25 }
-    # - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "SEX&RAC1P", weight: 0.75 }
+    - { name: "objective_1", metric: "F1", group: "overall", weight: 0.25 }
+    - { name: "objective_2", metric: "Equalized_Odds_FNR", group: "SEX&RAC1P", weight: 0.75 }
   max_trials: 3
   num_workers: 2
   num_pp_candidates: 2
