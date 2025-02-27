@@ -160,6 +160,7 @@ def get_config_advisor(logical_pipeline, bo_advisor_config):
         config_space.add_hyperparameters(list(stage_config_space.values()))
 
     _logger_kwargs = {'force_init': False}  # do not init logger in advisor
+    print(f"Setting AsyncBatchAdvisor num_constraints to {bo_advisor_config.num_constraints}")
     config_advisor = AsyncBatchAdvisor(config_space,
                                        num_objectives = bo_advisor_config.num_objectives,
                                        num_constraints = bo_advisor_config.num_constraints,
@@ -185,11 +186,11 @@ def get_config_advisor(logical_pipeline, bo_advisor_config):
 def select_next_physical_pipelines(logical_pipeline: LogicalPipeline, lp_to_advisor: dict,
                                    bo_advisor_config: BOAdvisorConfig, exp_config: DefaultMunch,
                                    run_num: int, random_state: int):
-    config_advisor, config_space = (
-        (lp_to_advisor[run_num][logical_pipeline.logical_pipeline_name]["config_advisor"],
-         lp_to_advisor[run_num][logical_pipeline.logical_pipeline_name]["config_space"])
-            if lp_to_advisor[run_num].get(logical_pipeline.logical_pipeline_name, None) is not None
-            else get_config_advisor(logical_pipeline, bo_advisor_config))
+    if lp_to_advisor[run_num].get(logical_pipeline.logical_pipeline_name, None) is not None:
+        config_advisor = lp_to_advisor[run_num][logical_pipeline.logical_pipeline_name]["config_advisor"]
+        config_space = lp_to_advisor[run_num][logical_pipeline.logical_pipeline_name]["config_space"]
+    else:
+        config_advisor, config_space = get_config_advisor(logical_pipeline, bo_advisor_config)
 
     # Create physical pipelines based on MO-BO suggestions
     physical_pipelines = []

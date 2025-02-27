@@ -255,8 +255,11 @@ class PipelineEvaluator(MLLifecycle):
         test_reversed_objectives = test_objectives.pop("reversed_objectives")
 
         objective_values, constraints, extra_info = parse_result(copy.copy(test_objectives))
+        print(f"Constraints before update: {constraints}")
+        constraints = self.update_constraints(constraints, objective_values)
+        print(f"Constraints after update: {constraints}")
+        
         print(f"Objectives: {objective_values}")
-        print(f"Constraints: {constraints}")
         print(f"Extra info: {extra_info}")
         observation = Observation(
             config=physical_pipeline.suggestion,
@@ -272,6 +275,66 @@ class PipelineEvaluator(MLLifecycle):
 
         return train_reversed_objectives, test_reversed_objectives, observation, test_multiple_models_metrics_dct[model_name]
 
+    def update_constraints(self, constraints, objectives):
+        """
+        Update constraints based on the observed objective values and the experiment configuration.
+
+        Parameters:
+        constraints: a list of constraint values parsed earlier (may be empty)
+        objectives: a list of observed objective values (assumed in the same order as in self.exp_config["objectives"])
+        
+        Returns:
+        A list of computed constraint violation values.
+        
+        Note:
+        - For a maximization metric (e.g. F1) the observed objective is reversed (i.e. 1 - actual_value).
+        - If an objective is weighted (its value is already multiplied by the weight), then the threshold is also weighted.
+        - For a ">=" constraint on a non-reversed objective, we require observed_value >= (weight * threshold),
+            so violation = (weight * threshold) - observed_value.
+        - For a "<=" constraint, we require observed_value <= (weight * threshold),
+            so violation = observed_value - (weight * threshold).
+        - For reversed objectives, a constraint ">= t" becomes: observed_value should be <= weight*(1 - t),
+            so violation = observed_value - (weight*(1 - t)), and vice versa.
+        - Feasibility is implied when the computed violation is <= 0.
+        """
+        updated_constraints = list(constraints) if constraints is not None else []
+        
+        # Iterate over objectives defined in exp_config. It is assumed that the order here
+        # matches the order of objective values in the "objectives" list.
+        for i, obj_conf in enumerate(self.exp_config.get("optimisation_args", {}).get("objectives", [])):
+            try:
+                obs_value = objectives[i]
+            except IndexError:
+                # If there are fewer observed values than defined objectives, skip.
+                continue
+
+            weight = obj_conf.get("weight", 1)
+            
+            for constr in obj_conf.get("constraint", []):
+                parts = constr.split()
+                if len(parts) != 2:
+                    raise ValueError("Invalid constraint format: '{}'".format(constr))
+                operator, thresh_str = parts
+                try:
+                    threshold = float(thresh_str)
+                except ValueError:
+                    raise ValueError("Constraint threshold is not a number in '{}'".format(constr))
+                
+                # For reversed metrics, the desired (target) reversed value is weight*(1 - threshold).
+                target = weight * (1 - threshold)
+                if operator == ">=":
+                    # Feasible if observed (reversed) value <= target
+                    violation = obs_value - target
+                elif operator == "<=":
+                    # Feasible if observed (reversed) value >= target
+                    violation = target - obs_value
+                else:
+                    raise ValueError("Unsupported operator '{}' in constraint '{}'".format(operator, constr))
+                
+                updated_constraints.append(violation)
+        
+        return updated_constraints
+    
     def run_null_imputation_stage(self, X_train_val_with_nulls, X_test_with_nulls, y_train_val, y_test,
                                   experiment_seed: int, null_imputer_name: str, null_imputer_params: dict):
         if null_imputer_name in (ErrorRepairMethod.boost_clean.value, ErrorRepairMethod.cp_clean.value):

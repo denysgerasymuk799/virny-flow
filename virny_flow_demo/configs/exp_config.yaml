@@ -14,8 +14,8 @@ pipeline_args:
 optimisation_args:
   ref_point: [0.20, 0.20]
   objectives:
-    - { name: "objective_1", metric: "F1", group: "overall", weight: 0.25 }
-    - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "Gender", weight: 0.75 }
+    - { name: "objective_1", metric: "F1", group: "overall", weight: 0.25, constraint: [">= 0.9"] }
+    - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "Gender", weight: 0.75, constraint: ["<= 0.2"] }
   max_trials: 20
   num_workers: 8
   num_pp_candidates: 2

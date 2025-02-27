@@ -9,7 +9,7 @@ from virny_flow_demo.configs.datasets_config import DATASET_CONFIG
 
 if __name__ == '__main__':
     # Read an experimental config
-    exp_config_yaml_path = pathlib.Path(__file__).parent.joinpath('configs').joinpath('exp_config_folk_emp.yaml')
+    exp_config_yaml_path = pathlib.Path(__file__).parent.joinpath('configs').joinpath('exp_config.yaml')
     exp_config = create_exp_config_obj(exp_config_yaml_path=exp_config_yaml_path)
 
     worker_interface(exp_config=exp_config,
