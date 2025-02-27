@@ -23,7 +23,7 @@ def initialize_consumer():
             consumer = KafkaConsumer(
                 NEW_TASKS_QUEUE_TOPIC,
                 group_id=WORKER_CONSUMER_GROUP,
-                bootstrap_servers=os.getenv("KAFKA_BROKER"),
+                bootstrap_servers=os.getenv("KAFKA_BROKER", "localhost:9093"),
                 api_version=(0, 10, 1),
                 value_deserializer=lambda v: json.loads(v.decode('utf-8')),
                 enable_auto_commit=True,
@@ -56,9 +56,8 @@ class Worker:
 
         self.address = address.rstrip('/')
         self._logger = get_logger(logger_name="Worker")
-
         self.producer = KafkaProducer(
-            bootstrap_servers=os.getenv("KAFKA_BROKER"),
+            bootstrap_servers=os.getenv("KAFKA_BROKER", "localhost:9093"),
             api_version=(0, 10, 1),
             acks='all',
             retries=5,

@@ -100,6 +100,7 @@ def validate_config(config_obj):
                             "metric": {"type": "string", "required": True},
                             "group": {"type": "string", "required": True},
                             "weight": {"type": "float", "required": False, "default": 0.5},
+                            "constraint": {"type": "list", "required": False, "schema": {"type": "string"}}
                         }
                     }
                 },

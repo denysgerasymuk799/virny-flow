@@ -1,0 +1,27 @@
+common_args:
+  exp_config_name: "test_debug"
+  run_nums: [1]
+  secrets_path: "/Users/denys_herasymuk/Research/NYU/VirnyFlow_Project/Code/virny-flow/virny_flow_demo/configs/secrets.env"
+
+pipeline_args:
+  dataset: "diabetes"
+  sensitive_attrs_for_intervention: ["Gender"]
+  null_imputers: []
+  fairness_interventions: []
+#  models: ["lr_clf", "rf_clf", "lgbm_clf", "gandalf_clf"]
+  models: ["gandalf_clf"]
+
+optimisation_args:
+  ref_point: [0.20, 0.20]
+  objectives:
+    - { name: "objective_1", metric: "F1", group: "overall", weight: 0.25, constraint: [">= 0.9"] }
+    - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "Gender", weight: 0.75, constraint: ["<= 0.2"] }
+  max_trials: 20
+  num_workers: 8
+  num_pp_candidates: 2
+  training_set_fractions_for_halting: [0.7, 0.8, 0.9, 1.0]
+  exploration_factor: 0.5
+  risk_factor: 0.5
+
+virny_args:
+  sensitive_attributes_dct: {'Gender': 'Female'}
