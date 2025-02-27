@@ -56,7 +56,6 @@ class Worker:
 
         self.address = address.rstrip('/')
         self._logger = get_logger(logger_name="Worker")
-        print("### os.getenv('KAFKA_BROKER'):", os.getenv("KAFKA_BROKER"))
         self.producer = KafkaProducer(
             bootstrap_servers=os.getenv("KAFKA_BROKER", "localhost:9093"),
             api_version=(0, 10, 1),

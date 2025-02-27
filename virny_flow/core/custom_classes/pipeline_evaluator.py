@@ -260,7 +260,6 @@ class PipelineEvaluator(MLLifecycle):
         print(f"Constraints after update: {constraints}")
         
         print(f"Objectives: {objective_values}")
-        print(f"Extra info: {extra_info}")
         observation = Observation(
             config=physical_pipeline.suggestion,
             objectives=objective_values,
