@@ -7,9 +7,9 @@ from lightgbm import LGBMClassifier
 from openbox.utils.config_space import UniformIntegerHyperparameter, UniformFloatHyperparameter, CategoricalHyperparameter
 from pytorch_tabular.models import GANDALFConfig
 from pytorch_tabular.config import OptimizerConfig, TrainerConfig
+from xgboost import XGBClassifier
 
-from .constants import FairnessIntervention, INIT_RANDOM_STATE
-from .constants import ErrorRepairMethod
+from .constants import FairnessIntervention, INIT_RANDOM_STATE, ErrorRepairMethod
 import virny_flow.core.null_imputers.datawig_imputer as datawig_imputer
 from virny_flow.core.null_imputers.imputation_methods import (impute_with_deletion, impute_with_simple_imputer,
                                                               impute_with_missforest, impute_with_kmeans)
@@ -123,10 +123,10 @@ def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
             'model': DecisionTreeClassifier,
             'default_kwargs': {'random_state': models_tuning_seed},
             'config_space': {
-                'model__max_depth': CategoricalHyperparameter("model__max_depth", [5, 10]),
-                'model__min_samples_leaf': CategoricalHyperparameter("model__min_samples_leaf", [5, 10, 20, 50, 100]),
-                'model__max_features': CategoricalHyperparameter("model__max_features", [0.6, 'sqrt']),
-                'model__criterion': CategoricalHyperparameter("model__criterion", ["gini", "entropy"])
+                'model__criterion': CategoricalHyperparameter("model__criterion", ["gini", "entropy"], default_value="gini"),
+                'model__max_depth': UniformIntegerHyperparameter("model__max_depth", lower=1, upper=10, default_value=3),
+                'model__min_samples_split': UniformIntegerHyperparameter("model__min_samples_split", 2, 20, default_value=2),
+                'model__min_samples_leaf': UniformIntegerHyperparameter("model__min_samples_leaf", 1, 20, default_value=1),
             }
         },
         'lr_clf': {
@@ -156,6 +156,17 @@ def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
                 'model__activation': CategoricalHyperparameter("model__activation", ['logistic', 'tanh', 'relu']),
                 'model__solver': CategoricalHyperparameter("model__solver", ['lbfgs', 'sgd', 'adam']),
                 'model__learning_rate': CategoricalHyperparameter("model__learning_rate", ['constant', 'invscaling', 'adaptive'])
+            }
+        },
+        'xgb_clf': {
+            'model': XGBClassifier,
+            'default_kwargs': {'random_state': models_tuning_seed},
+            'config_space': {
+                'model__max_depth': UniformIntegerHyperparameter("model__max_depth", lower=1, upper=10, default_value=3),
+                'model__learning_rate': UniformFloatHyperparameter("model__learning_rate", lower=0.01, upper=1, default_value=0.1, log=True),
+                'model__n_estimators': UniformIntegerHyperparameter("model__n_estimators", 50, 500, default_value=100),
+                'model__subsample': UniformFloatHyperparameter("model__subsample", lower=0.01, upper=1.0, default_value=1.0, log=False),
+                'model__min_child_weight': UniformIntegerHyperparameter("model__min_child_weight", lower=1, upper=20, default_value=1, log=False),
             }
         },
         'lgbm_clf': {
