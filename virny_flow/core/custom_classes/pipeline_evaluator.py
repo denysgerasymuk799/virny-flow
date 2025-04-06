@@ -481,19 +481,21 @@ class PipelineEvaluator(MLLifecycle):
             postprocessor_configs = self.fairness_intervention_config[FairnessIntervention.ROC.value]
             postprocessor = get_reject_option_classification_postprocessor(privileged_groups=privileged_groups,
                                                                            unprivileged_groups=unprivileged_groups,
-                                                                           postprocessor_configs=fairness_intervention_params)
+                                                                           postprocessor_configs=postprocessor_configs)
             self.virny_config['postprocessing_sensitive_attribute'] = sensitive_attribute
         else:
             postprocessor = None
             if fairness_intervention_name == FairnessIntervention.EGR.value:
-                models_dct = get_exponentiated_gradient_reduction_wrapper(inprocessor_configs=fairness_intervention_params,
+                inprocessor_configs = self.fairness_intervention_config[fairness_intervention_name]
+                models_dct = get_exponentiated_gradient_reduction_wrapper(inprocessor_configs=inprocessor_configs,
                                                                           sensitive_attr_for_intervention=sensitive_attribute)
                 models_dct_key = list(models_dct.keys())[0]
                 models_dct = {model_name: models_dct[models_dct_key]}
             elif fairness_intervention_name == FairnessIntervention.AD.value:
+                inprocessor_configs = self.fairness_intervention_config[fairness_intervention_name]
                 models_dct = get_adversarial_debiasing_wrapper_config(privileged_groups=privileged_groups,
                                                                       unprivileged_groups=unprivileged_groups,
-                                                                      inprocessor_configs=fairness_intervention_params,
+                                                                      inprocessor_configs=inprocessor_configs,
                                                                       sensitive_attr_for_intervention=sensitive_attribute)
                 models_dct_key = list(models_dct.keys())[0]
                 models_dct = {model_name: models_dct[models_dct_key]}
