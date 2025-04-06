@@ -16,8 +16,8 @@ optimisation_args:
   objectives:
     - { name: "objective_1", metric: "F1", group: "overall", weight: 0.25 }
     - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "Gender", weight: 0.75 }
-  max_trials: 20
-  num_workers: 8
+  max_trials: 5
+  num_workers: 2
   num_pp_candidates: 2
   training_set_fractions_for_halting: [0.7, 0.8, 0.9, 1.0]
   exploration_factor: 0.5
