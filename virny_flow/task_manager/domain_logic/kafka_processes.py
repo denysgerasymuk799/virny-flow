@@ -10,13 +10,15 @@ from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 from .score_model import update_logical_pipeline_score_model
 from .bayesian_optimization import parse_config_space
 from ..database.task_manager_db_client import TaskManagerDBClient
+from ...core.custom_classes.async_counter import AsyncCounter
+from ...core.utils.optimization_utils import has_remaining_time_budget, has_remaining_pipelines_budget
 from virny_flow.core.utils.custom_logger import get_logger
 from virny_flow.core.custom_classes.task_queue import TaskQueue
 from virny_flow.configs.constants import (TASK_MANAGER_CONSUMER_GROUP, NEW_TASKS_QUEUE_TOPIC, LOGICAL_PIPELINE_SCORES_TABLE, NO_TASKS,
                                           EXP_CONFIG_HISTORY_TABLE, COMPLETED_TASKS_QUEUE_TOPIC, PHYSICAL_PIPELINE_OBSERVATIONS_TABLE)
 
 
-async def start_task_provider(exp_config: DefaultMunch, uvicorn_server):
+async def start_task_provider(exp_config: DefaultMunch, uvicorn_server, total_pipelines_counter: AsyncCounter):
     termination_flag = False
     logger = get_logger('TaskProvider')
     db_client = TaskManagerDBClient(exp_config.common_args.secrets_path)
@@ -27,44 +29,58 @@ async def start_task_provider(exp_config: DefaultMunch, uvicorn_server):
 
     producer = AIOKafkaProducer(bootstrap_servers=os.getenv("KAFKA_BROKER"))
     await producer.start()
+
+    start_time = time.perf_counter()
     for idx, run_num in enumerate(exp_config.common_args.run_nums):
         execution_start_time = time.time()
         print('#' * 40 + '\n' + f'START TASK PROVIDING FOR RUN_NUM={run_num}' + '\n' + '#' * 40, flush=True)
 
         while True:
             try:
-                num_available_tasks = await task_queue.get_num_available_tasks(exp_config_name=exp_config.common_args.exp_config_name, run_num=run_num)
-                if num_available_tasks == 0:
-                    if not await task_queue.is_empty(exp_config_name=exp_config.common_args.exp_config_name, run_num=run_num):
-                        print("Wait until new tasks come up...", flush=True)
-                        await asyncio.sleep(10)
-                        continue
+                # Check execution budget conditions
+                if (exp_config.optimisation_args.max_time_budget is not None
+                    and not has_remaining_time_budget(exp_config.optimisation_args.max_time_budget, start_time)) or \
+                        (exp_config.optimisation_args.max_total_pipelines_num is not None
+                         and not await has_remaining_pipelines_budget(exp_config.optimisation_args.max_total_pipelines_num, total_pipelines_counter)):
+                    # If all work is done, set num_available_tasks to num_workers and get new tasks from task_queue.
+                    # When task_queue is empty, it will return NO_TASKS, and it will be sent to each worker.
+                    num_available_tasks = exp_config.optimisation_args.num_workers * 2  # Multiply by 2 to be sure to shutdown all the workers
+                    termination_flag = True
+                    logger.info("An execution budget has expired. Shutting down...")
 
-                    # Check termination factor: Get all logical pipelines, which have num_trials less than max_trials.
-                    query = {"num_trials": {"$lt": exp_config.optimisation_args.max_trials}}
-                    logical_pipeline_records = await db_client.read_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
-                                                                          exp_config_name=exp_config.common_args.exp_config_name,
-                                                                          run_num=run_num,
-                                                                          query=query)
-                    if len(logical_pipeline_records) == 0:
-                        # Save execution time of all pipelines for the define experimental config
-                        exp_config_execution_time = time.time() - execution_start_time
-                        await db_client.update_query(collection_name=EXP_CONFIG_HISTORY_TABLE,
-                                                     exp_config_name=exp_config.common_args.exp_config_name,
-                                                     run_num=run_num,
-                                                     condition={},
-                                                     update_val_dct={"exp_config_execution_time": exp_config_execution_time})
-                        if idx + 1 == len(exp_config.common_args.run_nums):
-                            # If all work is done, set num_available_tasks to num_workers and get new tasks from task_queue.
-                            # When task_queue is empty, it will return NO_TASKS, and it will be sent to each worker.
-                            num_available_tasks = exp_config.optimisation_args.num_workers * 2  # Multiply by 2 to be sure to shutdown all the workers
-                            termination_flag = True
+                else:
+                    num_available_tasks = await task_queue.get_num_available_tasks(exp_config_name=exp_config.common_args.exp_config_name, run_num=run_num)
+                    if num_available_tasks == 0:
+                        if not await task_queue.is_empty(exp_config_name=exp_config.common_args.exp_config_name, run_num=run_num):
+                            print("Wait until new tasks come up...", flush=True)
+                            await asyncio.sleep(10)
+                            continue
+
+                        # Check termination factor: Get all logical pipelines, which have num_trials less than max_trials.
+                        query = {"num_trials": {"$lt": exp_config.optimisation_args.max_trials}}
+                        logical_pipeline_records = await db_client.read_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
+                                                                              exp_config_name=exp_config.common_args.exp_config_name,
+                                                                              run_num=run_num,
+                                                                              query=query)
+                        if len(logical_pipeline_records) == 0:
+                            # Save execution time of all pipelines for the define experimental config
+                            exp_config_execution_time = time.time() - execution_start_time
+                            await db_client.update_query(collection_name=EXP_CONFIG_HISTORY_TABLE,
+                                                         exp_config_name=exp_config.common_args.exp_config_name,
+                                                         run_num=run_num,
+                                                         condition={},
+                                                         update_val_dct={"exp_config_execution_time": exp_config_execution_time})
+                            if idx + 1 == len(exp_config.common_args.run_nums):
+                                # If all work is done, set num_available_tasks to num_workers and get new tasks from task_queue.
+                                # When task_queue is empty, it will return NO_TASKS, and it will be sent to each worker.
+                                num_available_tasks = exp_config.optimisation_args.num_workers * 2  # Multiply by 2 to be sure to shutdown all the workers
+                                termination_flag = True
+                            else:
+                                break  # Start processing tasks for another run_num
                         else:
-                            break  # Start processing tasks for another run_num
-                    else:
-                        logger.info("Wait until all physical pipelines are executed to terminate all workers...")
-                        await asyncio.sleep(10)
-                        continue
+                            logger.info("Wait until all physical pipelines are executed to terminate all workers...")
+                            await asyncio.sleep(10)
+                            continue
 
                 # Add new tasks to the NewTaskQueue topic in Kafka
                 for i in range(num_available_tasks):
@@ -121,7 +137,7 @@ def get_kafka_consumer():
                             enable_auto_commit=True)
 
 
-async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict):
+async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict, total_pipelines_counter: AsyncCounter):
     logger = get_logger('CostModelUpdater')
     db_client = TaskManagerDBClient(exp_config.common_args.secrets_path)
     task_queue = TaskQueue(secrets_path=exp_config.common_args.secrets_path,
@@ -131,6 +147,8 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
 
     consumer = get_kafka_consumer()
     await consumer.start()
+
+    start_time = time.perf_counter()
     try:
         async for record in consumer:
             try:
@@ -185,6 +203,22 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
                 # Complete the task
                 await task_queue.complete_task(exp_config_name=exp_config_name, run_num=run_num, task_uuid=task_uuid)
                 logger.info(f'Task with task_uuid = {task_uuid} and run_num = {run_num} was successfully completed.')
+
+                # Increment the total number of successfully executed pipelines
+                await total_pipelines_counter.increment()
+                total_pipelines_num = await total_pipelines_counter.get_value()
+                logger.info(f'The number of successfully executed pipelines is {total_pipelines_num}.')
+                logger.info(f'System execution runtime is {time.perf_counter() - start_time}.')
+
+                # Check execution budget conditions
+                if (exp_config.optimisation_args.max_time_budget is not None
+                    and not has_remaining_time_budget(exp_config.optimisation_args.max_time_budget, start_time)) or \
+                        (exp_config.optimisation_args.max_total_pipelines_num is not None
+                         and not await has_remaining_pipelines_budget(exp_config.optimisation_args.max_total_pipelines_num, total_pipelines_counter)):
+                    db_client.close()
+                    task_queue.close()
+                    logger.info("An execution budget has expired. Shutting down...")
+                    return
 
             except Exception as err:
                 logger.error(f'Consume error: {err}')

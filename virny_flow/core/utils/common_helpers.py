@@ -3,7 +3,6 @@ import hashlib
 import secrets
 import base64
 import yaml
-import json
 import pandas as pd
 
 from datetime import datetime
@@ -104,7 +103,9 @@ def validate_config(config_obj):
                         }
                     }
                 },
-                "max_trials": {"type": "integer", "min": 1, "required": True},
+                "max_trials": {"type": "integer", "min": 1, "default": 1000},
+                "max_time_budget": {"type": "integer", "min": 60},
+                "max_total_pipelines_num": {"type": "integer", "min": 1},
                 "num_workers": {"type": "integer", "min": 1, "required": True},
                 "num_pp_candidates": {"type": "integer", "min": 1, "required": False, "default": 10},
                 "queue_size": {"type": "integer", "min": config_obj['optimisation_args']['num_workers'],
@@ -172,6 +173,9 @@ def validate_config(config_obj):
 
     if config_obj["common_args"].get("num_runs") is not None:
         config_obj["common_args"]["run_nums"] = [run_num for run_num in range(1, config_obj["common_args"]["num_runs"] + 1)]
+
+    if config_obj["optimisation_args"].get("max_total_pipelines_num") is not None:
+        config_obj["optimisation_args"]["max_trials"] = config_obj["optimisation_args"]["max_total_pipelines_num"]
 
     return config_obj
 

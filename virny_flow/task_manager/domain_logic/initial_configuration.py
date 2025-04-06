@@ -1,5 +1,6 @@
-import asyncio
+import time
 import base64
+import asyncio
 from munch import DefaultMunch
 from dataclasses import asdict
 from datetime import datetime, timezone
@@ -8,13 +9,16 @@ from .bayesian_optimization import select_next_logical_pipeline, select_next_phy
 from ..database.task_manager_db_client import TaskManagerDBClient
 from ...core.utils.custom_logger import get_logger
 from ...core.utils.common_helpers import flatten_dict
+from ...core.utils.optimization_utils import has_remaining_time_budget, has_remaining_pipelines_budget
 from virny_flow.core.custom_classes.task_queue import TaskQueue
+from virny_flow.core.custom_classes.async_counter import AsyncCounter
 from virny_flow.configs.structs import BOAdvisorConfig, LogicalPipeline
 from virny_flow.configs.constants import (StageName, STAGE_SEPARATOR, NO_FAIRNESS_INTERVENTION, INIT_RANDOM_STATE,
                                           LOGICAL_PIPELINE_SCORES_TABLE, EXP_CONFIG_HISTORY_TABLE)
 
 
-async def start_task_generator(exp_config: DefaultMunch, lp_to_advisor: dict, bo_advisor_config: BOAdvisorConfig):
+async def start_task_generator(exp_config: DefaultMunch, lp_to_advisor: dict, bo_advisor_config: BOAdvisorConfig,
+                               total_pipelines_counter: AsyncCounter):
     logger = get_logger('TaskGenerator')
     db_client = TaskManagerDBClient(exp_config.common_args.secrets_path)
     task_queue = TaskQueue(secrets_path=exp_config.common_args.secrets_path,
@@ -22,12 +26,24 @@ async def start_task_generator(exp_config: DefaultMunch, lp_to_advisor: dict, bo
     db_client.connect()
     task_queue.connect()
 
+    start_time = time.perf_counter()
     for run_num in exp_config.common_args.run_nums:
         random_state = INIT_RANDOM_STATE + run_num
         bo_advisor_config.random_state = random_state
         print('#' * 40 + '\n' + f'START TASK GENERATION FOR RUN_NUM={run_num}' + '\n' + '#' * 40, flush=True)
 
         while True:
+            # Check execution budget conditions
+            if (exp_config.optimisation_args.max_time_budget is not None
+                and not has_remaining_time_budget(exp_config.optimisation_args.max_time_budget, start_time)) or \
+                    (exp_config.optimisation_args.max_total_pipelines_num is not None
+                     and not await has_remaining_pipelines_budget(exp_config.optimisation_args.max_total_pipelines_num, total_pipelines_counter)):
+                db_client.close()
+                task_queue.close()
+                logger.info("An execution budget has expired. Shutting down...")
+                return
+
+            # Wait for enough space for a new lp
             if not await task_queue.has_space_for_next_lp(exp_config_name=exp_config.common_args.exp_config_name,
                                                           run_num=run_num,
                                                           num_pp_candidates=exp_config.optimisation_args.num_pp_candidates):

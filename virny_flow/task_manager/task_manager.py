@@ -4,6 +4,7 @@ from munch import DefaultMunch
 
 from .routes import register_routes
 from .database.task_manager_db_client import TaskManagerDBClient
+from ..core.custom_classes.async_counter import AsyncCounter
 from virny_flow.configs.structs import BOAdvisorConfig
 
 
@@ -12,6 +13,7 @@ class TaskManager:
         self.host = host
         self.port = port
         self.exp_config = exp_config
+        self.total_pipelines_counter = AsyncCounter()
 
         # Initialize BO Advisor
         self.bo_advisor_config = BOAdvisorConfig()
@@ -33,7 +35,8 @@ class TaskManager:
                         db_client=self.db_client,
                         uvicorn_server=self.uvicorn_server,
                         lp_to_advisor=self._lp_to_advisor,
-                        bo_advisor_config=self.bo_advisor_config)
+                        bo_advisor_config=self.bo_advisor_config,
+                        total_pipelines_counter=self.total_pipelines_counter)
 
         # Redefine uvicorn_server.config to initialize endpoints
         self.uvicorn_server.config = uvicorn.Config(self.app, host=self.host, port=self.port)
