@@ -504,7 +504,7 @@ class PipelineEvaluator(MLLifecycle):
          models_fitted_bootstraps_dct) = compute_metrics_with_config(dataset=main_base_flow_dataset,
                                                                      config=self.virny_config,
                                                                      models_config=models_dct,
-                                                                     notebook_logs_stdout=False,
+                                                                     notebook_logs_stdout=None,
                                                                      postprocessor=postprocessor,
                                                                      return_fitted_bootstrap=True,
                                                                      verbose=0)

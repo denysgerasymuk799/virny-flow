@@ -20,6 +20,7 @@ from virny_flow.configs.constants import (TASK_MANAGER_CONSUMER_GROUP, NEW_TASKS
 
 async def start_task_provider(exp_config: DefaultMunch, uvicorn_server, total_pipelines_counter: AsyncCounter):
     termination_flag = False
+    empty_execution_budget_flag = False
     logger = get_logger('TaskProvider')
     db_client = TaskManagerDBClient(exp_config.common_args.secrets_path)
     task_queue = TaskQueue(secrets_path=exp_config.common_args.secrets_path,
@@ -42,10 +43,19 @@ async def start_task_provider(exp_config: DefaultMunch, uvicorn_server, total_pi
                     and not has_remaining_time_budget(exp_config.optimisation_args.max_time_budget, start_time)) or \
                         (exp_config.optimisation_args.max_total_pipelines_num is not None
                          and not await has_remaining_pipelines_budget(exp_config.optimisation_args.max_total_pipelines_num, total_pipelines_counter)):
+                    # Save execution time of all pipelines for the define experimental config
+                    exp_config_execution_time = time.time() - execution_start_time
+                    await db_client.update_query(collection_name=EXP_CONFIG_HISTORY_TABLE,
+                                                 exp_config_name=exp_config.common_args.exp_config_name,
+                                                 run_num=run_num,
+                                                 condition={},
+                                                 update_val_dct={"exp_config_execution_time": exp_config_execution_time})
+
                     # If all work is done, set num_available_tasks to num_workers and get new tasks from task_queue.
                     # When task_queue is empty, it will return NO_TASKS, and it will be sent to each worker.
                     num_available_tasks = exp_config.optimisation_args.num_workers * 2  # Multiply by 2 to be sure to shutdown all the workers
                     termination_flag = True
+                    empty_execution_budget_flag = True
                     logger.info("An execution budget has expired. Shutting down...")
 
                 else:
@@ -104,16 +114,21 @@ async def start_task_provider(exp_config: DefaultMunch, uvicorn_server, total_pi
                     terminate_consumer_json_msg = json.dumps(terminate_consumer_msg)
                     await producer.send_and_wait(topic=COMPLETED_TASKS_QUEUE_TOPIC,
                                                  value=terminate_consumer_json_msg.encode('utf-8'))
+                    # Terminate TaskProvider
+                    db_client.close()
+                    task_queue.close()
+
                     try:
                         # Terminate TaskManager web-server
                         uvicorn_server.should_exit = True
                     except Exception as e:
                         logger.error(f'Error during uvicorn server termination: {e}')
 
-                    # Terminate TaskProvider
-                    db_client.close()
-                    task_queue.close()
-                    break
+                    if empty_execution_budget_flag:
+                        await producer.stop()
+                        return
+                    else:
+                        break
 
             except Exception as err:
                 logger.error(f'Produce error: {err}')
