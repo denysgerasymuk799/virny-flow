@@ -255,10 +255,8 @@ class PipelineEvaluator(MLLifecycle):
         test_reversed_objectives = test_objectives.pop("reversed_objectives")
 
         objective_values, constraints, extra_info = parse_result(copy.copy(test_objectives))
-        print(f"Constraints before update: {constraints}")
         constraints = self.update_constraints(constraints, objective_values)
-        print(f"Constraints after update: {constraints}")
-        
+
         print(f"Objectives: {objective_values}")
         observation = Observation(
             config=physical_pipeline.suggestion,
@@ -506,7 +504,7 @@ class PipelineEvaluator(MLLifecycle):
          models_fitted_bootstraps_dct) = compute_metrics_with_config(dataset=main_base_flow_dataset,
                                                                      config=self.virny_config,
                                                                      models_config=models_dct,
-                                                                     notebook_logs_stdout=False,
+                                                                     notebook_logs_stdout=None,
                                                                      postprocessor=postprocessor,
                                                                      return_fitted_bootstrap=True,
                                                                      verbose=0)
