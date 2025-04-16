@@ -1,4 +1,3 @@
-import os
 import json
 import time
 
@@ -11,7 +10,7 @@ from virny_flow.core.utils.custom_logger import get_logger
 from virny_flow.core.utils.pipeline_utils import observation_to_dict
 
 
-def initialize_consumer():
+def initialize_consumer(kafka_broker_address):
     max_retries = 5  # Maximum number of retries
     backoff_factor = 2  # Exponential backoff factor (e.g., 2, 4, 8 seconds)
     retry_count = 0
@@ -23,7 +22,7 @@ def initialize_consumer():
             consumer = KafkaConsumer(
                 NEW_TASKS_QUEUE_TOPIC,
                 group_id=WORKER_CONSUMER_GROUP,
-                bootstrap_servers=os.getenv("KAFKA_BROKER", "localhost:9093"),
+                bootstrap_servers=kafka_broker_address,
                 api_version=(0, 10, 1),
                 value_deserializer=lambda v: json.loads(v.decode('utf-8')),
                 enable_auto_commit=True,
@@ -51,13 +50,13 @@ def initialize_consumer():
 
 
 class Worker:
-    def __init__(self, address: str, secrets_path: str):
+    def __init__(self, secrets_path: str, kafka_broker_address: str = "localhost:9093"):
         load_dotenv(secrets_path, override=True)
 
-        self.address = address.rstrip('/')
         self._logger = get_logger(logger_name="Worker")
+        self.kafka_broker_address = kafka_broker_address
         self.producer = KafkaProducer(
-            bootstrap_servers=os.getenv("KAFKA_BROKER", "localhost:9093"),
+            bootstrap_servers=self.kafka_broker_address,
             api_version=(0, 10, 1),
             acks='all',
             retries=5,
@@ -69,7 +68,7 @@ class Worker:
         while True:
             try:
                 # Since an execution of one task can take hours, it is better to re-initialize a consumer to get each new task
-                consumer = initialize_consumer()
+                consumer = initialize_consumer(self.kafka_broker_address)
                 while True:
                     for msg_obj in consumer:
                         task_dct = msg_obj.value

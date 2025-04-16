@@ -18,7 +18,8 @@ from virny_flow.configs.constants import (TASK_MANAGER_CONSUMER_GROUP, NEW_TASKS
                                           EXP_CONFIG_HISTORY_TABLE, COMPLETED_TASKS_QUEUE_TOPIC, PHYSICAL_PIPELINE_OBSERVATIONS_TABLE)
 
 
-async def start_task_provider(exp_config: DefaultMunch, uvicorn_server, total_pipelines_counter: AsyncCounter):
+async def start_task_provider(exp_config: DefaultMunch, uvicorn_server, total_pipelines_counter: AsyncCounter,
+                              kafka_broker_address: str):
     termination_flag = False
     empty_execution_budget_flag = False
     logger = get_logger('TaskProvider')
@@ -28,7 +29,7 @@ async def start_task_provider(exp_config: DefaultMunch, uvicorn_server, total_pi
     db_client.connect()
     task_queue.connect()
 
-    producer = AIOKafkaProducer(bootstrap_servers=os.getenv("KAFKA_BROKER"))
+    producer = AIOKafkaProducer(bootstrap_servers=kafka_broker_address)
     await producer.start()
 
     start_time = time.perf_counter()
@@ -105,7 +106,7 @@ async def start_task_provider(exp_config: DefaultMunch, uvicorn_server, total_pi
                         logger.info(f'Sending message to Kafka failed due to the following error -- {e}')
                         # Wait for all pending messages to be delivered or expire
                         await producer.stop()
-                        producer = AIOKafkaProducer(bootstrap_servers=os.getenv("KAFKA_BROKER"))
+                        producer = AIOKafkaProducer(bootstrap_servers=kafka_broker_address)
                         await producer.start()
 
                 if termination_flag:
@@ -133,15 +134,15 @@ async def start_task_provider(exp_config: DefaultMunch, uvicorn_server, total_pi
             except Exception as err:
                 logger.error(f'Produce error: {err}')
                 await producer.stop()
-                producer = AIOKafkaProducer(bootstrap_servers=os.getenv("KAFKA_BROKER"))
+                producer = AIOKafkaProducer(bootstrap_servers=kafka_broker_address)
                 await producer.start()
 
     await producer.stop()
 
 
-def get_kafka_consumer():
+def get_kafka_consumer(kafka_broker_address):
     return AIOKafkaConsumer(COMPLETED_TASKS_QUEUE_TOPIC,
-                            bootstrap_servers=[os.getenv("KAFKA_BROKER")],
+                            bootstrap_servers=[kafka_broker_address],
                             group_id=TASK_MANAGER_CONSUMER_GROUP,
                             session_timeout_ms=300_000,  # Increase session timeout (default: 10000 ms)
                             heartbeat_interval_ms=20_000,  # Increase heartbeat interval (default: 3000 ms)
@@ -152,7 +153,8 @@ def get_kafka_consumer():
                             enable_auto_commit=True)
 
 
-async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict, total_pipelines_counter: AsyncCounter):
+async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict, total_pipelines_counter: AsyncCounter,
+                                   kafka_broker_address: str):
     logger = get_logger('CostModelUpdater')
     db_client = TaskManagerDBClient(exp_config.common_args.secrets_path)
     task_queue = TaskQueue(secrets_path=exp_config.common_args.secrets_path,
@@ -160,7 +162,7 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
     db_client.connect()
     task_queue.connect()
 
-    consumer = get_kafka_consumer()
+    consumer = get_kafka_consumer(kafka_broker_address)
     await consumer.start()
 
     start_time = time.perf_counter()
