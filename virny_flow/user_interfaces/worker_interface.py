@@ -8,8 +8,8 @@ from virny_flow.core.custom_classes.pipeline_evaluator import PipelineEvaluator
 from virny_flow.core.custom_classes.worker import Worker
 
 
-def worker_interface(exp_config: DefaultMunch, virny_flow_address: str, dataset_config: dict,
-                     null_imputation_config: dict, fairness_intervention_config: dict, models_config: dict):
+def worker_interface(exp_config: DefaultMunch, dataset_config: dict, null_imputation_config: dict,
+                     fairness_intervention_config: dict, models_config: dict, kafka_broker_address: str = "localhost:9093"):
     # Suppress all warnings
     warnings.filterwarnings("ignore")
     os.environ["PYTHONWARNINGS"] = "ignore"
@@ -21,7 +21,7 @@ def worker_interface(exp_config: DefaultMunch, virny_flow_address: str, dataset_
                                            fairness_intervention_config=fairness_intervention_config,
                                            models_config=models_config)
     # Get an initial task
-    worker = Worker(address=virny_flow_address, secrets_path=exp_config.common_args.secrets_path)
+    worker = Worker(secrets_path=exp_config.common_args.secrets_path, kafka_broker_address=kafka_broker_address)
     task_dct = worker.get_task()
 
     # Infinite while loop for task execution

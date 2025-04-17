@@ -13,7 +13,6 @@ if __name__ == '__main__':
     exp_config = create_exp_config_obj(exp_config_yaml_path=exp_config_yaml_path)
 
     worker_interface(exp_config=exp_config,
-                     virny_flow_address="http://127.0.0.1:8000",
                      dataset_config=DATASET_CONFIG,
                      null_imputation_config=NULL_IMPUTATION_CONFIG,
                      fairness_intervention_config=FAIRNESS_INTERVENTION_CONFIG_SPACE,

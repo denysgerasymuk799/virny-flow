@@ -9,7 +9,8 @@ from virny_flow.configs.structs import BOAdvisorConfig
 
 
 class TaskManager:
-    def __init__(self, secrets_path: str, host: str, port: int, exp_config: DefaultMunch):
+    def __init__(self, secrets_path: str, host: str, port: int, exp_config: DefaultMunch,
+                 kafka_broker_address: str = "localhost:9093"):
         self.host = host
         self.port = port
         self.exp_config = exp_config
@@ -36,7 +37,8 @@ class TaskManager:
                         uvicorn_server=self.uvicorn_server,
                         lp_to_advisor=self._lp_to_advisor,
                         bo_advisor_config=self.bo_advisor_config,
-                        total_pipelines_counter=self.total_pipelines_counter)
+                        total_pipelines_counter=self.total_pipelines_counter,
+                        kafka_broker_address=kafka_broker_address)
 
         # Redefine uvicorn_server.config to initialize endpoints
         self.uvicorn_server.config = uvicorn.Config(self.app, host=self.host, port=self.port)
