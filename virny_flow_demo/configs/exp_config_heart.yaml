@@ -14,11 +14,11 @@ optimisation_args:
   ref_point: [0.33, 0.05]
   objectives:
     - { name: "objective_1", metric: "F1", group: "overall", weight: 0.5 }
-    - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "gender", weight: 0.5 }
-  max_total_pipelines_num: 5
+    - { name: "objective_2", metric: "Equalized_Odds_TNR", group: "gender", weight: 0.5 }
+  max_total_pipelines_num: 10
   num_workers: 2
   num_pp_candidates: 2
-  training_set_fractions_for_halting: [0.7, 0.8, 0.9, 1.0]
+  training_set_fractions_for_halting: [0.75, 1.0]
   exploration_factor: 0.5
   risk_factor: 0.5
 
