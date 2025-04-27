@@ -109,21 +109,27 @@ class PipelineEvaluator(MLLifecycle):
                                                                      exp_config_name=self.exp_config_name,
                                                                      run_num=task.run_num,
                                                                      seed=seed)
-        for (cur_test_compound_pp_quality, observation, test_multiple_models_metrics_df) in adaptive_pipeline_generator:
-            try:
-                # Simplify read/write concern to avoid transaction errors
-                session.start_transaction(write_concern=WriteConcern(w="majority", j=False), read_concern=ReadConcern("local"))
-                run_transaction_with_retry(adaptive_execution_transaction,
-                                           session,
-                                           db=self._db,
-                                           task=task,
-                                           exp_config_name=self.exp_config_name,
-                                           cur_test_compound_pp_quality=cur_test_compound_pp_quality)
-                commit_with_retry(session)
-            except Exception as e:
-                print(f"Transaction aborted: {e}")
-                session.abort_transaction()
-                session = self._db.client.start_session()
+        try:
+            for (cur_test_compound_pp_quality, observation, test_multiple_models_metrics_df) in adaptive_pipeline_generator:
+                try:
+                    # Simplify read/write concern to avoid transaction errors
+                    session.start_transaction(write_concern=WriteConcern(w="majority", j=False), read_concern=ReadConcern("local"))
+                    run_transaction_with_retry(adaptive_execution_transaction,
+                                               session,
+                                               db=self._db,
+                                               task=task,
+                                               exp_config_name=self.exp_config_name,
+                                               cur_test_compound_pp_quality=cur_test_compound_pp_quality)
+                    commit_with_retry(session)
+                except Exception as e:
+                    print(f"Transaction aborted: {e}")
+                    session.abort_transaction()
+                    session = self._db.client.start_session()
+
+        except Exception as e:
+            print(f"Pipeline execution failed:\n{e}")
+            self._db.close()
+            return None
 
         # Write virny metrics from the latest halting round into database
         # if cur_test_compound_pp_quality is greater than best_compound_pp_quality
@@ -259,7 +265,6 @@ class PipelineEvaluator(MLLifecycle):
         objective_values, constraints, extra_info = parse_result(copy.copy(test_objectives))
         constraints = self.update_constraints(constraints, objective_values)
 
-        print(f"Objectives: {objective_values}")
         observation = Observation(
             config=physical_pipeline.suggestion,
             objectives=objective_values,
