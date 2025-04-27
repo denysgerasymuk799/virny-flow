@@ -232,8 +232,10 @@ class PipelineEvaluator(MLLifecycle):
         (test_multiple_models_metrics_dct,
          train_multiple_models_metrics_dct) = self.run_model_evaluation_stage(main_base_flow_dataset=preprocessed_base_flow_dataset,
                                                                               experiment_seed=seed,
+                                                                              objectives=objectives,
                                                                               null_imputer_name=null_imputer_name,
                                                                               fairness_intervention_name=fairness_intervention_name,
+                                                                              fairness_intervention_params=fairness_intervention_params,
                                                                               model_name=model_name,
                                                                               model_params=model_params)
         elapsed_time = time.time() - start_time
@@ -460,8 +462,9 @@ class PipelineEvaluator(MLLifecycle):
 
         return models_dct
 
-    def run_model_evaluation_stage(self, main_base_flow_dataset, experiment_seed: int, null_imputer_name: str,
-                                   fairness_intervention_name: str, model_name: str, model_params: dict):
+    def run_model_evaluation_stage(self, main_base_flow_dataset, experiment_seed: int, objectives: list, null_imputer_name: str,
+                                   fairness_intervention_name: str, fairness_intervention_params: dict,
+                                   model_name: str, model_params: dict):
         models_dct = self._init_model_config(model_name=model_name,
                                              model_params=model_params,
                                              base_flow_dataset=main_base_flow_dataset)
@@ -471,29 +474,37 @@ class PipelineEvaluator(MLLifecycle):
         privileged_groups = [{sensitive_attribute: 1}]
         unprivileged_groups = [{sensitive_attribute: 0}]
         if fairness_intervention_name == FairnessIntervention.EOP.value:
+            # Enforce sensitive_attribute to be integer
+            main_base_flow_dataset.X_train_val[sensitive_attribute] = main_base_flow_dataset.X_train_val[sensitive_attribute].astype(int)
+            main_base_flow_dataset.X_test[sensitive_attribute] = main_base_flow_dataset.X_test[sensitive_attribute].astype(int)
             postprocessor = get_eq_odds_postprocessor(privileged_groups=privileged_groups,
                                                       unprivileged_groups=unprivileged_groups,
                                                       seed=experiment_seed)
             self.virny_config['postprocessing_sensitive_attribute'] = sensitive_attribute
         elif fairness_intervention_name == FairnessIntervention.ROC.value:
-            postprocessor_configs = self.fairness_intervention_config[FairnessIntervention.ROC.value]
+            # Enforce sensitive_attribute to be integer
+            main_base_flow_dataset.X_train_val[sensitive_attribute] = main_base_flow_dataset.X_train_val[sensitive_attribute].astype(int)
+            main_base_flow_dataset.X_test[sensitive_attribute] = main_base_flow_dataset.X_test[sensitive_attribute].astype(int)
             postprocessor = get_reject_option_classification_postprocessor(privileged_groups=privileged_groups,
                                                                            unprivileged_groups=unprivileged_groups,
-                                                                           postprocessor_configs=postprocessor_configs)
+                                                                           postprocessor_configs=fairness_intervention_params)
             self.virny_config['postprocessing_sensitive_attribute'] = sensitive_attribute
         else:
             postprocessor = None
             if fairness_intervention_name == FairnessIntervention.EGR.value:
-                inprocessor_configs = self.fairness_intervention_config[fairness_intervention_name]
-                models_dct = get_exponentiated_gradient_reduction_wrapper(inprocessor_configs=inprocessor_configs,
+                objective_names = [obj['metric'].lower() for obj in objectives]
+                constraint = "DemographicParity" if ("selection_rate_difference" in objective_names or
+                                                     "disparate_impact" in objective_names) else "EqualizedOdds"
+                fairness_intervention_params['constraints'] = constraint
+                models_dct = get_exponentiated_gradient_reduction_wrapper(estimator=models_dct[model_name],
+                                                                          inprocessor_configs=fairness_intervention_params,
                                                                           sensitive_attr_for_intervention=sensitive_attribute)
                 models_dct_key = list(models_dct.keys())[0]
                 models_dct = {model_name: models_dct[models_dct_key]}
             elif fairness_intervention_name == FairnessIntervention.AD.value:
-                inprocessor_configs = self.fairness_intervention_config[fairness_intervention_name]
                 models_dct = get_adversarial_debiasing_wrapper_config(privileged_groups=privileged_groups,
                                                                       unprivileged_groups=unprivileged_groups,
-                                                                      inprocessor_configs=inprocessor_configs,
+                                                                      inprocessor_configs=fairness_intervention_params,
                                                                       sensitive_attr_for_intervention=sensitive_attribute)
                 models_dct_key = list(models_dct.keys())[0]
                 models_dct = {model_name: models_dct[models_dct_key]}
@@ -515,6 +526,9 @@ class PipelineEvaluator(MLLifecycle):
         train_base_flow_dataset.X_test = main_base_flow_dataset.X_train_val
         train_base_flow_dataset.y_train_val = pd.DataFrame()
         train_base_flow_dataset.y_test = main_base_flow_dataset.y_train_val
+        if fairness_intervention_name in (FairnessIntervention.EOP.value, FairnessIntervention.ROC.value):
+            train_base_flow_dataset.X_test = train_base_flow_dataset.X_test.drop(columns=[sensitive_attribute])
+
         train_metrics_df = compute_metrics_with_fitted_bootstrap(fitted_bootstrap=models_fitted_bootstraps_dct[model_name],
                                                                  test_base_flow_dataset=train_base_flow_dataset,
                                                                  config=self.virny_config,
