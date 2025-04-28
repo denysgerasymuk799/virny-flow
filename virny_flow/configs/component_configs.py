@@ -4,7 +4,8 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from lightgbm import LGBMClassifier
-from openbox.utils.config_space import UniformIntegerHyperparameter, UniformFloatHyperparameter, CategoricalHyperparameter
+from openbox.utils.config_space import (UniformIntegerHyperparameter, UniformFloatHyperparameter,
+                                        CategoricalHyperparameter, Constant)
 from pytorch_tabular.models import GANDALFConfig
 from pytorch_tabular.config import OptimizerConfig, TrainerConfig
 from xgboost import XGBClassifier
@@ -88,31 +89,31 @@ FAIRNESS_INTERVENTION_CONFIG_SPACE = {
         "fi__Az": CategoricalHyperparameter("fi__Az", [0.0, 0.1, 0.5, 1.0, 5.0, 10.0]),
     },
     FairnessIntervention.AD.value: {
-        "fi__scope_name": CategoricalHyperparameter("fi__scope_name", ["adversarial_debiasing"]),
+        "fi__scope_name": Constant("fi__scope_name", "adversarial_debiasing"),
         "fi__adversary_loss_weight": UniformFloatHyperparameter("fi__adversary_loss_weight", 0.1, 0.5),
         "fi__num_epochs": UniformIntegerHyperparameter("fi__num_epochs", 50, 100, q=10),
         "fi__batch_size": CategoricalHyperparameter("fi__batch_size", [64, 128, 256]),
         "fi__classifier_num_hidden_units": CategoricalHyperparameter("fi__classifier_num_hidden_units", [100, 200, 300]),
-        "fi__debias": CategoricalHyperparameter("fi__debias", [True, False]),
+        "fi__debias": CategoricalHyperparameter("fi__debias", [True]),
     },
     FairnessIntervention.EGR.value: {
-        "fi__constraints": CategoricalHyperparameter("fi__constraints", ["DemographicParity", "EqualizedOdds"]),
-        "fi__eps": UniformFloatHyperparameter("fi__eps", 0.01, 0.1),
+        # "fi__constraints": CategoricalHyperparameter("fi__constraints", ["DemographicParity", "EqualizedOdds"]),
+        # "fi__eps": UniformFloatHyperparameter("fi__eps", 0.01, 0.1),
         "fi__max_iter": UniformIntegerHyperparameter("fi__max_iter", 50, 100, q=10),
-        "fi__nu": CategoricalHyperparameter("fi__nu", [0.1, 0.2, 0.3]),
-        "fi__eta0": UniformFloatHyperparameter("fi__eta0", 1.0, 2.0),
+        # "fi__nu": CategoricalHyperparameter("fi__nu", [0.1, 0.2, 0.3]),
+        # "fi__eta0": UniformFloatHyperparameter("fi__eta0", 1.0, 2.0),
         "fi__run_linprog_step": CategoricalHyperparameter("fi__run_linprog_step", [True, False]),
-        "fi__drop_prot_attr": CategoricalHyperparameter("fi__drop_prot_attr", [True, False]),
+        "fi__drop_prot_attr": CategoricalHyperparameter("fi__drop_prot_attr", [True]),
     },           
     FairnessIntervention.EOP.value: {},
     FairnessIntervention.ROC.value: {
-        "low_class_thresh": UniformFloatHyperparameter("low_class_thresh", 0.01, 0.1),
-        "high_class_thresh": UniformFloatHyperparameter("high_class_thresh", 0.9, 0.99),
-        "num_class_thresh": UniformIntegerHyperparameter("num_class_thresh", 50, 100, q=10),
-        "num_ROC_margin": UniformIntegerHyperparameter("num_ROC_margin", 20, 50, q=5),
-        "metric_name": CategoricalHyperparameter("metric_name", ["Statistical parity difference", "Average odds difference", "Equal opportunity difference"]),
-        "metric_ub": UniformFloatHyperparameter("metric_ub", 0.05, 0.1),
-        "metric_lb": UniformFloatHyperparameter("metric_lb", -0.1, -0.05),
+        "fi__low_class_thresh": UniformFloatHyperparameter("fi__low_class_thresh", 0.01, 0.1),
+        "fi__high_class_thresh": UniformFloatHyperparameter("fi__high_class_thresh", 0.9, 0.99),
+        "fi__num_class_thresh": UniformIntegerHyperparameter("fi__num_class_thresh", 50, 100, q=10),
+        "fi__num_ROC_margin": UniformIntegerHyperparameter("fi__num_ROC_margin", 20, 50, q=5),
+        "fi__metric_name": CategoricalHyperparameter("fi__metric_name", ["Statistical parity difference", "Average odds difference", "Equal opportunity difference"]),
+        "fi__metric_ub": UniformFloatHyperparameter("fi__metric_ub", 0.05, 0.1),
+        "fi__metric_lb": UniformFloatHyperparameter("fi__metric_lb", -0.1, -0.05),
     }
 }
 

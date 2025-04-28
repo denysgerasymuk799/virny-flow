@@ -1,0 +1,26 @@
+common_args:
+  exp_config_name: "test_heart"
+  run_nums: [1]
+  secrets_path: "/Users/denys_herasymuk/Research/NYU/VirnyFlow_Project/Code/virny-flow/virny_flow_demo/configs/secrets.env"
+
+pipeline_args:
+  dataset: "heart"
+  sensitive_attrs_for_intervention: ["gender"]
+  null_imputers: []
+  fairness_interventions: ["DIR", "AD", "EGR"]
+  models: ["lr_clf", "rf_clf", "lgbm_clf"]
+
+optimisation_args:
+  ref_point: [0.33, 0.05]
+  objectives:
+    - { name: "objective_1", metric: "F1", group: "overall", weight: 0.5 }
+    - { name: "objective_2", metric: "Equalized_Odds_TNR", group: "gender", weight: 0.5 }
+  max_total_pipelines_num: 20
+  num_workers: 2
+  num_pp_candidates: 2
+  training_set_fractions_for_halting: [0.75, 1.0]
+  exploration_factor: 0.5
+  risk_factor: 0.5
+
+virny_args:
+  sensitive_attributes_dct: {'gender': '1'}

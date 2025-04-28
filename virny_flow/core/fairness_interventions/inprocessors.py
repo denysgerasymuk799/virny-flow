@@ -22,26 +22,21 @@ def get_adversarial_debiasing_wrapper_config(privileged_groups, unprivileged_gro
                                           sess=session)
     models_config = {
         "AdversarialDebiasing": AdversarialDebiasingWrapper(inprocessor=debiased_model,
-                                                            sensitive_attr_for_intervention=sensitive_attr_for_intervention
-                                                            )
+                                                            sensitive_attr_for_intervention=sensitive_attr_for_intervention)
     }
     
     return models_config
 
 
-def get_exponentiated_gradient_reduction_wrapper(inprocessor_configs, sensitive_attr_for_intervention):
-    estimator = LogisticRegression({"C": 1.0, "solver": "lbfgs"})
+def get_exponentiated_gradient_reduction_wrapper(estimator, inprocessor_configs, sensitive_attr_for_intervention):
     debiased_model = ExponentiatedGradientReduction(estimator=estimator,
                                                     constraints=inprocessor_configs['constraints'],
-                                                    eps=inprocessor_configs['eps'],
                                                     max_iter=inprocessor_configs['max_iter'],
-                                                    nu=inprocessor_configs['nu'],
-                                                    eta0=inprocessor_configs['eta0'],
                                                     run_linprog_step=inprocessor_configs['run_linprog_step'],
                                                     drop_prot_attr=inprocessor_configs['drop_prot_attr'],)
     models_config = {
         "ExponentiatedGradientReduction": ExpGradientReductionWrapper(inprocessor=debiased_model,
-                                                        sensitive_attr_for_intervention=sensitive_attr_for_intervention)
+                                                                      sensitive_attr_for_intervention=sensitive_attr_for_intervention)
     }
     
     return models_config

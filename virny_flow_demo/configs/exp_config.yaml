@@ -7,9 +7,8 @@ pipeline_args:
   dataset: "diabetes"
   sensitive_attrs_for_intervention: ["Gender"]
   null_imputers: []
-  fairness_interventions: []
+  fairness_interventions: ["AD", "EGR"]
   models: ["lr_clf", "rf_clf", "lgbm_clf"]
-#  models: ["gandalf_clf"]
 
 optimisation_args:
   ref_point: [0.20, 0.20]
@@ -17,11 +16,11 @@ optimisation_args:
     - { name: "objective_1", metric: "F1", group: "overall", weight: 0.25 }
     - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "Gender", weight: 0.75 }
 #  max_trials: 5
-  max_time_budget: 60
-#  max_total_pipelines_num: 10
+#  max_time_budget: 60
+  max_total_pipelines_num: 20
   num_workers: 2
   num_pp_candidates: 2
-  training_set_fractions_for_halting: [0.7, 0.8, 0.9, 1.0]
+  training_set_fractions_for_halting: [0.5, 1.0]
   exploration_factor: 0.5
   risk_factor: 0.5
 

@@ -40,7 +40,7 @@ class AdversarialDebiasingWrapper:
                                                                      sensitive_attribute=self.sensitive_attr_for_intervention)
         test_dataset_pred = self.inprocessor.predict(test_binary_dataset)
         # Return 1 - test_dataset_pred.scores since scores are probabilities for label 1, not for label 0
-        return 1 - test_dataset_pred.scores
+        return 1 - test_dataset_pred.scores.flatten()
 
     def predict(self, X):
         y_empty = np.zeros(shape=X.shape[0])
@@ -49,7 +49,7 @@ class AdversarialDebiasingWrapper:
                                                                      target_column='target',
                                                                      sensitive_attribute=self.sensitive_attr_for_intervention)
         test_dataset_pred = self.inprocessor.predict(test_binary_dataset)
-        return test_dataset_pred.labels
+        return test_dataset_pred.labels.flatten()
 
     def __copy__(self):
         new_inprocessor = copy.copy(self.inprocessor)
