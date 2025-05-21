@@ -1,0 +1,26 @@
+
+pipeline_args:
+  dataset: "folk_emp"
+  sensitive_attrs_for_intervention: ["SEX", "RAC1P"]
+  null_imputers: ["median-mode", "miss_forest", "datawig"]
+  fairness_interventions: ["DIR", "AD"]
+  models: ["lr_clf", "rf_clf", "lgbm_clf", "gandalf_clf"]
+
+optimisation_args:
+  ref_point: [0.30, 0.10, 0.10]
+  objectives:
+    - { name: "obj_1", metric: "F1", group: "overall", weight: 0.25 }
+    - { name: "obj_2", metric: "FNRD", group: "SEX&RAC1P", weight: 0.5 }
+    - { name: "obj_3", metric: "Label_Stability", group: "overall", weight: 0.25 }
+  max_total_pipelines_num: 100
+  num_workers: 32
+  num_pp_candidates: 4
+  training_set_fractions_for_halting: [0.5, 1.0]
+  exploration_factor: 0.5
+  risk_factor: 0.5
+
+virny_args:
+  bootstrap_fraction: 0.8
+  n_estimators: 50
+  sensitive_attrs: {SEX: '2', RAC1P: ['2','3','4','5','6','7','8','9'], SEX&RAC1P: None}
+
