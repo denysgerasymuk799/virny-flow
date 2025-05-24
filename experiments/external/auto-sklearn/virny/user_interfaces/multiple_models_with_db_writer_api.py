@@ -1,0 +1,105 @@
+import pandas as pd
+from datetime import datetime, timezone
+
+from virny.custom_classes.base_dataset import BaseFlowDataset
+from virny.user_interfaces.multiple_models_api import run_metrics_computation
+
+
+def compute_metrics_with_db_writer(dataset: BaseFlowDataset, config, models_config: dict,
+                                   custom_tbl_fields_dct: dict, db_writer_func, postprocessor=None,
+                                   with_predict_proba: bool = True, notebook_logs_stdout: bool = False,
+                                   return_fitted_bootstrap: bool = False, verbose: int = 0):
+    """
+    Compute stability and accuracy metrics for each model in models_config. Arguments are defined as an input config object.
+    Save results to a database after each run appending fields and value from custom_tbl_fields_dct and using db_writer_func.
+
+    Return a dictionary where keys are model names, and values are metrics for sensitive attributes defined in config.
+
+    Parameters
+    ----------
+    dataset
+        BaseFlowDataset object that contains all needed attributes like target, features, numerical_columns etc.
+    config
+        Object that contains bootstrap_fraction, dataset_name, n_estimators, sensitive_attributes_dct attributes
+    models_config
+        Dictionary where keys are model names, and values are initialized models
+    custom_tbl_fields_dct
+        Dictionary where keys are column names and values to add to inserted metrics during saving results to a database
+    db_writer_func
+        Python function object has one argument (run_models_metrics_df) and save this metrics df to a target database
+    postprocessor
+        [Optional] Postprocessor object to apply to model predictions before metrics computation
+    with_predict_proba
+        [Optional] True, if models in models_config have a predict_proba method and can return probabilities for predictions,
+         False, otherwise. Note that if it is set to False, only metrics based on labels (not labels and probabilities) will be computed.
+         Ignored when a postprocessor is not None, and set to False in this case.
+    notebook_logs_stdout
+        [Optional] True, if this interface was execute in a Jupyter notebook,
+         False, otherwise.
+    return_fitted_bootstrap
+        [Optional] If True, the fitted bootstrap of models is returned. Can be useful to reuse this bootstrap on other test sets.
+         Default, False.
+    verbose
+        [Optional] Level of logs printing. The greater level provides more logs.
+            As for now, 0, 1, 2 levels are supported. Currently, verbose works only with notebook_logs_stdout = False.
+
+    """
+    # Currently, verbose works only with notebook_logs_stdout = False
+    if notebook_logs_stdout:
+        verbose = 0
+
+    multiple_models_metrics_dct = dict()
+    run_models_metrics_df = pd.DataFrame()
+    models_metrics_dct, models_fitted_bootstraps_dct = run_metrics_computation(dataset=dataset,
+                                                                               bootstrap_fraction=config.bootstrap_fraction,
+                                                                               dataset_name=config.dataset_name,
+                                                                               models_config=models_config,
+                                                                               n_estimators=config.n_estimators,
+                                                                               sensitive_attributes_dct=config.sensitive_attributes_dct,
+                                                                               random_state=config.random_state,
+                                                                               model_setting=config.model_setting,
+                                                                               computation_mode=config.computation_mode,
+                                                                               postprocessor=postprocessor,
+                                                                               postprocessing_sensitive_attribute=config.postprocessing_sensitive_attribute,
+                                                                               save_results=False,
+                                                                               with_predict_proba=with_predict_proba,
+                                                                               notebook_logs_stdout=notebook_logs_stdout,
+                                                                               verbose=verbose)
+
+    # Concatenate current run metrics with previous results and
+    # create melted_model_metrics_df to save it in a database
+    for model_name in models_metrics_dct.keys():
+        model_metrics_df = models_metrics_dct[model_name]
+        model_metrics_df['Dataset_Name'] = config.dataset_name
+        model_metrics_df['Num_Estimators'] = config.n_estimators
+
+        model_metrics_df_copy = model_metrics_df.copy(deep=True)  # Version copy for multiple_models_metrics_dct
+        # Append current run metrics to multiple_models_metrics_dct
+        if multiple_models_metrics_dct.get(model_name) is None:
+            multiple_models_metrics_dct[model_name] = model_metrics_df_copy
+        else:
+            multiple_models_metrics_dct[model_name] = pd.concat(
+                [multiple_models_metrics_dct[model_name], model_metrics_df_copy])
+
+        # Extend df with technical columns
+        model_metrics_df['Tag'] = 'OK'
+        model_metrics_df['Record_Create_Date_Time'] = datetime.now(timezone.utc)
+
+        for column, value in custom_tbl_fields_dct.items():
+            model_metrics_df[column] = value
+
+        subgroup_names = [col for col in model_metrics_df.columns if '_priv' in col or '_dis' in col] + ['overall']
+        melted_model_metrics_df = model_metrics_df.melt(
+            id_vars=[col for col in model_metrics_df.columns if col not in subgroup_names],
+            value_vars=subgroup_names,
+            var_name="Subgroup",
+            value_name="Metric_Value")
+        run_models_metrics_df = pd.concat([run_models_metrics_df, melted_model_metrics_df])
+
+    # Save results for this run in a database
+    db_writer_func(run_models_metrics_df)
+
+    if return_fitted_bootstrap:
+        return multiple_models_metrics_dct, models_fitted_bootstraps_dct
+
+    return multiple_models_metrics_dct

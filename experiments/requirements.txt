@@ -1,0 +1,1 @@
+virny_flow@git+https://github.com/denysgerasymuk799/virny-flow.git
