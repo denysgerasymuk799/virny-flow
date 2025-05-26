@@ -1,21 +1,45 @@
-# VirnyFlow
+# VirnyFlow: A Design Space for Responsible Model Development
 
-This repository contains the source code, scripts, and datasets for the Shades-of-Null benchmark. The benchmark uses state-of-the-art MVM techniques on a suite of novel evaluation settings on popular fairness benchmark datasets, including multi-mechanism missingness (when several different missingness patterns co-exist in the data) and missingness shift (when the missingness mechanism changes between development/training and deployment/testing), and using a large set of holistic evaluation metrics, including fairness and stability. The benchmark includes functionality for storing experiment results in a database, with MongoDB chosen for our purposes. Additionally, the benchmark is designed to be extensible, allowing researchers to incorporate custom datasets and apply new MVM techniques.
+<p align="center">
+    <img src="./docs/virnyflow_architecture.png" alt="System Design" width="75%">
+</p>
 
+This repository contains the source code for **VirnyFlow**, a flexible and scalable framework for responsible machine learning pipeline development. VirnyFlow enables multi-stage, multi-objective optimization of ML pipelines with support for fairness, stability, and uncertainty as optimization criteria. The system is designed to facilitate human-in-the-loop workflows through a modular architecture that integrates evaluation protocol definition, Bayesian optimization and distributed execution. The repository also includes experiment configurations, execution scripts, and benchmarking pipelines used in the paper *“VirnyFlow: A Design Space for Responsible Model Development.”*
 
-## How to start VirnyFlow
+## Repository Structure
 
-```shell
-/virny-flow/virny_flow_demo $ docker-compose up --build
+**`virny_flow/`**: Core library containing the main functionality
+  - `configs/`: Configuration files, constants, and data structures
+  - `core/`: Core components of the framework
+    - `custom_classes/`: Custom implementations for the framework
+    - `error_injectors/`: Components for injecting various types of errors into datasets
+    - `fairness_interventions/`: Implementations of fairness intervention techniques
+    - `null_imputers/`: Methods for imputing null values in datasets
+    - `utils/`: Utility functions used throughout the framework
+  - `task_manager/`: Components for distributed task management
+    - `database/`: Database interaction layer
+    - `domain_logic/`: Business logic for task management
+  - `user_interfaces/`: Interfaces for interacting with the system
+  - `visualizations/`: Components for visualization of results
+  - `external_dependencies/`: External libraries and dependencies
 
-# To stop all container use "docker-compose down --volumes"
+**`virny_flow_demo/`**: Demo implementation of VirnyFlow
+  - `configs/`: Configuration files for the demo
+  - `docker-compose.yaml`: Docker Compose file for running the demo
+  - `run_*.py`: Scripts for running different components of the system
 
-# KAFKA_BROKER env variable should be set to localhost:9093
-/virny-flow $ python3 -m virny_flow_demo.run_task_manager
+**`experiments/`**: Scripts and configurations for experiments
+  - `cluster/`: Configuration for distributed computing
+  - `scripts/`: Scripts for running experiments
+  - `notebooks/`: Jupyter notebooks for analysis and visualization
+  - `external/`: External dependencies for experiments
 
-/virny-flow $ python3 -m virny_flow_demo.run_worker
-```
+**`tests/`**: Test suite for VirnyFlow
+  - `custom_classes/`: Tests for custom class implementations
+  - `error_injectors/`: Tests for error injection components
+  - `logs/`: Test execution logs
 
+**`docs/`**: Documentation files, including architecture diagrams
 
 ## Setup
 
@@ -62,6 +86,93 @@ docker-compose down --volumes
 #docker-compose down --volumes && docker system prune -a --volumes -f
 ```
 
+## How to start VirnyFlow
+
+```shell
+/virny-flow/virny_flow_demo $ docker-compose up --build
+
+# To stop all container use "docker-compose down --volumes"
+
+# KAFKA_BROKER env variable should be set to localhost:9093
+/virny-flow $ python3 -m virny_flow_demo.run_task_manager
+
+/virny-flow $ python3 -m virny_flow_demo.run_worker
+```
+
+## Experiment Configuration
+
+VirnyFlow uses YAML configuration files to define experiment parameters. These files are typically located in the `virny_flow_demo/configs/` directory. Below is an explanation of the key configuration sections and parameters:
+
+### Configuration Structure
+
+The experiment configuration file is divided into several sections:
+
+```yaml
+common_args:
+  # General experiment settings
+  
+pipeline_args:
+  # Dataset and model pipeline configuration
+  
+optimisation_args:
+  # Multi-objective optimization settings
+  
+virny_args:
+  # Fairness evaluation settings
+```
+
+### Common Arguments
+
+```yaml
+common_args:
+  exp_config_name: "test_folk_emp"  # Name of the experiment configuration
+  run_nums: [1]                     # Run numbers for different random seeds
+  secrets_path: "path/to/secrets.env"  # Path to secrets file with database credentials
+```
+
+### Pipeline Arguments
+
+```yaml
+pipeline_args:
+  dataset: "folk_emp"                        # Dataset to use
+  sensitive_attrs_for_intervention: ["SEX", "RAC1P"]  # Attributes to use for fairness interventions
+  null_imputers: []                          # Null imputation techniques (if any)
+  fairness_interventions: []                 # Fairness intervention methods (if any)
+  models: ["lr_clf", "rf_clf", "lgbm_clf"]   # ML models to evaluate
+```
+
+### Optimization Arguments
+
+```yaml
+optimisation_args:
+  ref_point: [0.30, 0.10]  # Reference point for hypervolume calculation
+  
+  objectives:  # Multi-objective optimization targets
+    - { name: "objective_1", metric: "F1", group: "overall", weight: 0.25 }
+    - { name: "objective_2", metric: "Equalized_Odds_FNR", group: "SEX&RAC1P", weight: 0.75 }
+  
+  max_trials: 3               # Maximum number of optimization trials
+  num_workers: 2              # Number of parallel workers
+  num_pp_candidates: 2        # Number of preprocessing candidates to consider
+  
+  # Progressive training fractions to evaluate model performance
+  training_set_fractions_for_halting: [0.7, 0.8, 0.9, 1.0]
+  
+  exploration_factor: 0.5     # Controls exploration vs. exploitation trade-off
+  risk_factor: 0.5            # Controls risk tolerance in optimization
+```
+
+### Virny Arguments
+
+```yaml
+virny_args:
+  # Configuration for sensitive attributes and their values
+  sensitive_attributes_dct: {
+    'SEX': '2', 
+    'RAC1P': ['2', '3', '4', '5', '6', '7', '8', '9'], 
+    'SEX&RAC1P': None
+  }
+```
 
 ## Usage
 
