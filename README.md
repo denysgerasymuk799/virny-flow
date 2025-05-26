@@ -76,7 +76,7 @@ CONNECTION_STRING=your_mongodb_connection_string
 ## How to Start VirnyFlow
 
 1. Add your datasets to `virny_flow_demo/configs/datasets_config.py`. You need to use Virny wrapper BaseFlowDataset, where reading and basic preprocessing take place
-   ([link to documentation](https://dataresponsibly.github.io/Virny/examples/Multiple_Models_Interface_Use_Case/#preprocess-the-dataset-and-create-a-baseflowdataset-class)).
+   ([a link to documentation](https://dataresponsibly.github.io/Virny/examples/Multiple_Models_Interface_Use_Case/#preprocess-the-dataset-and-create-a-baseflowdataset-class)).
 
 2. Create an experiment config, similar to `virny_flow_demo/configs/exp_config.yaml`. A detailed description of each argument is available in the "Experiment Configuration" section below.
 
