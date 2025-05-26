@@ -6,6 +6,7 @@
 
 This repository contains the source code for **VirnyFlow**, a flexible and scalable framework for responsible machine learning pipeline development. VirnyFlow enables multi-stage, multi-objective optimization of ML pipelines with support for fairness, stability, and uncertainty as optimization criteria. The system is designed to facilitate human-in-the-loop workflows through a modular architecture that integrates evaluation protocol definition, Bayesian optimization and distributed execution. The repository also includes experiment configurations, execution scripts, and benchmarking pipelines used in the paper *“VirnyFlow: A Design Space for Responsible Model Development.”*
 
+
 ## Repository Structure
 
 **`virny_flow/`**: Core library containing the main functionality
@@ -40,6 +41,7 @@ This repository contains the source code for **VirnyFlow**, a flexible and scala
   - `logs/`: Test execution logs
 
 **`docs/`**: Documentation files, including architecture diagrams
+
 
 ## Setup
 
@@ -83,8 +85,8 @@ python3 -m virny_flow_demo.run_worker
 Shutdown the system:
 ```shell
 docker-compose down --volumes
-#docker-compose down --volumes && docker system prune -a --volumes -f
 ```
+
 
 ## How to start VirnyFlow
 
@@ -98,6 +100,7 @@ docker-compose down --volumes
 
 /virny-flow $ python3 -m virny_flow_demo.run_worker
 ```
+
 
 ## Experiment Configuration
 
@@ -174,46 +177,6 @@ virny_args:
   }
 ```
 
-## Usage
-
-### MVM technique evaluation
-
-This console command evaluates single or multiple null imputation techniques on the selected dataset. The argument `evaluation_scenarios` defines which evaluation scenarios to use. Available scenarios are listed in `configs/scenarios_config.py`, but users have an option to create own evaluation scenarios. `tune_imputers` is a bool parameter whether to tune imputers or to reuse hyper-parameters from NULL_IMPUTERS_HYPERPARAMS in `configs/null_imputers_config.py`. `save_imputed_datasets` is a bool parameter whether to save imputed datasets locally for future use. `dataset` and `null_imputers` arguments should be chosen from supported datasets and MVM techniques. `run_nums` defines run numbers for different seeds, for example, the number 3 corresponds to 300 seed defined in EXPERIMENT_RUN_SEEDS in `configs/constants.py`.
-```shell
-python ./scripts/impute_nulls_with_predictor.py \
-    --dataset folk \
-    --null_imputers [\"miss_forest\",\"datawig\"] \
-    --run_nums [1,2,3] \
-    --tune_imputers true \
-    --save_imputed_datasets true \
-    --evaluation_scenarios [\"exp1_mcar3\"]
-```
-
-### Models evaluation
-
-This console command evaluates single or multiple null imputation techniques along with ML models training on the selected dataset. Arguments `evaluation_scenarios`, `dataset`, `null_imputers`, `run_nums` are used for the same purpose as in `impute_nulls_with_predictor.py`. `models` defines which ML models to evaluate in the pipeline. `ml_impute` is a bool argument which decides whether to impute null dynamically or use precomputed saved datasets with imputed values (if they are available).
-```shell
-python ./scripts/evaluate_models.py \
-    --dataset folk \
-    --null_imputers [\"miss_forest\",\"datawig\"] \
-    --models [\"lr_clf\",\"mlp_clf\"] \
-    --run_nums [1,2,3] \
-    --tune_imputers true \
-    --save_imputed_datasets true \
-    --ml_impute true \
-    --evaluation_scenarios [\"exp1_mcar3\"]
-```
-
-### Baseline evaluation
-
-This console command evaluates ML models on clean datasets (without injected nulls) for getting baseline metrics. Arguments follow same logic as in `evaluate_models.py`.
-```shell
-python ./scripts/evaluate_baseline.py \
-    --dataset folk \
-    --models [\"lr_clf\",\"mlp_clf\"] \
-    --run_nums [1,2,3]
-```
-
 
 ## Extending the benchmark
 
@@ -274,39 +237,3 @@ def new_imputation_method(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_l
 2. Add the configuration of your new imputer to `configs/null_imputers_config.py` to the _NULL_IMPUTERS_CONFIG_ dictionary.
 3. Add your imputer name to the _ErrorRepairMethod_ enum in `configs/constants.py`.
 4. [Optional] If a standard imputation pipeline does not work for a new null imputer, add a new if-statement to `source/custom_classes/benchmark.py` to the _impute_nulls method.
-
-
-### Adding a new evaluation scenario
-
-1. Add a configuration for the new _missingness scenario_ and the desired dataset to the `ERROR_INJECTION_SCENARIOS_CONFIG` dict in `configs/scenarios_config.py`. Missingness scenario should follow the structure below: `missing_features` are columns for null injection, and `setting` is a dict, specifying error rates and conditions for error injection.
-```python
-ACS_INCOME_DATASET: {
-    "MCAR": [
-        {
-            'missing_features': ['WKHP', 'AGEP', 'SCHL', 'MAR'],
-            'setting': {'error_rates': [0.1, 0.2, 0.3, 0.4, 0.5]},
-        },
-    ],
-    "MAR": [
-        {
-            'missing_features': ['WKHP', 'SCHL'],
-            'setting': {'condition': ('SEX', '2'), 'error_rates': [0.08, 0.12, 0.20, 0.28, 0.35]}
-        }
-    ],
-    ...
-}
-```
-2. Create a new _evaluation scenario_ with the new _missingness scenario_ in the `EVALUATION_SCENARIOS_CONFIG` dict in `configs/scenarios_config.py`. A new _missingness scenario_ can be used alone or combined with others. `train_injection_scenario` and `test_injection_scenarios` define settings of error injection for train and test sets, respectively. `test_injection_scenarios` takes a list as an input since the benchmark has an optimisation for multiple test sets.
-```python
-EVALUATION_SCENARIOS_CONFIG = {
-    'mixed_exp': {
-        'train_injection_scenario': 'MCAR1 & MAR1 & MNAR1',
-        'test_injection_scenarios': ['MCAR1 & MAR1 & MNAR1'],
-    },
-    'exp1_mcar3': {
-        'train_injection_scenario': 'MCAR3',
-        'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
-    },
-    ...
-}
-```
