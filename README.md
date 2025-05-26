@@ -45,7 +45,7 @@ This repository contains the source code for **VirnyFlow**, a flexible and scala
 
 ## Setup
 
-Create a virtual environment and install requirements:
+Create a virtual environment with Python 3.9 and install the following requirements (tested on Apple Silicon M2 and Ubuntu 22.04):
 ```shell
 python -m venv venv 
 source venv/bin/activate
@@ -53,7 +53,7 @@ pip3 install --upgrade pip3
 pip3 install -r requiremnents.txt
 ```
 
-Install datawig:
+[Optional] Install datawig:
 ```shell
 pip3 install mxnet-cu110
 pip3 install datawig --no-deps
@@ -63,42 +63,46 @@ pip3 install datawig --no-deps
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-11.0/compat
 ```
 
-Add MongoDB secrets (optional)
+Add MongoDB secrets (optional). You can deploy a free 500-MB MongoDB cluster on [Atlas](https://www.mongodb.com/docs/atlas/tutorial/deploy-free-tier-cluster/).
 ```dotenv
-# Create configs/secrets.env file with database variables
+# Create virny_flow_demo/configs/secrets.env file with database variables
 DB_NAME=your_mongodb_name
 CONNECTION_STRING=your_mongodb_connection_string
 ```
 
-Start the system for local debugging:
+
+## How to Start VirnyFlow
+
+1. Add your datasets to `virny_flow_demo/configs/datasets_config.py`. You need to use Virny wrapper BaseFlowDataset, where reading and basic preprocessing take place
+   ([link to documentation](https://dataresponsibly.github.io/Virny/examples/Multiple_Models_Interface_Use_Case/#preprocess-the-dataset-and-create-a-baseflowdataset-class)).
+
+2. Create an experiment config, similar to `virny_flow_demo/configs/exp_config.yaml`. A detailed description of each argument is available in the "Experiment Configuration" section below.
+
+3. Start the system locally and wait for its termination:
 ```shell
 # Start Kafka
-docker-compose up --build
-
-# Start TaskManager in the root dir
-python3 -m virny_flow_demo.run_task_manager
-
-# Start Worker in the root dir
-python3 -m virny_flow_demo.run_worker
-```
-
-Shutdown the system:
-```shell
-docker-compose down --volumes
-```
-
-
-## How to start VirnyFlow
-
-```shell
 /virny-flow/virny_flow_demo $ docker-compose up --build
 
-# To stop all container use "docker-compose down --volumes"
-
-# KAFKA_BROKER env variable should be set to localhost:9093
+# Start TaskManager in the root dir
 /virny-flow $ python3 -m virny_flow_demo.run_task_manager
 
+# Start Worker in the root dir
 /virny-flow $ python3 -m virny_flow_demo.run_worker
+```
+
+4. When the execution is complete, shutdown Kafka using the following command:
+```shell
+/virny-flow/virny_flow_demo $ docker-compose down --volumes
+```
+
+5. Look at the metrics of the tuned ML pipelines using VirnyView (more details [in the documentation](https://dataresponsibly.github.io/Virny/introduction/virnyview_overview/)).
+```shell
+/virny-flow $ python3 -m virny_flow_demo.run_virnyview
+```
+
+6. Look at the progress of the Bayesian optimization using OpenBox UI.
+```shell
+/virny-flow $ python3 -m virny_flow_demo.run_openbox_ui
 ```
 
 
@@ -176,64 +180,3 @@ virny_args:
     'SEX&RAC1P': None
   }
 ```
-
-
-## Extending the benchmark
-
-### Adding a new dataset
-
-1. To add a new dataset, you need to use Virny wrapper BaseFlowDataset, where reading and basic preprocessing take place
-   ([link to documentation](https://dataresponsibly.github.io/Virny/examples/Multiple_Models_Interface_Use_Case/#preprocess-the-dataset-and-create-a-baseflowdataset-class)).
-2. Create a `config yaml` file in `configs/yaml_files` with settings for the number of estimators, bootstrap fraction and sensitive attributes dict like in example below.
-```yaml
-dataset_name: folk
-bootstrap_fraction: 0.8
-n_estimators: 50
-computation_mode: error_analysis
-sensitive_attributes_dct: {'SEX': '2', 'RAC1P': ['2', '3', '4', '5', '6', '7', '8', '9'], 'SEX & RAC1P': None}
-```
-3. In `configs/dataset_config.py`, add a newly created wrapper for your dataset specifing kwarg arguments, test set fraction and config yaml path in the `DATASET_CONFIG` dict.
-
-
-### Adding a new ML model
-
-1. To add a new model, add the model name to `MLModels` enum in `configs/constants.py`.
-2. Set up a model instance and hyper-parameters grid for tuning inside the function `get_models_params_for_tuning` in `configs/models_config_for_tuning.py`. Model instance should inherit sklearn BaseEstimator from scikit-learn in order to support logic with tuning and fitting model ([link to documentation](https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html)).
-
-
-### Adding a new null imputer
-
-1. Create a new imputation method for your imputer in `source/null_imputers/imputation_methods.py` similar to:
-```python
-def new_imputation_method(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: list,
-                          numeric_columns_with_nulls: list, categorical_columns_with_nulls: list,
-                          hyperparams: dict, **kwargs):
-    """
-    This method imputes nulls using the new null imputer method.
-    
-    Arguments:
-        X_train_with_nulls -- a training features df with nulls in numeric_columns_with_nulls and categorical_columns_with_nulls columns
-        X_tests_with_nulls_lst -- a list of different X test dfs with nulls in numeric_columns_with_nulls and categorical_columns_with_nulls columns
-        numeric_columns_with_nulls -- a list of numerical column names with nulls
-        categorical_columns_with_nulls -- a list of categorical column names with nulls
-        hyperparams -- a dictionary of tuned hyperparams for the null imputer
-        kwargs -- all other params needed for the null imputer
-    
-    Returns:
-        X_train_imputed (pd.DataFrame) -- a training features df with imputed columns defined in numeric_columns_with_nulls
-                                          and categorical_columns_with_nulls
-        X_tests_imputed_lst (list) -- a list of test features df with imputed columns defined in numeric_columns_with_nulls 
-                                         and categorical_columns_with_nulls
-        null_imputer_params_dct (dict) -- a dictionary where a keys is a column name with nulls, and 
-                                          a value is a dictionary of null imputer parameters used to impute this column
-    """
-    
-    # Write here either a call to the algorithm or the algorithm itself
-    ...
-    
-    return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct
-```
-
-2. Add the configuration of your new imputer to `configs/null_imputers_config.py` to the _NULL_IMPUTERS_CONFIG_ dictionary.
-3. Add your imputer name to the _ErrorRepairMethod_ enum in `configs/constants.py`.
-4. [Optional] If a standard imputation pipeline does not work for a new null imputer, add a new if-statement to `source/custom_classes/benchmark.py` to the _impute_nulls method.
