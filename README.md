@@ -43,6 +43,7 @@ This repository contains the source code for **VirnyFlow**, a flexible and scala
 **`docs/`**: Documentation files, including architecture diagrams
 
 
+
 ## Setup
 
 Create a virtual environment with Python 3.9 and install the following requirements (tested on Apple Silicon M2 and Ubuntu 22.04):
@@ -53,7 +54,7 @@ pip3 install --upgrade pip3
 pip3 install -r requiremnents.txt
 ```
 
-[Optional] Install datawig:
+_[Optional]_ Install datawig:
 ```shell
 pip3 install mxnet-cu110
 pip3 install datawig --no-deps
@@ -69,6 +70,7 @@ Add MongoDB secrets (optional). You can deploy a free 500-MB MongoDB cluster on 
 DB_NAME=your_mongodb_name
 CONNECTION_STRING=your_mongodb_connection_string
 ```
+
 
 
 ## How to Start VirnyFlow
@@ -104,6 +106,7 @@ CONNECTION_STRING=your_mongodb_connection_string
 ```shell
 /virny-flow $ python3 -m virny_flow_demo.run_openbox_ui
 ```
+
 
 
 ## Experiment Configuration
@@ -180,3 +183,36 @@ virny_args:
     'SEX&RAC1P': None
   }
 ```
+
+
+
+## Comparison with Existing ML Systems
+
+The below table summarizes a list of existing ML systems we compare VirnyFlow with, their source repos, papers, and links to our adaptation in code. 
+
+<div style="overflow-x:auto;">
+
+| Name          | Source Paper                                                                                                                                                                                                                                                                            | Source Repo                                                                                         | Adapted Implementation                     |
+|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|--------------------------------------------|
+| Alpine Meadow | [Zeyuan Shang, Emanuel Zgraggen, Benedetto Buratti, Ferdinand Kossmann, Philipp Eichmann, Yeounoh Chung, Carsten Binnig, Eli Upfal, and Tim Kraska. 2019. Democratizing data science through interactive curation of ml pipelines.](https://dl.acm.org/doi/abs/10.1145/3299869.3319863) | Shared by the authors privately                                                                     | Hidden as for the authors' request         |
+| auto-sklearn  | [Matthias Feurer, Katharina Eggensperger, Stefan Falkner, Marius Lindauer, and Frank Hutter. 2022. Auto-sklearn 2.0: Hands-free automl via meta-learning.](https://dl.acm.org/doi/abs/10.5555/3586589.3586850)                                                                            | [GitHub](https://github.com/automl/auto-sklearn) | [Code](experiments/external/auto-sklearn/) |
+
+</div>
+
+
+
+## Experimental Results Reproducibility
+
+Table summarizing details for reproducibility of experimental results.
+
+<div style="overflow-x:auto;">
+
+| Name                                                                                      | Description                                                                                                                 | Execution Scripts                                       | Visualizations                                                    |
+|-------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|-------------------------------------------------------------------|
+| **Experiment 1:** Functionality of the System [_Section 4.2 in the paper_].               | Is our system able to optimize ML pipelines according to different multi-objective optimization criteria?                   | [Bash scripts](./experiments/cluster/case_studies_exp/) | [Plots](./experiments/notebooks/visualizations/case_studies_exp/) |
+| **Experiment 2:** Performance Comparison with Other Systems [_Section 4.3 in the paper_]. | How does our system compare to state-of-the-art AutoML systems in terms of performance?                                     | [Bash scripts](./experiments/cluster/comparison_exp2/) | [Plots](./experiments/notebooks/visualizations/comparison_exp/) |
+| **Experiment 3:** Scalability [_Section 4.4 and Appendix A.1 in the paper_].              | How does our system compare to state-of-the-art AutoML systems in terms of scalability?                                     | [Bash scripts](./experiments/cluster/scalability_exp/) | [Plots](./experiments/notebooks/visualizations/scalability_exp/) |
+| **Experiment 4.1:** System Configuration Sensitivity [_Section 4.5 in the paper_].        | What is the sensitivity of our system to varying the number of physical pipeline candidates per logical pipeline selection? | [Bash scripts](./experiments/cluster/sensitivity_exp/) | [Plots](./experiments/notebooks/visualizations/sensitivity_exp/) |
+| **Experiment 4.2:** System Configuration Sensitivity [_Section 4.5 in the paper_].        | What is the sensitivity of our system to varying the training set fractions for pruning?                                    | [Bash scripts](./experiments/cluster/sensitivity_exp2/) | [Plots](./experiments/notebooks/visualizations/sensitivity_exp/) |
+
+</div>
