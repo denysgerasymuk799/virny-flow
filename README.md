@@ -7,7 +7,7 @@
 This repository contains the source code for **VirnyFlow**, a flexible and scalable framework for responsible machine learning pipeline development. VirnyFlow enables multi-stage, multi-objective optimization of ML pipelines with support for fairness, stability, and uncertainty as optimization criteria. The system is designed to facilitate human-in-the-loop workflows through a modular architecture that integrates evaluation protocol definition, Bayesian optimization and distributed execution. The repository also includes experiment configurations, execution scripts, and benchmarking pipelines used in the paper *“VirnyFlow: A Design Space for Responsible Model Development.”*
 
 
-## Repository Structure
+## 📒 Repository Structure
 
 **`virny_flow/`**: Core library containing the main functionality
   - `configs/`: Configuration files, constants, and data structures
@@ -44,7 +44,7 @@ This repository contains the source code for **VirnyFlow**, a flexible and scala
 
 
 
-## Setup
+## 🛠️ Setup
 
 Create a virtual environment with Python 3.9 and install the following requirements (tested on Apple Silicon M2 and Ubuntu 22.04):
 ```shell
@@ -73,7 +73,7 @@ CONNECTION_STRING=your_mongodb_connection_string
 
 
 
-## How to Start VirnyFlow
+## 🚀 How to Start VirnyFlow
 
 1. Add your datasets to `virny_flow_demo/configs/datasets_config.py`. You need to use Virny wrapper BaseFlowDataset, where reading and basic preprocessing take place
    ([a link to documentation](https://dataresponsibly.github.io/Virny/examples/Multiple_Models_Interface_Use_Case/#preprocess-the-dataset-and-create-a-baseflowdataset-class)).
@@ -109,7 +109,7 @@ CONNECTION_STRING=your_mongodb_connection_string
 
 
 
-## Experiment Configuration
+## ⚙️ Experiment Configuration
 
 VirnyFlow uses YAML configuration files to define experiment parameters. These files are typically located in the `virny_flow_demo/configs/` directory. Below is an explanation of the key configuration sections and parameters:
 
@@ -186,7 +186,7 @@ virny_args:
 
 
 
-## Comparison with Existing ML Systems
+## ⚖️ Comparison with Existing ML Systems
 
 The below table summarizes a list of existing ML systems we compare VirnyFlow with, their source repos, papers, and links to our adaptation in code. 
 
@@ -201,7 +201,7 @@ The below table summarizes a list of existing ML systems we compare VirnyFlow wi
 
 
 
-## Experimental Results Reproducibility
+## 🔬 Experimental Results Reproducibility
 
 Table summarizing details for reproducibility of experimental results.
 
