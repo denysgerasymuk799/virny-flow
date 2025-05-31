@@ -1,0 +1,560 @@
+var info={
+  "data": {
+    "num_objectives": 2,
+    "num_constraints": 0,
+    "advance": true,
+    "line_data": [
+      {
+        "best": [
+          [
+            1,
+            0.274643
+          ]
+        ],
+        "infeasible": [],
+        "feasible": [
+          [
+            2,
+            0.281381
+          ],
+          [
+            3,
+            0.279803
+          ],
+          [
+            4,
+            0.276428
+          ],
+          [
+            5,
+            0.281171
+          ],
+          [
+            6,
+            0.276574
+          ],
+          [
+            7,
+            0.274906
+          ],
+          [
+            8,
+            0.282212
+          ]
+        ]
+      },
+      {
+        "best": [
+          [
+            1,
+            0.034264
+          ],
+          [
+            2,
+            0.015062
+          ],
+          [
+            4,
+            0.012416
+          ],
+          [
+            5,
+            0.001775
+          ],
+          [
+            7,
+            0.000595
+          ]
+        ],
+        "infeasible": [],
+        "feasible": [
+          [
+            3,
+            0.055856
+          ],
+          [
+            6,
+            0.005369
+          ],
+          [
+            8,
+            0.034085
+          ]
+        ]
+      }
+    ],
+    "cons_line_data": [],
+    "cons_list_rev": [],
+    "parallel_data": {
+      "data": [
+        [
+          1,
+          0.20071324869673113,
+          256,
+          300,
+          true,
+          50,
+          "adversarial_debiasing",
+          -1,
+          950,
+          900,
+          1431,
+          0.274643,
+          0.034264
+        ],
+        [
+          2,
+          0.19529422205652383,
+          128,
+          200,
+          true,
+          50,
+          "adversarial_debiasing",
+          9,
+          250,
+          850,
+          176,
+          0.281381,
+          0.015062
+        ],
+        [
+          3,
+          0.16186364512017637,
+          128,
+          300,
+          true,
+          50,
+          "adversarial_debiasing",
+          6,
+          700,
+          750,
+          1902,
+          0.279803,
+          0.055856
+        ],
+        [
+          4,
+          0.11589404374419261,
+          128,
+          200,
+          true,
+          80,
+          "adversarial_debiasing",
+          -1,
+          550,
+          650,
+          2686,
+          0.276428,
+          0.012416
+        ],
+        [
+          5,
+          0.4613318294629162,
+          256,
+          100,
+          true,
+          90,
+          "adversarial_debiasing",
+          4,
+          350,
+          500,
+          3000,
+          0.281171,
+          0.001775
+        ],
+        [
+          6,
+          0.3,
+          64,
+          100,
+          true,
+          75,
+          "adversarial_debiasing",
+          3,
+          550,
+          525,
+          20,
+          0.276574,
+          0.005369
+        ],
+        [
+          7,
+          0.43467855816690937,
+          128,
+          300,
+          true,
+          80,
+          "adversarial_debiasing",
+          8,
+          550,
+          750,
+          333,
+          0.274906,
+          0.000595
+        ],
+        [
+          8,
+          0.3132035651773178,
+          256,
+          300,
+          true,
+          60,
+          "adversarial_debiasing",
+          5,
+          600,
+          900,
+          2215,
+          0.282212,
+          0.034085
+        ]
+      ],
+      "schema": [
+        "Uid",
+        "fi__adversary_loss_weight",
+        "fi__batch_size",
+        "fi__classifier_num_hidden_units",
+        "fi__debias",
+        "fi__num_epochs",
+        "fi__scope_name",
+        "model__max_depth",
+        "model__min_data_in_leaf",
+        "model__n_estimators",
+        "model__num_leaves",
+        "Objs 1",
+        "Objs 2"
+      ],
+      "visualMap": {
+        "min": 1,
+        "max": 8,
+        "dimension": 0
+      }
+    },
+    "table_list": [
+      [
+        1,
+        [
+          0.274643,
+          0.034264
+        ],
+        null,
+        {
+          "fi__adversary_loss_weight": 0.20071324869673113,
+          "fi__batch_size": 256,
+          "fi__classifier_num_hidden_units": 300,
+          "fi__debias": true,
+          "fi__num_epochs": 50,
+          "fi__scope_name": "adversarial_debiasing",
+          "model__max_depth": -1,
+          "model__min_data_in_leaf": 950,
+          "model__n_estimators": 900,
+          "model__num_leaves": 1431
+        },
+        "'fi__adversary_loss_weight': 0.200",
+        0,
+        65.541
+      ],
+      [
+        2,
+        [
+          0.281381,
+          0.015062
+        ],
+        null,
+        {
+          "fi__adversary_loss_weight": 0.19529422205652383,
+          "fi__batch_size": 128,
+          "fi__classifier_num_hidden_units": 200,
+          "fi__debias": true,
+          "fi__num_epochs": 50,
+          "fi__scope_name": "adversarial_debiasing",
+          "model__max_depth": 9,
+          "model__min_data_in_leaf": 250,
+          "model__n_estimators": 850,
+          "model__num_leaves": 176
+        },
+        "'fi__adversary_loss_weight': 0.195",
+        0,
+        102.505
+      ],
+      [
+        3,
+        [
+          0.279803,
+          0.055856
+        ],
+        null,
+        {
+          "fi__adversary_loss_weight": 0.16186364512017637,
+          "fi__batch_size": 128,
+          "fi__classifier_num_hidden_units": 300,
+          "fi__debias": true,
+          "fi__num_epochs": 50,
+          "fi__scope_name": "adversarial_debiasing",
+          "model__max_depth": 6,
+          "model__min_data_in_leaf": 700,
+          "model__n_estimators": 750,
+          "model__num_leaves": 1902
+        },
+        "'fi__adversary_loss_weight': 0.161",
+        0,
+        108.725
+      ],
+      [
+        4,
+        [
+          0.276428,
+          0.012416
+        ],
+        null,
+        {
+          "fi__adversary_loss_weight": 0.11589404374419261,
+          "fi__batch_size": 128,
+          "fi__classifier_num_hidden_units": 200,
+          "fi__debias": true,
+          "fi__num_epochs": 80,
+          "fi__scope_name": "adversarial_debiasing",
+          "model__max_depth": -1,
+          "model__min_data_in_leaf": 550,
+          "model__n_estimators": 650,
+          "model__num_leaves": 2686
+        },
+        "'fi__adversary_loss_weight': 0.115",
+        0,
+        167.879
+      ],
+      [
+        5,
+        [
+          0.281171,
+          0.001775
+        ],
+        null,
+        {
+          "fi__adversary_loss_weight": 0.4613318294629162,
+          "fi__batch_size": 256,
+          "fi__classifier_num_hidden_units": 100,
+          "fi__debias": true,
+          "fi__num_epochs": 90,
+          "fi__scope_name": "adversarial_debiasing",
+          "model__max_depth": 4,
+          "model__min_data_in_leaf": 350,
+          "model__n_estimators": 500,
+          "model__num_leaves": 3000
+        },
+        "'fi__adversary_loss_weight': 0.461",
+        0,
+        98.786
+      ],
+      [
+        6,
+        [
+          0.276574,
+          0.005369
+        ],
+        null,
+        {
+          "fi__adversary_loss_weight": 0.3,
+          "fi__batch_size": 64,
+          "fi__classifier_num_hidden_units": 100,
+          "fi__debias": true,
+          "fi__num_epochs": 75,
+          "fi__scope_name": "adversarial_debiasing",
+          "model__max_depth": 3,
+          "model__min_data_in_leaf": 550,
+          "model__n_estimators": 525,
+          "model__num_leaves": 20
+        },
+        "'fi__adversary_loss_weight': 0.3, ",
+        0,
+        245.785
+      ],
+      [
+        7,
+        [
+          0.274906,
+          0.000595
+        ],
+        null,
+        {
+          "fi__adversary_loss_weight": 0.43467855816690937,
+          "fi__batch_size": 128,
+          "fi__classifier_num_hidden_units": 300,
+          "fi__debias": true,
+          "fi__num_epochs": 80,
+          "fi__scope_name": "adversarial_debiasing",
+          "model__max_depth": 8,
+          "model__min_data_in_leaf": 550,
+          "model__n_estimators": 750,
+          "model__num_leaves": 333
+        },
+        "'fi__adversary_loss_weight': 0.434",
+        0,
+        178.589
+      ],
+      [
+        8,
+        [
+          0.282212,
+          0.034085
+        ],
+        null,
+        {
+          "fi__adversary_loss_weight": 0.3132035651773178,
+          "fi__batch_size": 256,
+          "fi__classifier_num_hidden_units": 300,
+          "fi__debias": true,
+          "fi__num_epochs": 60,
+          "fi__scope_name": "adversarial_debiasing",
+          "model__max_depth": 5,
+          "model__min_data_in_leaf": 600,
+          "model__n_estimators": 900,
+          "model__num_leaves": 2215
+        },
+        "'fi__adversary_loss_weight': 0.313",
+        0,
+        77.674
+      ]
+    ],
+    "pareto_data": {
+      "ref_point": [
+        0.33,
+        0.05
+      ],
+      "hv": [
+        [
+          1,
+          0.001
+        ],
+        [
+          2,
+          0.002
+        ],
+        [
+          3,
+          0.002
+        ],
+        [
+          4,
+          0.002
+        ],
+        [
+          5,
+          0.003
+        ],
+        [
+          6,
+          0.003
+        ],
+        [
+          7,
+          0.003
+        ],
+        [
+          8,
+          0.003
+        ]
+      ],
+      "pareto_point": [
+        [
+          0.2749062568928755,
+          0.000594711676732862
+        ],
+        [
+          0.2746432491767289,
+          0.034264272361230974
+        ]
+      ],
+      "pareto_point_feasible": [
+        [
+          0.2746432491767289,
+          0.034264272361230974
+        ],
+        [
+          0.2813807531380753,
+          0.015062104544147248
+        ],
+        [
+          0.27980280848521066,
+          0.0558560720448662
+        ],
+        [
+          0.2764275256222548,
+          0.012416145383951638
+        ],
+        [
+          0.28117067343586677,
+          0.0017748777681909633
+        ],
+        [
+          0.2765740132778872,
+          0.0053686727063561035
+        ],
+        [
+          0.2749062568928755,
+          0.000594711676732862
+        ],
+        [
+          0.2822122571001495,
+          0.03408541846419322
+        ]
+      ],
+      "pareto_point_infeasible": [],
+      "all_points": [
+        [
+          0.2746432491767289,
+          0.034264272361230974
+        ],
+        [
+          0.2813807531380753,
+          0.015062104544147248
+        ],
+        [
+          0.27980280848521066,
+          0.0558560720448662
+        ],
+        [
+          0.2764275256222548,
+          0.012416145383951638
+        ],
+        [
+          0.28117067343586677,
+          0.0017748777681909633
+        ],
+        [
+          0.2765740132778872,
+          0.0053686727063561035
+        ],
+        [
+          0.2749062568928755,
+          0.000594711676732862
+        ],
+        [
+          0.2822122571001495,
+          0.03408541846419322
+        ]
+      ]
+    },
+    "task_inf": {
+      "table_field": [
+        "Task Id",
+        "Advisor Type",
+        "Surrogate Type",
+        "Current Run",
+        "Max Runs",
+        "Max Runtime Per Trial"
+      ],
+      "table_data": [
+        "OpenBox",
+        "default",
+        "prf",
+        8,
+        200,
+        null
+      ]
+    },
+    "importance_data": null,
+    "pred_label_data": null,
+    "grade_data": null,
+    "cons_pred_label_data": null
+  }
+};

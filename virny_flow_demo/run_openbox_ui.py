@@ -46,11 +46,11 @@ def prepare_history(data: dict, config_space: ConfigurationSpace, defined_object
 
 if __name__ == '__main__':
     # Input variables
-    exp_config_name = 'case_studies_exp_folk_pubcov_cs2_w_acc_0_5_w_fair_0_5'
-    lp_name = 'None&NO_FAIRNESS_INTERVENTION&lgbm_clf'
-    run_num = 1
-    max_trials = 100
-    ref_point = [0.50, 0.15]
+    exp_config_name = 'case_studies_exp_folk_emp_cs1_w_acc_0_5_w_fair_0_5'
+    lp_name = 'None&NO_FAIRNESS_INTERVENTION&rf_clf'
+    run_num = 2
+    max_trials = 200
+    ref_point = [0.30, 0.10]
 
     # Read an experimental config
     db_secrets_path = pathlib.Path(__file__).parent.joinpath('configs').joinpath('secrets.env')
