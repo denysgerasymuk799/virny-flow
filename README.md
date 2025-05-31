@@ -4,7 +4,7 @@
     <img src="./docs/virnyflow_architecture.png" alt="System Design" width="75%">
 </p>
 
-This repository contains the source code for **VirnyFlow**, a flexible and scalable framework for responsible machine learning pipeline development. VirnyFlow enables multi-stage, multi-objective optimization of ML pipelines with support for fairness, stability, and uncertainty as optimization criteria. The system is designed to facilitate human-in-the-loop workflows through a modular architecture that integrates evaluation protocol definition, Bayesian optimization and distributed execution. The repository also includes experiment configurations, execution scripts, and benchmarking pipelines used in the paper *“VirnyFlow: A Design Space for Responsible Model Development.”*
+This repository contains the source code for **VirnyFlow**, a flexible and scalable framework for responsible machine learning pipeline development. VirnyFlow enables multi-stage, multi-objective optimization of ML pipelines with support for fairness, stability, and uncertainty as optimization criteria. The system is designed to facilitate human-in-the-loop workflows through a modular architecture that integrates evaluation protocol definition, Bayesian optimization and distributed execution. The repository also includes experiment configurations, execution scripts, and benchmarking pipelines used in the *“VirnyFlow: A Design Space for Responsible Model Development”* paper. The full version of the paper is available via [this link](https://github.com/denysgerasymuk799/virny-flow/blob/main/docs/virnyflow_full.pdf).
 
 
 ## 📒 Repository Structure
