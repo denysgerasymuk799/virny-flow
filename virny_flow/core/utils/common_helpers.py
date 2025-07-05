@@ -72,6 +72,7 @@ def validate_config(config_obj):
                 "exp_config_name": {"type": "string", "required": True},
                 "num_runs": {"type": "integer", "required": False, "min": 1},
                 "run_nums": {"type": "list", "required": False, "schema": {"type": "integer", "min": 1}},
+                "save_storage": {"type": "boolean", "required": False, "default": False},
                 "secrets_path": {"type": "string", "required": True},
             }
         },

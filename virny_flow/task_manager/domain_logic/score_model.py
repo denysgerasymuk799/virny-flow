@@ -102,13 +102,17 @@ async def update_logical_pipeline_score_model(exp_config_name: str, objectives_l
                                                       reversed_objectives=np.array(observation.extra_info['reversed_objectives']))
 
     # Step 5: Update the scores in DB
+    update_val_dct = {
+        "score": final_score,
+        "pipeline_quality_mean": pipeline_quality_mean,
+        "pipeline_quality_std": pipeline_quality_std,
+        "pipeline_execution_cost": pipeline_execution_cost,
+        "best_compound_pp_quality": max(logical_pipeline.best_compound_pp_quality, compound_pp_quality),
+        "num_completed_pps": logical_pipeline.num_completed_pps + 1,
+    }
     await db_client.update_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
                                  exp_config_name=exp_config_name,
                                  run_num=run_num,
                                  condition={"logical_pipeline_uuid": logical_pipeline_uuid},
-                                 update_val_dct={"score": final_score,
-                                                 "pipeline_quality_mean": pipeline_quality_mean,
-                                                 "pipeline_quality_std": pipeline_quality_std,
-                                                 "pipeline_execution_cost": pipeline_execution_cost,
-                                                 "num_completed_pps": logical_pipeline.num_completed_pps + 1})
+                                 update_val_dct=update_val_dct)
     return compound_pp_quality
