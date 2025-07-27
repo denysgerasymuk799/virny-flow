@@ -24,6 +24,12 @@ This repository contains the source code for **VirnyFlow**, a flexible and scala
   - `visualizations/`: Components for visualization of results
   - `external_dependencies/`: External libraries and dependencies
 
+**`virny_flow_interface/`**: Visualization interface of VirnyFlow
+- `app.py`: Script to launch a gradio application with all visualizations
+- `scripts/configs/`: Configuration files for the demo
+- `scripts/run_*.py`: Scripts for running different components of the system
+- `docker-compose.yaml`: Docker Compose file for running the demo
+
 **`virny_flow_demo/`**: Demo implementation of VirnyFlow
   - `configs/`: Configuration files for the demo
   - `docker-compose.yaml`: Docker Compose file for running the demo

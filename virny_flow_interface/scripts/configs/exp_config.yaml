@@ -1,0 +1,30 @@
+common_args:
+  exp_config_name: "gradio_demo7"
+  run_nums: [1]
+  save_storage: False
+  secrets_path: "/Users/denys_herasymuk/Research/NYU/VirnyFlow_Demo_Project/virnyflow-demo/scripts/configs/secrets_gmail.env"
+
+pipeline_args:
+  dataset: "diabetes"
+  sensitive_attrs_for_intervention: ["Gender"]
+  null_imputers: []
+  fairness_interventions: []
+  models: ["lr_clf", "rf_clf", "lgbm_clf"]
+
+optimisation_args:
+  ref_point: [0.25, 0.35, 0.2]
+  objectives:
+    - { name: "objective_1", metric: "F1", group: "overall", weight: 0.33 }
+    - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "Gender", weight: 0.33 }
+    - { name: "objective_3", metric: "Label_Stability", group: "overall", weight: 0.33 }
+  max_total_pipelines_num: 80
+  num_workers: 2
+  num_pp_candidates: 2
+  training_set_fractions_for_halting: [0.5, 1.0]
+  exploration_factor: 0.5
+  risk_factor: 0.5
+
+virny_args:
+  bootstrap_fraction: 0.8
+  n_estimators: 50
+  sensitive_attributes_dct: {'Gender': 'Female'}
