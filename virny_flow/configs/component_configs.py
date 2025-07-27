@@ -13,7 +13,7 @@ from xgboost import XGBClassifier
 from .constants import FairnessIntervention, INIT_RANDOM_STATE, ErrorRepairMethod
 import virny_flow.core.null_imputers.datawig_imputer as datawig_imputer
 from virny_flow.core.null_imputers.imputation_methods import (impute_with_deletion, impute_with_simple_imputer,
-                                                              impute_with_missforest, impute_with_kmeans)
+                                                              impute_with_missforest, impute_with_kmeans, impute_with_automl)
 
 
 # ====================================================================
@@ -71,11 +71,11 @@ NULL_IMPUTATION_CONFIG = {
             "mvi__final_fc_hidden_units": CategoricalHyperparameter("mvi__final_fc_hidden_units", [1, 10, 50, 100]),
         }
     },
-    # ErrorRepairMethod.automl.value: {
-    #     "method": impute_with_automl,
-    #     "default_kwargs": {"max_trials": 50, "tuner": None, "validation_split": 0.2, "epochs": 100},
-    #     "config_space": {}
-    # },
+    ErrorRepairMethod.automl.value: {
+        "method": impute_with_automl,
+        "default_kwargs": {"max_trials": 50, "tuner": None, "validation_split": 0.2, "epochs": 100},
+        "config_space": {}
+    },
 }
 
 FAIRNESS_INTERVENTION_CONFIG_SPACE = {
@@ -97,11 +97,7 @@ FAIRNESS_INTERVENTION_CONFIG_SPACE = {
         "fi__debias": CategoricalHyperparameter("fi__debias", [True]),
     },
     FairnessIntervention.EGR.value: {
-        # "fi__constraints": CategoricalHyperparameter("fi__constraints", ["DemographicParity", "EqualizedOdds"]),
-        # "fi__eps": UniformFloatHyperparameter("fi__eps", 0.01, 0.1),
         "fi__max_iter": UniformIntegerHyperparameter("fi__max_iter", 50, 100, q=10),
-        # "fi__nu": CategoricalHyperparameter("fi__nu", [0.1, 0.2, 0.3]),
-        # "fi__eta0": UniformFloatHyperparameter("fi__eta0", 1.0, 2.0),
         "fi__run_linprog_step": CategoricalHyperparameter("fi__run_linprog_step", [True, False]),
         "fi__drop_prot_attr": CategoricalHyperparameter("fi__drop_prot_attr", [True]),
     },           
