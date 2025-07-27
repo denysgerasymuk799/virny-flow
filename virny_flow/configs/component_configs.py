@@ -3,10 +3,14 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.linear_model import LinearRegression
 from lightgbm import LGBMClassifier
 from openbox.utils.config_space import (UniformIntegerHyperparameter, UniformFloatHyperparameter,
                                         CategoricalHyperparameter, Constant)
-from pytorch_tabular.models import GANDALFConfig
+from pytorch_tabular.models import (GANDALFConfig, DANetModel, MDNModel, NODEModel, FTTransformerModel,
+                                    GatedAdditiveTreeEnsembleModel)
 from pytorch_tabular.config import OptimizerConfig, TrainerConfig
 from xgboost import XGBClassifier
 
@@ -176,6 +180,32 @@ def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
                 'model__min_data_in_leaf': UniformIntegerHyperparameter("model__min_data_in_leaf", 100, 1000, q=50),
             }
         },
+        'knn_clf': {
+            'model': KNeighborsClassifier,
+            'default_kwargs': {},
+            'config_space': {
+                'model__n_neighbors': UniformIntegerHyperparameter("model__n_neighbors", lower=1, upper=30, default_value=5),
+                'model__weights': CategoricalHyperparameter("model__weights", ["uniform", "distance"], default_value="uniform"),
+                'model__p': CategoricalHyperparameter("model__p", [1, 2], default_value=2),  # 1 = manhattan, 2 = euclidean
+            }
+        },
+        'svc_clf': {
+            'model': SVC,
+            'default_kwargs': {'random_state': models_tuning_seed, 'probability': True},
+            'config_space': {
+                'model__C': UniformFloatHyperparameter("model__C", lower=0.01, upper=10.0, default_value=1.0, log=True),
+                'model__kernel': CategoricalHyperparameter("model__kernel", ["linear", "poly", "rbf", "sigmoid"]),
+                'model__gamma': CategoricalHyperparameter("model__gamma", ["scale", "auto"]),
+            }
+        },
+        'lr_reg': {
+            'model': LinearRegression,
+            'default_kwargs': {},
+            'config_space': {
+                'model__fit_intercept': CategoricalHyperparameter("model__fit_intercept", [True, False]),
+                'model__normalize': CategoricalHyperparameter("model__normalize", [True, False]),  # deprecated in latest sklearn but kept for backward compatibility
+            }
+        },
         ####################################################################
         # Use Pytorch Tabular API to work with tabular neural networks
         ####################################################################
@@ -201,5 +231,114 @@ def get_models_params_for_tuning(models_tuning_seed: int = INIT_RANDOM_STATE):
                 'model__gflu_feature_init_sparsity': CategoricalHyperparameter("model__gflu_feature_init_sparsity", [0.1 * i for i in range(6)]),
                 'model__learning_rate': CategoricalHyperparameter("model__learning_rate", [1e-3, 1e-4, 1e-5, 1e-6]),
             },
+        },
+        'danet_clf': {
+            'model': DANetModel,
+            'default_kwargs': {'seed': models_tuning_seed, 'task': 'classification'},
+            'optimizer_config': OptimizerConfig(),
+            'trainer_config': TrainerConfig(accelerator="cpu",
+                                            batch_size=512,
+                                            max_epochs=100,
+                                            seed=models_tuning_seed,
+                                            early_stopping=None,
+                                            checkpoints=None,
+                                            load_best=False,
+                                            trainer_kwargs=dict(enable_model_summary=False,
+                                                                log_every_n_steps=None,
+                                                                enable_progress_bar=True,
+                                                                enable_checkpointing=False,
+                                                                default_root_dir=None)),
+            'config_space': {
+                'model__num_layers': UniformIntegerHyperparameter("model__num_layers", 1, 10, q=1),
+                'model__dropout': UniformFloatHyperparameter("model__dropout", 0.0, 0.5, q=0.05),
+                'model__learning_rate': CategoricalHyperparameter("model__learning_rate", [1e-3, 1e-4, 1e-5]),
+            }
+        },
+        'mdn_clf': {
+            'model': MDNModel,
+            'default_kwargs': {'seed': models_tuning_seed, 'task': 'classification'},
+            'optimizer_config': OptimizerConfig(),
+            'trainer_config': TrainerConfig(accelerator="cpu",
+                                            batch_size=512,
+                                            max_epochs=100,
+                                            seed=models_tuning_seed,
+                                            early_stopping=None,
+                                            checkpoints=None,
+                                            load_best=False,
+                                            trainer_kwargs=dict(enable_model_summary=False,
+                                                                log_every_n_steps=None,
+                                                                enable_progress_bar=True,
+                                                                enable_checkpointing=False,
+                                                                default_root_dir=None)),
+            'config_space': {
+                'model__num_gaussian': UniformIntegerHyperparameter("model__num_gaussian", 1, 10, q=1),
+                'model__learning_rate': CategoricalHyperparameter("model__learning_rate", [1e-3, 1e-4, 1e-5]),
+            }
+        },
+        'node_clf': {
+            'model': NODEModel,
+            'default_kwargs': {'seed': models_tuning_seed, 'task': 'classification'},
+            'optimizer_config': OptimizerConfig(),
+            'trainer_config': TrainerConfig(accelerator="cpu",
+                                            batch_size=512,
+                                            max_epochs=100,
+                                            seed=models_tuning_seed,
+                                            early_stopping=None,
+                                            checkpoints=None,
+                                            load_best=False,
+                                            trainer_kwargs=dict(enable_model_summary=False,
+                                                                log_every_n_steps=None,
+                                                                enable_progress_bar=True,
+                                                                enable_checkpointing=False,
+                                                                default_root_dir=None)),
+            'config_space': {
+                'model__num_layers': UniformIntegerHyperparameter("model__num_layers", 1, 5, q=1),
+                'model__num_trees': UniformIntegerHyperparameter("model__num_trees", 32, 512, q=32),
+                'model__learning_rate': CategoricalHyperparameter("model__learning_rate", [1e-3, 1e-4, 1e-5]),
+            }
+        },
+        'ftt_clf': {
+            'model': FTTransformerModel,
+            'default_kwargs': {'seed': models_tuning_seed, 'task': 'classification'},
+            'optimizer_config': OptimizerConfig(),
+            'trainer_config': TrainerConfig(accelerator="cpu",
+                                            batch_size=512,
+                                            max_epochs=100,
+                                            seed=models_tuning_seed,
+                                            early_stopping=None,
+                                            checkpoints=None,
+                                            load_best=False,
+                                            trainer_kwargs=dict(enable_model_summary=False,
+                                                                log_every_n_steps=None,
+                                                                enable_progress_bar=True,
+                                                                enable_checkpointing=False,
+                                                                default_root_dir=None)),
+            'config_space': {
+                'model__attn_dropout': UniformFloatHyperparameter("model__attn_dropout", 0.0, 0.5, q=0.05),
+                'model__learning_rate': CategoricalHyperparameter("model__learning_rate", [1e-3, 1e-4, 1e-5]),
+                'model__num_heads': CategoricalHyperparameter("model__num_heads", [1, 2, 4, 8]),
+            }
+        },
+        'gate_clf': {
+            'model': GatedAdditiveTreeEnsembleModel,
+            'default_kwargs': {'seed': models_tuning_seed, 'task': 'classification'},
+            'optimizer_config': OptimizerConfig(),
+            'trainer_config': TrainerConfig(accelerator="cpu",
+                                            batch_size=512,
+                                            max_epochs=100,
+                                            seed=models_tuning_seed,
+                                            early_stopping=None,
+                                            checkpoints=None,
+                                            load_best=False,
+                                            trainer_kwargs=dict(enable_model_summary=False,
+                                                                log_every_n_steps=None,
+                                                                enable_progress_bar=True,
+                                                                enable_checkpointing=False,
+                                                                default_root_dir=None)),
+            'config_space': {
+                'model__num_trees': UniformIntegerHyperparameter("model__num_trees", 64, 1024, q=64),
+                'model__tree_depth': UniformIntegerHyperparameter("model__tree_depth", 2, 6, q=1),
+                'model__learning_rate': CategoricalHyperparameter("model__learning_rate", [1e-2, 1e-3, 1e-4]),
+            }
         },
     }
