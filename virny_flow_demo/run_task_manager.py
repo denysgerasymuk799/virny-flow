@@ -8,7 +8,7 @@ if __name__ == "__main__":
     exp_config_yaml_path = pathlib.Path(__file__).parent.joinpath('configs').joinpath('exp_config.yaml')
     exp_config = create_exp_config_obj(exp_config_yaml_path=exp_config_yaml_path)
 
-    task_manager = TaskManager(secrets_path=pathlib.Path(__file__).parent.joinpath('configs').joinpath('secrets.env'),
+    task_manager = TaskManager(secrets_path=pathlib.Path(__file__).parent.joinpath('configs').joinpath('secrets_gmail.env'),
                                host='127.0.0.1',
                                port=8000,
                                exp_config=exp_config)

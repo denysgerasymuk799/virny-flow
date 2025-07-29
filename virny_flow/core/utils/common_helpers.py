@@ -104,6 +104,16 @@ def validate_config(config_obj):
                         }
                     }
                 },
+                "optimizer": {
+                    "type": "dict",
+                    "required": False,
+                    "default": {"surrogate_type": "auto", "acq_type": "auto", "acq_optimizer_type": "auto"},
+                    "schema": {
+                        "surrogate_type": {"type": "string", "required": False, "default": "auto"},
+                        "acq_type": {"type": "string", "required": False, "default": "auto"},
+                        "acq_optimizer_type": {"type": "string", "required": False, "default": "auto"},
+                    }
+                },
                 "max_trials": {"type": "integer", "min": 1, "default": 1000},
                 "max_time_budget": {"type": "integer", "min": 60},
                 "max_total_pipelines_num": {"type": "integer", "min": 1},
