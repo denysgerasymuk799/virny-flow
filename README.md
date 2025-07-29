@@ -166,6 +166,11 @@ optimisation_args:
   objectives:  # Multi-objective optimization targets
     - { name: "objective_1", metric: "F1", group: "overall", weight: 0.25 }
     - { name: "objective_2", metric: "Equalized_Odds_FNR", group: "SEX&RAC1P", weight: 0.75 }
+
+  optimizer:  # Optimizer args for OpenBox
+    surrogate_type: 'gp'
+    acq_type: 'mesmo'
+    acq_optimizer_type: 'local_random'
   
   max_trials: 3               # Maximum number of optimization trials
   num_workers: 2              # Number of parallel workers

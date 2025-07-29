@@ -28,8 +28,9 @@ from virny_flow.core.fairness_interventions.postprocessors import get_eq_odds_po
 from virny_flow.core.fairness_interventions.inprocessors import get_adversarial_debiasing_wrapper_config, get_exponentiated_gradient_reduction_wrapper
 from virny_flow.core.custom_classes.core_db_client import run_transaction_with_retry, commit_with_retry
 from virny_flow.configs.structs import Task, PhysicalPipeline
-from virny_flow.configs.constants import (ErrorRepairMethod, STAGE_SEPARATOR, NO_FAIRNESS_INTERVENTION, ALL_EXPERIMENT_METRICS_TABLE,
-                                          FairnessIntervention, EXP_CONFIG_HISTORY_TABLE)
+from virny_flow.configs.constants import (ErrorRepairMethod, STAGE_SEPARATOR, NO_FAIRNESS_INTERVENTION,
+                                          ALL_EXPERIMENT_METRICS_TABLE,
+                                          FairnessIntervention, EXP_CONFIG_HISTORY_TABLE, LOGICAL_PIPELINE_SCORES_TABLE)
 from virny_flow.task_manager.domain_logic.bayesian_optimization import get_objective_losses
 
 
@@ -40,6 +41,19 @@ def get_best_compound_pp_quality(session, db: CoreDBClient, exp_config_name: str
                                                    query={"exp_config_name": exp_config_name,
                                                           "run_num": run_num})
     best_compound_pp_quality = exp_config_metadata_record['best_compound_pp_quality']
+
+    return best_compound_pp_quality
+
+
+def get_best_compound_pp_quality_per_lp(session, db: CoreDBClient, exp_config_name: str, run_num: int,
+                                        logical_pipeline_name: str):
+    # Read best_compound_pp_quality for exp_config_name and run_num
+    lp_record = db.read_one_query(collection_name=LOGICAL_PIPELINE_SCORES_TABLE,
+                                  session=session,
+                                  query={"exp_config_name": exp_config_name,
+                                         "logical_pipeline_name": logical_pipeline_name,
+                                         "run_num": run_num})
+    best_compound_pp_quality = lp_record['best_compound_pp_quality']
 
     return best_compound_pp_quality
 
@@ -89,6 +103,7 @@ class PipelineEvaluator(MLLifecycle):
                          virny_config=exp_config.virny_args)
 
         self.exp_config = exp_config
+        self.save_storage = exp_config.common_args.save_storage
         self.null_imputation_config = null_imputation_config
         self.fairness_intervention_config = fairness_intervention_config
 
@@ -131,12 +146,21 @@ class PipelineEvaluator(MLLifecycle):
             self._db.close()
             return None
 
+        # Depending on the save_storage config, get the best compound_pp_quality
+        # per logical pipeline or in total per experiment config
+        if self.save_storage:
+            best_compound_pp_quality = get_best_compound_pp_quality(session=session,
+                                                                    db=self._db,
+                                                                    exp_config_name=self.exp_config_name,
+                                                                    run_num=task.run_num)
+        else:
+            best_compound_pp_quality = get_best_compound_pp_quality_per_lp(session=session,
+                                                                           db=self._db,
+                                                                           exp_config_name=self.exp_config_name,
+                                                                           run_num=task.run_num,
+                                                                           logical_pipeline_name=task.physical_pipeline.logical_pipeline_name)
         # Write virny metrics from the latest halting round into database
         # if cur_test_compound_pp_quality is greater than best_compound_pp_quality
-        best_compound_pp_quality = get_best_compound_pp_quality(session=session,
-                                                                db=self._db,
-                                                                exp_config_name=self.exp_config_name,
-                                                                run_num=task.run_num)
         if cur_test_compound_pp_quality >= best_compound_pp_quality:
             null_imputer_name, fairness_intervention_name, model_name = task.physical_pipeline.logical_pipeline_name.split(STAGE_SEPARATOR)
             custom_tbl_fields_dct = dict()

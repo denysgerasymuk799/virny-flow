@@ -139,6 +139,7 @@ async def create_init_state_for_config(exp_config: DefaultMunch, db_client: Task
                         pipeline_quality_mean={objective['name']: 0.0 for objective in exp_config.optimisation_args.objectives},
                         pipeline_quality_std={objective['name']: 0.0 for objective in exp_config.optimisation_args.objectives},
                         pipeline_execution_cost=0.0,
+                        best_compound_pp_quality=0.0,
                         num_completed_pps=0,
                         surrogate_type=None,
                         acq_type=None,

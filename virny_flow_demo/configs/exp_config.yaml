@@ -1,13 +1,14 @@
 common_args:
   exp_config_name: "test_debug"
   run_nums: [1]
-  secrets_path: "/Users/denys_herasymuk/Research/NYU/VirnyFlow_Project/Code/virny-flow/virny_flow_demo/configs/secrets.env"
+  save_storage: false
+  secrets_path: "/Users/denys_herasymuk/Research/NYU/VirnyFlow_Project/Code/virny-flow/virny_flow_demo/configs/secrets_gmail.env"
 
 pipeline_args:
   dataset: "diabetes"
   sensitive_attrs_for_intervention: ["Gender"]
   null_imputers: []
-  fairness_interventions: ["AD", "EGR"]
+  fairness_interventions: []
   models: ["lr_clf", "rf_clf", "lgbm_clf"]
 
 optimisation_args:
@@ -15,9 +16,13 @@ optimisation_args:
   objectives:
     - { name: "objective_1", metric: "F1", group: "overall", weight: 0.25 }
     - { name: "objective_2", metric: "Equalized_Odds_TPR", group: "Gender", weight: 0.75 }
+#  optimizer:
+#    surrogate_type: 'gp'
+#    acq_type: 'mesmo'
+#    acq_optimizer_type: 'local_random'
 #  max_trials: 5
 #  max_time_budget: 60
-  max_total_pipelines_num: 20
+  max_total_pipelines_num: 5
   num_workers: 2
   num_pp_candidates: 2
   training_set_fractions_for_halting: [0.5, 1.0]

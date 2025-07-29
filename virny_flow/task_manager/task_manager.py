@@ -18,6 +18,9 @@ class TaskManager:
 
         # Initialize BO Advisor
         self.bo_advisor_config = BOAdvisorConfig()
+        self.bo_advisor_config.surrogate_type = exp_config.optimisation_args.optimizer.surrogate_type
+        self.bo_advisor_config.acq_type = exp_config.optimisation_args.optimizer.acq_type
+        self.bo_advisor_config.acq_optimizer_type = exp_config.optimisation_args.optimizer.acq_optimizer_type
         self.bo_advisor_config.ref_point = exp_config.optimisation_args.ref_point
         self.bo_advisor_config.num_objectives = len(exp_config.optimisation_args.objectives)
         self.bo_advisor_config.max_trials = exp_config.optimisation_args.max_trials

@@ -72,6 +72,7 @@ def validate_config(config_obj):
                 "exp_config_name": {"type": "string", "required": True},
                 "num_runs": {"type": "integer", "required": False, "min": 1},
                 "run_nums": {"type": "list", "required": False, "schema": {"type": "integer", "min": 1}},
+                "save_storage": {"type": "boolean", "required": False, "default": False},
                 "secrets_path": {"type": "string", "required": True},
             }
         },
@@ -101,6 +102,16 @@ def validate_config(config_obj):
                             "weight": {"type": "float", "required": False, "default": 0.5},
                             "constraint": {"type": "list", "required": False, "schema": {"type": "string"}}
                         }
+                    }
+                },
+                "optimizer": {
+                    "type": "dict",
+                    "required": False,
+                    "default": {"surrogate_type": "auto", "acq_type": "auto", "acq_optimizer_type": "auto"},
+                    "schema": {
+                        "surrogate_type": {"type": "string", "required": False, "default": "auto"},
+                        "acq_type": {"type": "string", "required": False, "default": "auto"},
+                        "acq_optimizer_type": {"type": "string", "required": False, "default": "auto"},
                     }
                 },
                 "max_trials": {"type": "integer", "min": 1, "default": 1000},
