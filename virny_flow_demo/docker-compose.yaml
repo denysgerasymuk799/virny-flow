@@ -6,7 +6,7 @@ networks:
 
 services:
   zookeeper:
-    image: bitnami/zookeeper:latest
+    image: bitnamilegacy/zookeeper:3.8.4-debian-12-r9
     container_name: zookeeper
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
@@ -16,7 +16,7 @@ services:
       - task-manager-network
 
   kafka_broker:
-    image: bitnami/kafka:latest
+    image: bitnamilegacy/kafka:3.3.2-debian-11-r11
     container_name: kafka_broker
     environment:
       - KAFKA_CFG_BROKER_ID=1
