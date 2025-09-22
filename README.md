@@ -78,9 +78,17 @@ CONNECTION_STRING=your_mongodb_connection_string
 1. Add your datasets to `virny_flow_demo/configs/datasets_config.py`. You need to use Virny wrapper BaseFlowDataset, where reading and basic preprocessing take place
    ([a link to documentation](https://dataresponsibly.github.io/Virny/examples/Multiple_Models_Interface_Use_Case/#preprocess-the-dataset-and-create-a-baseflowdataset-class)).
 
-2. Create an experiment config, similar to `virny_flow_demo/configs/exp_config.yaml`. A detailed description of each argument is available in the "Experiment Configuration" section below.
+2. Create an .env file with environment variables to connect to your MongoDB. The content of the file should be similar to the following:
+```shell
+DB_NAME=<db_name>
+CONNECTION_STRING=mongodb+srv://<db_username>:<db_password>@cluster0.boppxc1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+```
 
-3. Start the system locally and wait for its termination:
+3. Create an experiment config, similar to `virny_flow_demo/configs/exp_config.yaml`. A detailed description of each argument is available in the "Experiment Configuration" section below. _Do not forget to set your own `secrets_path`_.
+
+4. Check that paths to your `exp_config.yaml` and `secrets.env` are correct in `virny_flow_demo/run_task_manager.py` and `virny_flow_demo/run_worker.py` modules.
+
+5. Start the system locally and wait for its termination:
 ```shell
 # Start Kafka
 /virny-flow/virny_flow_demo $ docker-compose up --build
@@ -92,17 +100,17 @@ CONNECTION_STRING=your_mongodb_connection_string
 /virny-flow $ python3 -m virny_flow_demo.run_worker
 ```
 
-4. When the execution is complete, shutdown Kafka using the following command:
+6. When the execution is complete, shutdown Kafka using the following command:
 ```shell
 /virny-flow/virny_flow_demo $ docker-compose down --volumes
 ```
 
-5. Look at the metrics of the tuned ML pipelines using VirnyView (more details [in the documentation](https://dataresponsibly.github.io/Virny/introduction/virnyview_overview/)).
+7. Look at the metrics of the tuned ML pipelines using VirnyView (more details [in the documentation](https://dataresponsibly.github.io/Virny/introduction/virnyview_overview/)).
 ```shell
 /virny-flow $ python3 -m virny_flow_demo.run_virnyview
 ```
 
-6. Look at the progress of the Bayesian optimization using OpenBox UI.
+8. Look at the progress of the Bayesian optimization using OpenBox UI.
 ```shell
 /virny-flow $ python3 -m virny_flow_demo.run_openbox_ui
 ```
