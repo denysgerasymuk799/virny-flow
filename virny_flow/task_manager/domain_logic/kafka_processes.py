@@ -240,7 +240,7 @@ async def start_cost_model_updater(exp_config: DefaultMunch, lp_to_advisor: dict
             except Exception as err:
                 logger.error(f'Consume error: {err}')
                 await consumer.stop()
-                consumer = get_kafka_consumer()
+                consumer = get_kafka_consumer(kafka_broker_address)
                 await consumer.start()
     finally:
         await consumer.stop()
