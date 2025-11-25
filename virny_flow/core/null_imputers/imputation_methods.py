@@ -6,7 +6,6 @@ from virny_flow.configs.structs import MixedImputer
 from virny_flow.core.utils.pipeline_utils import encode_dataset_for_missforest, decode_dataset_for_missforest
 from virny_flow.core.utils.dataframe_utils import get_numerical_columns_indexes
 
-from .automl_imputer import AutoMLImputer
 from .missforest_imputer import MissForestImputer
 from .kmeans_imputer import KMeansImputer
 
@@ -63,33 +62,6 @@ def impute_with_simple_imputer(X_train_with_nulls: pd.DataFrame, X_tests_with_nu
                 mixed_imputer.cat_imputer.transform(X_tests_imputed_lst[i][categorical_columns_with_nulls])
 
     null_imputer_params_dct = {'num_imputer_strategy': kwargs['num'], 'cat_imputer_strategy': kwargs['cat']}
-    return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct
-
-
-def impute_with_automl(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: list,
-                       numeric_columns_with_nulls: list, categorical_columns_with_nulls: list,
-                       hyperparams: dict, **kwargs):
-    directory = kwargs['directory']
-    seed = kwargs['experiment_seed']
-    target_columns = list(set(numeric_columns_with_nulls) | set(categorical_columns_with_nulls))
-
-    X_train_imputed = copy.deepcopy(X_train_with_nulls)
-    X_tests_imputed_lst = list(map(lambda X_test_with_nulls: copy.deepcopy(X_test_with_nulls), X_tests_with_nulls_lst))
-
-    imputer = AutoMLImputer(max_trials=kwargs["max_trials"],
-                            tuner=kwargs["tuner"],
-                            validation_split=kwargs["validation_split"],
-                            epochs=kwargs["epochs"],
-                            seed=seed,
-                            directory=directory)
-    imputer.fit(X=X_train_imputed,
-                target_columns=target_columns,
-                verbose=0)
-
-    X_train_imputed = imputer.transform(X_train_imputed)
-    X_tests_imputed_lst = list(map(lambda X_test_imputed: imputer.transform(X_test_imputed), X_tests_imputed_lst))
-
-    null_imputer_params_dct = imputer.get_best_hyperparameters()
     return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct
 
 

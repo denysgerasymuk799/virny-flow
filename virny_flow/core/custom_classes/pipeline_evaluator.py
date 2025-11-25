@@ -1,5 +1,4 @@
 import gc
-import os
 import copy
 import time
 import socket
@@ -22,7 +21,7 @@ from virny_flow.core.preprocessing import preprocess_base_flow_dataset
 from virny_flow.core.custom_classes.core_db_client import CoreDBClient
 from virny_flow.core.fairness_interventions.preprocessors import remove_disparate_impact, apply_learning_fair_representations
 from virny_flow.core.fairness_interventions.postprocessors import get_eq_odds_postprocessor, get_reject_option_classification_postprocessor
-from virny_flow.core.fairness_interventions.inprocessors import get_adversarial_debiasing_wrapper_config, get_exponentiated_gradient_reduction_wrapper
+from virny_flow.core.fairness_interventions.inprocessors import get_exponentiated_gradient_reduction_wrapper
 from virny_flow.core.custom_classes.core_db_client import run_transaction_with_retry, commit_with_retry
 from virny_flow.configs.structs import Task, PhysicalPipeline
 from virny_flow.configs.constants import (ErrorRepairMethod, STAGE_SEPARATOR, NO_FAIRNESS_INTERVENTION,
@@ -499,13 +498,6 @@ class PipelineEvaluator(MLLifecycle):
                 models_dct = get_exponentiated_gradient_reduction_wrapper(estimator=models_dct[model_name],
                                                                           inprocessor_configs=fairness_intervention_params,
                                                                           sensitive_attr_for_intervention=sensitive_attribute)
-                models_dct_key = list(models_dct.keys())[0]
-                models_dct = {model_name: models_dct[models_dct_key]}
-            elif fairness_intervention_name == FairnessIntervention.AD.value:
-                models_dct = get_adversarial_debiasing_wrapper_config(privileged_groups=privileged_groups,
-                                                                      unprivileged_groups=unprivileged_groups,
-                                                                      inprocessor_configs=fairness_intervention_params,
-                                                                      sensitive_attr_for_intervention=sensitive_attribute)
                 models_dct_key = list(models_dct.keys())[0]
                 models_dct = {model_name: models_dct[models_dct_key]}
 

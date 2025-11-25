@@ -14,7 +14,7 @@ from xgboost import XGBClassifier
 from .constants import FairnessIntervention, INIT_RANDOM_STATE, ErrorRepairMethod
 import virny_flow.core.null_imputers.datawig_imputer as datawig_imputer
 from virny_flow.core.null_imputers.imputation_methods import (impute_with_deletion, impute_with_simple_imputer,
-                                                              impute_with_missforest, impute_with_kmeans, impute_with_automl)
+                                                              impute_with_missforest, impute_with_kmeans)
 
 
 # ====================================================================
@@ -71,11 +71,6 @@ NULL_IMPUTATION_CONFIG = {
         "config_space": {
             "mvi__final_fc_hidden_units": CategoricalHyperparameter("mvi__final_fc_hidden_units", [1, 10, 50, 100]),
         }
-    },
-    ErrorRepairMethod.automl.value: {
-        "method": impute_with_automl,
-        "default_kwargs": {"max_trials": 50, "tuner": None, "validation_split": 0.2, "epochs": 100},
-        "config_space": {}
     },
 }
 
