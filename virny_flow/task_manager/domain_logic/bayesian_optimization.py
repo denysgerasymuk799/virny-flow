@@ -1,6 +1,8 @@
 import uuid
 import random
+import logging
 import numpy as np
+import openbox
 from munch import DefaultMunch
 from openbox.core.async_batch_advisor import AsyncBatchAdvisor
 from openbox.utils.config_space import ConfigurationSpace
@@ -89,35 +91,30 @@ def select_next_logical_pipeline(logical_pipelines, exploration_factor: float):
     return selected_pipeline
 
 
+_OPENBOX_DUPLICATE_WARNING = "Cannot sample non duplicate configuration"
+_openbox_filter_installed = False
+
+
+class _OpenBoxWarningFilter(logging.Filter):
+    def filter(self, record):
+        return _OPENBOX_DUPLICATE_WARNING not in record.getMessage()
+
+
+def _install_openbox_warning_filter():
+    global _openbox_filter_installed
+    if _openbox_filter_installed:
+        return
+
+    ob_logger = getattr(openbox.logger, "logger", None)
+    if ob_logger is None:
+        return
+
+    ob_logger.addFilter(_OpenBoxWarningFilter())
+    _openbox_filter_installed = True
+
+
 def parse_config_space(config_space):
     return {k: ("None" if v is None else v) for k, v in config_space.items()}
-
-
-def estimate_config_space_cardinality(config_space):
-    """
-    Estimate how many unique configurations exist for a given ConfigurationSpace.
-    Returns an integer if the space is fully enumerable; otherwise None (treated as infinite).
-    """
-    cardinality = 1
-    for hp in config_space.get_hyperparameters():
-        hp_type = hp.__class__.__name__
-        if hp_type == "CategoricalHyperparameter":
-            cardinality *= len(hp.choices)
-        elif hp_type == "Constant":
-            continue
-        elif hp_type in {"UniformIntegerHyperparameter", "OrdinalHyperparameter"}:
-            lower = getattr(hp, "lower", None)
-            upper = getattr(hp, "upper", None)
-            if lower is None or upper is None:
-                return None
-            q = getattr(hp, "q", 1) or 1
-            steps = int((upper - lower) / q) + 1
-            cardinality *= steps
-        else:
-            # Treat continuous domains (e.g., UniformFloatHyperparameter) as infinite.
-            return None
-
-    return cardinality
 
 
 def get_suggestion(config_advisor: AsyncBatchAdvisor):
@@ -206,6 +203,7 @@ def get_config_advisor(logical_pipeline, bo_advisor_config):
                                        output_dir = bo_advisor_config.logging_dir,
                                        random_state = bo_advisor_config.random_state,
                                        logger_kwargs=_logger_kwargs)
+    _install_openbox_warning_filter()
 
     return config_advisor, config_space
 
@@ -219,18 +217,9 @@ def select_next_physical_pipelines(logical_pipeline: LogicalPipeline, lp_to_advi
     else:
         config_advisor, config_space = get_config_advisor(logical_pipeline, bo_advisor_config)
 
-    remaining_trials_budget = max(exp_config.optimisation_args.max_trials - logical_pipeline.num_trials, 0)
-    num_new_tasks = min(exp_config.optimisation_args.num_pp_candidates, remaining_trials_budget)
-
-    finite_cardinality = estimate_config_space_cardinality(config_space)
-    if finite_cardinality is not None:
-        remaining_unique_configs = max(finite_cardinality - logical_pipeline.num_trials, 0)
-        if remaining_unique_configs == 0:
-            return []
-        num_new_tasks = min(num_new_tasks, remaining_unique_configs)
-
     # Create physical pipelines based on MO-BO suggestions
     physical_pipelines = []
+    num_new_tasks = min(exp_config.optimisation_args.num_pp_candidates, exp_config.optimisation_args.max_trials - logical_pipeline.num_trials)
     for idx in range(num_new_tasks):
         suggestion = get_suggestion(config_advisor)
         null_imputer_params = {k.replace('mvi__', '', 1): v for k, v in suggestion.items() if k.startswith('mvi__')}
