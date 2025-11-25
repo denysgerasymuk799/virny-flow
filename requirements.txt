@@ -1,5 +1,4 @@
 virny@git+https://github.com/DataResponsibly/Virny.git@development
-pytorch-tabular==1.1.0
 lightgbm==4.3.0
 tensorflow==2.17.0
 kmodes==0.12.2
