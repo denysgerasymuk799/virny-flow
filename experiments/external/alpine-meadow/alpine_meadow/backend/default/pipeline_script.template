@@ -1,0 +1,15 @@
+{comment}
+
+import sys
+import json
+
+import pandas as pd
+{imports}
+
+# inputs
+path = sys.argv[1]
+df = pd.read_csv(path)
+inputs = [df]
+
+# code
+{code}

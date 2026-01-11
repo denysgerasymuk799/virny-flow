@@ -1,0 +1,33 @@
+virny_flow@git+https://github.com/denysgerasymuk799/virny-flow.git
+liac-arff
+catboost
+ConfigSpace
+emcee
+flask
+lightgbm
+numpy
+openml
+pandas
+protobuf
+pyarrow
+pyformance
+pyDOE
+pyyaml
+requests
+scikit-learn
+scikit-optimize
+shap
+smac==1.4.0
+xgboost
+
+# Alpine meadow primitives:
+# pip install alpine_meadow.primitives@git+https://gitlab.com/einblick/alpine-meadow-primitives.git#egg=alpine_meadow.primitives
+# OR
+# git clone https://gitlab.com/einblick/alpine-meadow-primitives.git
+# cd alpine-meadow-primitives
+# edit setup.py and fix 'python_requires'
+# pip install .
+
+virny@git+https://github.com/DataResponsibly/Virny.git@development
+python-dotenv~=1.0.1
+pymongo~=4.8.0

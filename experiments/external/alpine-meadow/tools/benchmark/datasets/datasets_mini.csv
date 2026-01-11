@@ -1,0 +1,12 @@
+Dataset,TaskType
+1491_one_hundred_plants_margin,CLASSIFICATION
+1567_poker_hand,CLASSIFICATION
+185_baseball,CLASSIFICATION
+196_autoMpg,REGRESSION
+26_radon_seed,REGRESSION
+299_libras_move,REGRESSION
+313_spectrometer,CLASSIFICATION
+38_sick,CLASSIFICATION
+4550_MiceProtein,CLASSIFICATION
+534_cps_85_wages,REGRESSION
+57_hypothyroid,CLASSIFICATION

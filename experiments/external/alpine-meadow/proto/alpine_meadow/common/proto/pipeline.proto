@@ -1,0 +1,92 @@
+syntax = "proto3";
+package alpine_meadow;
+
+message Primitive {
+    enum Name {
+        UNDEFINED = 0;
+
+        // data
+        ExtractColumnsByNames = 1;
+        HorizontalConcat = 2;
+        FeatureEngineering = 3;
+        TimestampConverter = 4;
+
+        // feature
+        Imputer = 100;
+        MinMaxScaler = 101;
+        StandardScaler = 102;
+        RobustScaler = 103;
+        LabelEncoder = 104;
+        OneHotEncoder = 105;
+        PCA = 106;
+        KernelPCA = 107;
+        TruncatedSVD = 108;
+        FastICA = 109;
+        PolynomialFeatures = 110;
+        SelectPercentile = 111;
+        GenericUnivariateSelect = 112;
+        SelectKBest = 113;
+        VarianceThreshold = 114;
+        FeatureAgglomeration = 115;
+        RBFSampler = 116;
+        Normalizer = 117;
+
+        // classification
+        SVC = 200;
+        LinearSVC = 201;
+        LogisticRegression = 202;
+        SGDClassifier = 203;
+        RandomForestClassifier = 204;
+        GaussianNB = 205;
+        AdaBoostClassifier = 206;
+        KNeighborsClassifier = 207;
+        BaggingClassifier = 208;
+        ExtraTreesClassifier = 209;
+        GradientBoostingClassifier = 210;
+        XGradientBoostingClassifier = 211;
+        LinearDiscriminantAnalysis = 212;
+        QuadraticDiscriminantAnalysis = 213;
+        DecisionTreeClassifier = 214;
+        LGBMClassifier = 215;
+        BasicClassifier = 216;
+        CatBoostClassifier = 217;
+
+        // regression
+        SVR = 300;
+        LinearSVR = 301;
+        LinearRegression = 302;
+        Ridge = 303;
+        SGDRegressor = 304;
+        RandomForestRegressor = 305;
+        GaussianProcessRegressor = 306;
+        AdaBoostRegressor = 307;
+        KNeighborsRegressor = 308;
+        BaggingRegressor = 309;
+        ExtraTreesRegressor = 310;
+        GradientBoostingRegressor = 311;
+        XGradientBoostingRegressor = 312;
+        ARDRegression = 313;
+        DecisionTreeRegressor = 314;
+        LGBMRegressor = 315;
+        RuleFit = 316;
+        BasicRegressor = 317;
+        CatBoostRegressor = 318;
+
+        // tuning
+        ThresholdingPrimitive = 400;
+    }
+
+    Name name = 1;
+    map<string, bytes> parameters = 2;
+    map<string, string> human_readable_parameters = 3;
+}
+
+message Step {
+    Primitive primitive = 1;
+    map<string, string> inputs = 2;
+    repeated string outputs = 3;
+}
+
+message PipelineDesc {
+    repeated Step steps = 1;
+}

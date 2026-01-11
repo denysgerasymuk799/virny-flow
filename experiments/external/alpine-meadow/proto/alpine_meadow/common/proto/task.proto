@@ -1,0 +1,58 @@
+syntax = "proto3";
+package alpine_meadow;
+
+enum DatasetType {
+    // Default value. Not to be used.
+    DATASET_TYPE_UNDEFINED = 0;
+
+    TABULAR = 1;
+}
+
+enum TaskKeyword {
+    // Default value. Not to be used.
+    TASK_TYPE_UNDEFINED = 0;
+
+    CLASSIFICATION = 1;
+    REGRESSION = 2;
+}
+
+enum PerformanceMetric {
+    // Default value. Not to be used.
+    METRIC_UNDEFINED = 0;
+
+    ACCURACY = 1;
+    PRECISION = 2;
+    RECALL = 3;
+    F1 = 4;
+    F1_MICRO = 5;
+    F1_MACRO = 6;
+    ROC_AUC = 7;
+    ROC_AUC_MICRO = 8;
+    ROC_AUC_MACRO = 9;
+    MEAN_SQUARED_ERROR = 10;
+    ROOT_MEAN_SQUARED_ERROR = 11;
+    MEAN_ABSOLUTE_ERROR = 12;
+    R_SQUARED = 13;
+    NORMALIZED_MUTUAL_INFORMATION = 14;
+    COHEN_KAPPA = 15;
+    SUPPORT = 16;
+}
+
+message ValidationMethod {
+    message UserProvided {}
+
+    message Holdout {
+        float train_proportion = 1;
+        float test_proportion = 2;
+    }
+
+    message CrossValidation {
+        int32 num_folds = 1;
+    }
+
+    oneof method {
+        UserProvided user_provided = 1;
+        Holdout holdout = 2;
+        CrossValidation cross_validation = 3;
+    }
+}

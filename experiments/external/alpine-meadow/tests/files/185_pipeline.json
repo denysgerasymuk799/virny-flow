@@ -1,0 +1,103 @@
+{
+  "pipeline": {
+    "steps": [
+      {
+        "primitive": {
+          "name": "ExtractColumnsByNames",
+          "humanReadableParameters": {
+            "names": "['Player', 'Number_seasons', 'Games_played', 'At_bats', 'Runs', 'Hits', 'Doubles', 'Triples', 'Home_runs', 'RBIs', 'Walks', 'Strikeouts', 'Batting_average', 'On_base_pct', 'Slugging_pct', 'Fielding_ave', 'Position', 'Hall_of_Fame']"
+          }
+        },
+        "inputs": {
+          "inputs": "inputs.0"
+        }
+      },
+      {
+        "primitive": {
+          "name": "ExtractColumnsByNames",
+          "humanReadableParameters": {
+            "names": "['Hall_of_Fame']"
+          }
+        },
+        "inputs": {
+          "inputs": "inputs.0"
+        }
+      },
+      {
+        "primitive": {
+          "name": "ExtractColumnsByNames",
+          "humanReadableParameters": {
+            "names": "['Player', 'Position']"
+          }
+        },
+        "inputs": {
+          "inputs": "steps.0"
+        }
+      },
+      {
+        "primitive": {
+          "name": "LabelEncoder"
+        },
+        "inputs": {
+          "inputs": "steps.2"
+        }
+      },
+      {
+        "primitive": {
+          "name": "ExtractColumnsByNames",
+          "humanReadableParameters": {
+            "names": "['Number_seasons', 'Games_played', 'At_bats', 'Runs', 'Hits', 'Doubles', 'Triples', 'Home_runs', 'RBIs', 'Walks', 'Strikeouts', 'Batting_average', 'On_base_pct', 'Slugging_pct', 'Fielding_ave']"
+          }
+        },
+        "inputs": {
+          "inputs": "steps.0"
+        }
+      },
+      {
+        "primitive": {
+          "name": "Imputer",
+          "humanReadableParameters": {
+            "strategy": "mean"
+          }
+        },
+        "inputs": {
+          "inputs": "steps.4"
+        }
+      },
+      {
+        "primitive": {
+          "name": "Normalizer"
+        },
+        "inputs": {
+          "inputs": "steps.5"
+        }
+      },
+      {
+        "primitive": {
+          "name": "HorizontalConcat"
+        },
+        "inputs": {
+          "right": "steps.6",
+          "left": "steps.3"
+        }
+      },
+      {
+        "primitive": {
+          "name": "RandomForestClassifier",
+          "humanReadableParameters": {
+            "min_samples_split": "2",
+            "n_estimators": "50",
+            "min_samples_leaf": "1",
+            "criterion": "gini",
+            "bootstrap": "True",
+            "max_depth": "4"
+          }
+        },
+        "inputs": {
+          "outputs": "steps.1",
+          "inputs": "steps.7"
+        }
+      }
+    ]
+  }
+}

@@ -7,6 +7,7 @@ from virny_flow.visualizations.use_case_queries import get_models_disparity_metr
 VIRNY_FLOW = 'virny_flow'
 ALPINE = 'alpine_meadow'
 AUTOSKLEARN = 'autosklearn'
+FLAML = 'flaml'
 
 
 def display_table_with_results(system_metrics_df, system_name: str, disparity_metric_name: str, group_name: str):
@@ -72,7 +73,7 @@ def display_table_with_results_heart(system_metrics_df, system_name: str, dispar
 
 
 def create_performance_plot(final_metrics_df, metric_name: str, base_font_size: int = 22):
-    system_order = [VIRNY_FLOW, ALPINE, AUTOSKLEARN]
+    system_order = [VIRNY_FLOW, ALPINE, AUTOSKLEARN, FLAML]
 
     box_chart = alt.Chart(
         final_metrics_df
@@ -130,7 +131,7 @@ def create_performance_plot(final_metrics_df, metric_name: str, base_font_size: 
 
 
 def create_performance_plot_v3(final_metrics_df, metric_name: str, base_font_size: int = 22):
-    system_order = [VIRNY_FLOW, ALPINE, AUTOSKLEARN]
+    system_order = [VIRNY_FLOW, ALPINE, AUTOSKLEARN, FLAML]
 
     box_chart = alt.Chart(
         final_metrics_df
@@ -187,8 +188,184 @@ def create_performance_plot_v3(final_metrics_df, metric_name: str, base_font_siz
     return final_chart
 
 
+def create_performance_plot_v2_folk_emp(final_metrics_df, metric_name: str, base_font_size: int = 22):
+    system_order = [VIRNY_FLOW, ALPINE, AUTOSKLEARN, FLAML]
+    metric_title = (metric_name.lower().replace('equalized_odds_', '') + 'D').upper() if 'equalized_odds' in metric_name.lower() else metric_name
+
+    # Filter executions with erroneous configs
+    metrics_df = final_metrics_df.copy()
+
+    # Add a dashed line for an ideal value
+    if 'equalized_odds' in metric_name.lower():
+        box_chart = alt.Chart().mark_boxplot(
+            ticks=True,
+            median={'stroke': 'white', 'strokeWidth': 0.7},
+        ).encode(
+            x=alt.X('system_name:N', title=None, sort=system_order, axis=alt.Axis(labels=False, labelAngle=-45)),
+            y=alt.Y(f'{metric_name}:Q', title=metric_title, scale=alt.Scale(zero=False)),
+            color=alt.Color('system_name:N', sort=system_order, legend=alt.Legend(title=None)),
+        )
+
+        zero_line = alt.Chart().mark_rule(
+            strokeDash=[4, 4], strokeWidth=1.5, color='red',
+        ).encode(
+            y=alt.datum(0)
+        )
+
+        final_chart = alt.layer(
+            box_chart, zero_line,
+            data=metrics_df,
+        ).facet(
+            column=alt.Column('num_workers:O', title='# of Workers'),
+        )
+    else:
+        box_chart = alt.Chart(
+            metrics_df
+        ).mark_boxplot(
+            ticks=True,
+            median={'stroke': 'white', 'strokeWidth': 0.7},
+        ).encode(
+            x=alt.X('system_name:N', title=None, sort=system_order, axis=alt.Axis(labels=False, labelAngle=-45)),
+            y=alt.Y(f'{metric_name}:Q', title=metric_title, scale=alt.Scale(zero=False)),
+            color=alt.Color('system_name:N', sort=system_order, legend=alt.Legend(title=None)),
+            column=alt.Column('num_workers:O', title='# of Workers'),
+        ).resolve_scale(
+            x='shared'
+        )
+        final_chart = box_chart
+
+    final_chart = (
+        final_chart.configure_axis(
+            labelFontSize=base_font_size + 4,
+            titleFontSize=base_font_size + 6,
+            labelFontWeight='normal',
+            titleFontWeight='normal',
+        ).configure_title(
+            fontSize=base_font_size + 2
+        ).configure_legend(
+            titleFontSize=base_font_size + 4,
+            labelFontSize=base_font_size + 2,
+            symbolStrokeWidth=10,
+            labelLimit=400,
+            titleLimit=300,
+            columns=4,
+            orient='top',
+            direction='horizontal',
+            titleAnchor='middle',
+            symbolOffset=10,
+        ).configure_facet(
+            spacing=20
+        ).configure_view(
+            stroke=None
+        ).configure_header(
+            labelOrient='bottom',
+            titleOrient='bottom',
+            labelPadding=5,
+            titlePadding=5,
+            labelFontSize=base_font_size + 2,
+            titleFontSize=base_font_size + 2,
+            labelFontWeight='normal',
+            titleFontWeight='normal',
+        ).configure_axis(
+            labelFontSize=base_font_size + 4,
+            titleFontSize=base_font_size + 6,
+            labelFontWeight='normal',
+            titleFontWeight='normal',
+        )
+    )
+    return final_chart
+
+
+def create_performance_plot_v2_heart(final_metrics_df, metric_name: str, base_font_size: int = 22):
+    system_order = [VIRNY_FLOW, ALPINE, AUTOSKLEARN, FLAML]
+    metric_title = (metric_name.lower().replace('equalized_odds_', '') + 'D').upper() if 'equalized_odds' in metric_name.lower() else metric_name
+
+    # Filter executions with erroneous configs
+    metrics_df = final_metrics_df.copy()
+
+    # Add a dashed line for an ideal value
+    if 'equalized_odds' in metric_name.lower():
+        box_chart = alt.Chart().mark_boxplot(
+            ticks=True,
+            median={'stroke': 'white', 'strokeWidth': 0.7},
+        ).encode(
+            x=alt.X('system_name:N', title=None, sort=system_order, axis=alt.Axis(labels=False, labelAngle=-45)),
+            y=alt.Y(f'{metric_name}:Q', title=metric_title, scale=alt.Scale(zero=False)),
+            color=alt.Color('system_name:N', sort=system_order, legend=alt.Legend(title=None)),
+        )
+
+        zero_line = alt.Chart().mark_rule(
+            strokeDash=[4, 4], strokeWidth=1.5, color='red',
+        ).encode(
+            y=alt.datum(0)
+        )
+
+        final_chart = alt.layer(
+            box_chart, zero_line,
+            data=metrics_df,
+        ).facet(
+            column=alt.Column('num_workers:O', title='# of Workers'),
+        )
+    else:
+        box_chart = alt.Chart(
+            metrics_df
+        ).mark_boxplot(
+            ticks=True,
+            median={'stroke': 'white', 'strokeWidth': 0.7},
+        ).encode(
+            x=alt.X('system_name:N', title=None, sort=system_order, axis=alt.Axis(labels=False, labelAngle=-45)),
+            y=alt.Y(f'{metric_name}:Q', title=metric_title, scale=alt.Scale(zero=False)),
+            color=alt.Color('system_name:N', sort=system_order, legend=alt.Legend(title=None)),
+            column=alt.Column('num_workers:O', title='# of Workers'),
+        ).resolve_scale(
+            x='shared'
+        )
+        final_chart = box_chart
+
+    final_chart = (
+        final_chart.configure_axis(
+            labelFontSize=base_font_size + 4,
+            titleFontSize=base_font_size + 6,
+            labelFontWeight='normal',
+            titleFontWeight='normal',
+        ).configure_title(
+            fontSize=base_font_size + 2
+        ).configure_legend(
+            titleFontSize=base_font_size + 4,
+            labelFontSize=base_font_size + 2,
+            symbolStrokeWidth=10,
+            labelLimit=400,
+            titleLimit=300,
+            columns=4,
+            orient='top',
+            direction='horizontal',
+            titleAnchor='middle',
+            symbolOffset=10,
+        ).configure_facet(
+            spacing=20
+        ).configure_view(
+            stroke=None
+        ).configure_header(
+            labelOrient='bottom',
+            titleOrient='bottom',
+            labelPadding=5,
+            titlePadding=5,
+            labelFontSize=base_font_size + 2,
+            titleFontSize=base_font_size + 2,
+            labelFontWeight='normal',
+            titleFontWeight='normal',
+        ).configure_axis(
+            labelFontSize=base_font_size + 4,
+            titleFontSize=base_font_size + 6,
+            labelFontWeight='normal',
+            titleFontWeight='normal',
+        )
+    )
+    return final_chart
+
+
 def create_performance_plot_v2(final_metrics_df, metric_name: str, base_font_size: int = 22):
-    system_order = [VIRNY_FLOW, ALPINE, AUTOSKLEARN]
+    system_order = [VIRNY_FLOW, ALPINE, AUTOSKLEARN, FLAML]
 
     metric_title = (metric_name.lower().replace('equalized_odds_', '') + 'D').upper() if 'equalized_odds' in metric_name.lower() else metric_name
 
@@ -245,7 +422,7 @@ def create_performance_plot_v2(final_metrics_df, metric_name: str, base_font_siz
             symbolStrokeWidth=10,
             labelLimit=400,
             titleLimit=300,
-            columns=3,
+            columns=4,
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
@@ -284,7 +461,10 @@ def create_speedup_plot(one_worker_metrics_df, final_metrics_df, metric_name: st
     avg_one_worker_metrics_am_df['system_name'] = ALPINE
     avg_one_worker_metrics_askl_df = avg_one_worker_metrics_df.copy()
     avg_one_worker_metrics_askl_df['system_name'] = AUTOSKLEARN
-    to_plot = pd.concat([avg_final_metrics_df, avg_one_worker_metrics_df, avg_one_worker_metrics_am_df, avg_one_worker_metrics_askl_df])
+    avg_one_worker_metrics_fl_df = avg_one_worker_metrics_df.copy()
+    avg_one_worker_metrics_fl_df['system_name'] = FLAML
+    to_plot = pd.concat([avg_final_metrics_df, avg_one_worker_metrics_df, avg_one_worker_metrics_am_df,
+                         avg_one_worker_metrics_askl_df, avg_one_worker_metrics_fl_df])
 
     # Compute speedup
     baseline_time = avg_one_worker_metrics_df[metric_name].values[0]
@@ -292,7 +472,7 @@ def create_speedup_plot(one_worker_metrics_df, final_metrics_df, metric_name: st
     to_plot['speedup'] = to_plot['baseline_time'] / to_plot[metric_name]
 
     # Create an altair line plot with colouring
-    system_order = [VIRNY_FLOW, ALPINE, AUTOSKLEARN]
+    system_order = [VIRNY_FLOW, ALPINE, AUTOSKLEARN, FLAML]
     chart = alt.Chart(to_plot).mark_line(point=alt.OverlayMarkDef(filled=True, size=100)).encode(
         x=alt.X('num_workers', title='# of Workers', scale=alt.Scale(type='linear')),
         y=alt.Y('speedup', title='Speedup'),
@@ -303,13 +483,17 @@ def create_speedup_plot(one_worker_metrics_df, final_metrics_df, metric_name: st
     if dataset == 'heart':
         speedup_am_workers_32 = to_plot[(to_plot['system_name'] == ALPINE) & (to_plot['num_workers'] == 32)]['speedup'].values[0]
         speedup_askl_workers_32 = to_plot[(to_plot['system_name'] == AUTOSKLEARN) & (to_plot['num_workers'] == 16)]['speedup'].values[0]
+        speedup_fl_workers_32 = to_plot[(to_plot['system_name'] == FLAML) & (to_plot['num_workers'] == 32)]['speedup'].values[0]
+        best_competitor_workers_32 = speedup_am_workers_32
     else:
         speedup_am_workers_32 = to_plot[(to_plot['system_name'] == ALPINE) & (to_plot['num_workers'] == 32)]['speedup'].values[0]
         speedup_askl_workers_32 = to_plot[(to_plot['system_name'] == AUTOSKLEARN) & (to_plot['num_workers'] == 32)]['speedup'].values[0]
+        speedup_fl_workers_32 = to_plot[(to_plot['system_name'] == FLAML) & (to_plot['num_workers'] == 32)]['speedup'].values[0]
+        best_competitor_workers_32 = speedup_fl_workers_32
 
     rule_data = pd.DataFrame({
-        'speedup': [speedup_am_workers_32, speedup_askl_workers_32, None],
-        'system_name': [ALPINE, AUTOSKLEARN, VIRNY_FLOW]
+        'speedup': [speedup_am_workers_32, speedup_askl_workers_32, speedup_fl_workers_32, None],
+        'system_name': [ALPINE, AUTOSKLEARN, FLAML, VIRNY_FLOW]
     })
     rules = alt.Chart(rule_data).mark_rule(strokeDash=[8, 4], strokeWidth=3).encode(
         y='speedup',
@@ -322,7 +506,7 @@ def create_speedup_plot(one_worker_metrics_df, final_metrics_df, metric_name: st
     arrow_tail_y_padding = 0.5 if dataset == 'heart' else 1
     arrow = alt.Chart(pd.DataFrame({
         'x': [128],
-        'y_start': [speedup_am_workers_32],
+        'y_start': [best_competitor_workers_32],
         'y_end': [speedup_vf_workers_128 - arrow_head_y_padding]
     })).mark_rule(
         color='black',
@@ -346,7 +530,7 @@ def create_speedup_plot(one_worker_metrics_df, final_metrics_df, metric_name: st
     )
     arrow_tail = alt.Chart(pd.DataFrame({
         'x': [128],
-        'y': [speedup_am_workers_32 + arrow_tail_y_padding]
+        'y': [best_competitor_workers_32 + arrow_tail_y_padding]
     })).mark_point(
         shape='triangle-down',
         color='black',
@@ -356,10 +540,10 @@ def create_speedup_plot(one_worker_metrics_df, final_metrics_df, metric_name: st
         y='y:Q'
     )
     # Define text to compare virny_flow and alpine_meadow
-    comparison_value = round(speedup_vf_workers_128 / speedup_am_workers_32, 2)
+    comparison_value = round(speedup_vf_workers_128 / best_competitor_workers_32, 2)
     comparison_text = alt.Chart(pd.DataFrame({
         'x': [128],
-        'y': [(speedup_vf_workers_128 - 1.5 - speedup_am_workers_32) / 2 + speedup_am_workers_32],
+        'y': [(speedup_vf_workers_128 - 1.5 - best_competitor_workers_32) / 2 + best_competitor_workers_32],
         'label': [f'{comparison_value}x']
     })).mark_text(
         align='right',

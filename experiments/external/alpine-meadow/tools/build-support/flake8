@@ -1,0 +1,28 @@
+[flake8]
+
+filename=*.py,*.pyx
+
+# Skip errors and warnings
+ignore=
+    # E111 indentation is not a multiple of four
+    E114,
+    # E114 indentation is not a multiple of four (comment)
+    E111,
+    # E225 missing whitespace around operator
+    E225,
+    # E402 module level import not at top of file
+    E402,
+    # may be undefined, or defined from star imports
+    F405
+    # E999 SyntaxError: invalid syntax
+    E999
+    # W503 line break before binary operator
+    W503
+    # W504 line break after binary operator
+    W504
+
+# Set maximum allowed line length (default: 79)
+max-line-length=120
+
+# exclude
+exclude=*/meta_features/*,*/common/proto/,one_hot_encoder.py
