@@ -146,22 +146,17 @@ class PipelineEvaluator(MLLifecycle):
             self._db.close()
             return None
 
-        # Depending on the save_storage config, get the best compound_pp_quality
-        # per logical pipeline or in total per experiment config
+        # When save_storage is enabled, only persist metrics for pipelines that
+        # beat the current global best; otherwise save metrics for every pipeline.
+        should_save_metrics = True
         if self.save_storage:
             best_compound_pp_quality = get_best_compound_pp_quality(session=session,
                                                                     db=self._db,
                                                                     exp_config_name=self.exp_config_name,
                                                                     run_num=task.run_num)
-        else:
-            best_compound_pp_quality = get_best_compound_pp_quality_per_lp(session=session,
-                                                                           db=self._db,
-                                                                           exp_config_name=self.exp_config_name,
-                                                                           run_num=task.run_num,
-                                                                           logical_pipeline_name=task.physical_pipeline.logical_pipeline_name)
-        # Write virny metrics from the latest halting round into database
-        # if cur_test_compound_pp_quality is greater than best_compound_pp_quality
-        if cur_test_compound_pp_quality >= best_compound_pp_quality:
+            should_save_metrics = cur_test_compound_pp_quality >= best_compound_pp_quality
+
+        if should_save_metrics:
             null_imputer_name, fairness_intervention_name, model_name = task.physical_pipeline.logical_pipeline_name.split(STAGE_SEPARATOR)
             custom_tbl_fields_dct = dict()
             custom_tbl_fields_dct['session_uuid'] = self._session_uuid
