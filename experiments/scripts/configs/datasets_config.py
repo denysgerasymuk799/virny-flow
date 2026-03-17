@@ -1,6 +1,8 @@
 from virny.datasets import (DiabetesDataset2019, GermanCreditDataset, ACSEmploymentDataset, ACSIncomeDataset,
                             LawSchoolDataset, CardiovascularDiseaseDataset, ACSPublicCoverageDataset)
 
+from scripts.configs.data_loaders import CVDAgeCohortDataset
+
 
 DATASET_CONFIG = {
     "diabetes": {
@@ -45,6 +47,21 @@ DATASET_CONFIG = {
     "heart": {
         "data_loader": CardiovascularDiseaseDataset,
         "data_loader_kwargs": {},
+        "test_set_fraction": 0.2,
+    },
+    "heart_cohort_a": {
+        "data_loader": CVDAgeCohortDataset,
+        "data_loader_kwargs": {"max_age": 44},
+        "test_set_fraction": 0.2,
+    },
+    "heart_cohort_c": {
+        "data_loader": CVDAgeCohortDataset,
+        "data_loader_kwargs": {"min_age": 55},
+        "test_set_fraction": 0.2,
+    },
+    "heart_cohort_b_and_c": {
+        "data_loader": CVDAgeCohortDataset,
+        "data_loader_kwargs": {"min_age": 45},
         "test_set_fraction": 0.2,
     },
 }
