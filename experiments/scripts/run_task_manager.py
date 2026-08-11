@@ -25,6 +25,11 @@ if __name__ == "__main__":
                         required=False,
                         default="localhost:9092",
                         help="Hostname and port of the Kafka broker")
+    parser.add_argument("--port",
+                        type=int,
+                        required=False,
+                        default=8000,
+                        help="Port for the TaskManager HTTP server")
     args = parser.parse_args()
 
     # Read an experimental config
@@ -33,7 +38,7 @@ if __name__ == "__main__":
 
     task_manager = TaskManager(secrets_path=exp_config.common_args.secrets_path,
                                host='127.0.0.1',
-                               port=8000,
+                               port=args.port,
                                kafka_broker_address=args.kafka_broker_address,
                                exp_config=exp_config)
     task_manager.run()

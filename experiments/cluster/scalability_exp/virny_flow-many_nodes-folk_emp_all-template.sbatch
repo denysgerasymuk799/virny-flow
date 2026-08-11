@@ -9,7 +9,7 @@
 #SBATCH --time=48:00:00
 #SBATCH --mail-type=END
 #SBATCH --mail-user=<EMAIL>@nyu.edu
-#SBATCH --account=pr_152_general
+#SBATCH --account=torch_pr_1201_tandon_advanced
 #SBATCH --job-name=<EXP_NAME>_<DATASET>_n<NUM_NODES>_w<NUM_WORKERS>_<EXP_CONFIG_SUFFIX>
 #SBATCH --output=%j_<EXP_NAME>_<DATASET>_n<NUM_NODES>_w<NUM_WORKERS>_<EXP_CONFIG_SUFFIX>.out
 
@@ -84,7 +84,8 @@ for ((i = 1; i < NUM_NODES; i++)); do
 ssh $EMAIL@$NODE_HOSTNAME <<'SSH_EOF'
 singularity exec \\
   --overlay /scratch/$EMAIL/virny_flow_project/vldb_sds_env.ext3:ro \\
-  /scratch/work/public/singularity/ubuntu-20.04.1.sif \\
+  --bind /scratch/$EMAIL/folktables_data/2018:/ext3/miniconda3/lib/python3.9/site-packages/virny/datasets/2018 \\
+  /share/apps/images/ubuntu-20.04.4.sif \\
   /bin/bash -c "source /ext3/env.sh; bash /home/$EMAIL/projects/virny-flow-experiments/cluster/$CLUSTER_TYPE/run_workers.sh $NUM_WORKERS $NUM_CPUS_PER_WORKER $SESSION $EMAIL $KAFKA_BROKER_ADDRESS $NODE_HOSTNAME"
 SSH_EOF
 
@@ -108,5 +109,6 @@ done
 echo "Starting the primary worker..."
 singularity exec \
 	    --overlay /scratch/$EMAIL/virny_flow_project/vldb_sds_env.ext3:ro \
-	    /scratch/work/public/singularity/ubuntu-20.04.1.sif \
+	    --bind /scratch/$EMAIL/folktables_data/2018:/ext3/miniconda3/lib/python3.9/site-packages/virny/datasets/2018 \
+	    /share/apps/images/ubuntu-20.04.4.sif \
 	    /bin/bash -c "source /ext3/env.sh; bash /home/$EMAIL/projects/virny-flow-experiments/cluster/$CLUSTER_TYPE/run_virny_flow_cluster.sh $NUM_WORKERS $NUM_CPUS_PER_WORKER $SESSION $EMAIL $KAFKA_BROKER_ADDRESS"

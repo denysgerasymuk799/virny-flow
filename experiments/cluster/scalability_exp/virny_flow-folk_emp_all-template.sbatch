@@ -9,7 +9,7 @@
 #SBATCH --time=48:00:00
 #SBATCH --mail-type=END
 #SBATCH --mail-user=<EMAIL>@nyu.edu
-#SBATCH --account=pr_152_general
+#SBATCH --account=torch_pr_1201_tandon_advanced
 #SBATCH --job-name=<EXP_NAME>_<DATASET>_w<NUM_WORKERS>_<EXP_CONFIG_SUFFIX>_<RUN_NUM>
 #SBATCH --output=%j_<EXP_NAME>_<DATASET>_w<NUM_WORKERS>_<EXP_CONFIG_SUFFIX>_<RUN_NUM>.out
 
@@ -58,7 +58,6 @@ optimisation_args:
   num_workers: $NUM_WORKERS
   num_pp_candidates: 5
 #  num_pp_candidates: 2
-#  num_pp_candidates: 1
   training_set_fractions_for_halting: [0.1, 0.25, 0.5, 1.0]
   exploration_factor: 0.5
   risk_factor: 0.5
@@ -77,5 +76,6 @@ bash /home/$EMAIL/projects/virny-flow-experiments/cluster/$CLUSTER_TYPE/run_sing
 # Start virny_flow_cluster
 singularity exec \
 	    --overlay /scratch/$EMAIL/virny_flow_project/vldb_sds_env.ext3:ro \
-	    /scratch/work/public/singularity/ubuntu-20.04.1.sif \
+	    --bind /scratch/$EMAIL/folktables_data/2018:/ext3/miniconda3/lib/python3.9/site-packages/virny/datasets/2018 \
+	    /share/apps/images/ubuntu-20.04.4.sif \
 	    /bin/bash -c "source /ext3/env.sh; bash /home/$EMAIL/projects/virny-flow-experiments/cluster/$CLUSTER_TYPE/run_virny_flow_cluster.sh $NUM_WORKERS $NUM_CPUS_PER_WORKER $SESSION $EMAIL"

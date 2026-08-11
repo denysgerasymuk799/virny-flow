@@ -39,6 +39,7 @@ cat <<EOL > ./$SESSION/exp_config.yaml
 common_args:
   exp_config_name: "$EXP_CONFIG_NAME"
   run_nums: [<RUN_NUM>]
+  save_storage: true
   secrets_path: "/home/$EMAIL/projects/virny-flow-experiments/scripts/configs/secrets.env"
 
 pipeline_args:

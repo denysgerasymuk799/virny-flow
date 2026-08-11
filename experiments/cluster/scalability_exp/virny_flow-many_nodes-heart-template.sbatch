@@ -27,7 +27,9 @@ NUM_CPUS_PER_WORKER=1
 CLUSTER_TYPE=many_node_configs
 EMAIL=<EMAIL>
 SESSION=${SLURM_JOB_ID}_${EXP_CONFIG_NAME}
-KAFKA_BROKER_ADDRESS="$(hostname -s):9093"
+# Per-job ports, so concurrent jobs on the same node do not collide
+source /home/<EMAIL>/projects/virny-flow-experiments/cluster/port_config.sh
+KAFKA_BROKER_ADDRESS="$(hostname -s):$VF_KAFKA_PORT_EXTERNAL"
 NODES=($(scontrol show hostnames "$SLURM_NODELIST"))
 
 
@@ -43,6 +45,7 @@ cat <<EOL > ./$SESSION/exp_config.yaml
 common_args:
   exp_config_name: "$EXP_CONFIG_NAME"
   run_nums: [<RUN_NUM>]
+  save_storage: true
   secrets_path: "/home/$EMAIL/projects/virny-flow-experiments/scripts/configs/secrets.env"
 
 pipeline_args:

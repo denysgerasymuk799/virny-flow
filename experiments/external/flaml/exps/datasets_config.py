@@ -43,6 +43,15 @@ DATASET_CONFIG = {
             "sensitive_attributes_dct": {'SEX': '2', 'RAC1P': ['2', '3', '4', '5', '6', '7', '8', '9'], 'SEX&RAC1P': None},
         },
     },
+    "folk_emp_all": {
+        "data_loader": ACSEmploymentDataset,
+        "data_loader_kwargs": {"state": None, "year": 2018, "with_nulls": False},
+        "test_set_fraction": 0.2,
+        "virny_config": {
+            "computation_mode": "no_bootstrap",
+            "sensitive_attributes_dct": {'SEX': '2', 'RAC1P': ['2', '3', '4', '5', '6', '7', '8', '9'], 'SEX&RAC1P': None},
+        },
+    },
     "folk_pubcov": {
         "data_loader": ACSPublicCoverageDataset,
         "data_loader_kwargs": {"state": ['NY'], "year": 2018, "with_nulls": False,

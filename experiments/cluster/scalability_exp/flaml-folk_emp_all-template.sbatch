@@ -9,7 +9,7 @@
 #SBATCH --time=48:00:00
 #SBATCH --mail-type=END
 #SBATCH --mail-user=<EMAIL>@nyu.edu
-#SBATCH --account=pr_152_general
+#SBATCH --account=torch_pr_1201_tandon_advanced
 #SBATCH --job-name=<EXP_NAME>_<DATASET>_w<NUM_WORKERS>_<EXP_CONFIG_SUFFIX>_<RUN_NUM>
 #SBATCH --output=%j_<EXP_NAME>_<DATASET>_w<NUM_WORKERS>_<EXP_CONFIG_SUFFIX>_<RUN_NUM>.out
 
@@ -21,8 +21,6 @@ module purge
 # ====================================================================================
 EXP_CONFIG_NAME=<EXP_NAME>_<DATASET>_w<NUM_WORKERS>_<EXP_CONFIG_SUFFIX>
 NUM_WORKERS=<NUM_WORKERS>
-NUM_CPUS_PER_WORKER=1
-CLUSTER_TYPE=one_node_configs  # one_node_configs or many_node_configs
 EMAIL=<EMAIL>
 SESSION=${SLURM_JOB_ID}_${EXP_CONFIG_NAME}_<RUN_NUM>
 
@@ -30,16 +28,12 @@ SESSION=${SLURM_JOB_ID}_${EXP_CONFIG_NAME}_<RUN_NUM>
 # ====================================================================================
 # Define exp_config.yaml
 # ====================================================================================
-mkdir ./$SESSION
-mkdir -p ./$SESSION/tmp/zookeeper-data/
-mkdir -p ./$SESSION/tmp/zookeeper-logs/
-mkdir -p ./$SESSION/tmp/kafka-logs/
+mkdir -p ./flaml/$SESSION/
 
-cat <<EOL > ./$SESSION/exp_config.yaml
+cat <<EOL > ./flaml/$SESSION/exp_config.yaml
 common_args:
   exp_config_name: "$EXP_CONFIG_NAME"
   run_nums: [<RUN_NUM>]
-  save_storage: true
   secrets_path: "/home/$EMAIL/projects/virny-flow-experiments/scripts/configs/secrets.env"
 
 pipeline_args:
@@ -56,9 +50,7 @@ optimisation_args:
     - { name: "objective_2", metric: "Equalized_Odds_FNR", group: "SEX&RAC1P", weight: <W2> }
   max_total_pipelines_num: <MAX_TOTAL_PIPELINES_NUM>
   num_workers: $NUM_WORKERS
-  num_pp_candidates: 5
-#  num_pp_candidates: 2
-#  num_pp_candidates: 1
+  num_pp_candidates: 1
   training_set_fractions_for_halting: [0.1, 0.25, 0.5, 1.0]
   exploration_factor: 0.5
   risk_factor: 0.5
@@ -69,13 +61,14 @@ EOL
 
 
 # ====================================================================================
-# Start VirnyFlow cluster
+# Start FLAML
 # ====================================================================================
-# Start Kafka
-bash /home/$EMAIL/projects/virny-flow-experiments/cluster/$CLUSTER_TYPE/run_singularity_kafka.sh $NUM_WORKERS $SESSION $EMAIL
+EXECUTION_COMMAND="
+python /home/$EMAIL/projects/virny-flow-experiments/external/flaml/multi_objective_flaml_exp.py --exp-config-yaml-path ./flaml/$SESSION/exp_config.yaml --storage-path ./flaml/$SESSION/
+"
 
-# Start virny_flow_cluster
 singularity exec \
 	    --overlay /scratch/$EMAIL/virny_flow_project/vldb_sds_env.ext3:ro \
-	    /scratch/work/public/singularity/ubuntu-20.04.1.sif \
-	    /bin/bash -c "source /ext3/env.sh; bash /home/$EMAIL/projects/virny-flow-experiments/cluster/$CLUSTER_TYPE/run_virny_flow_cluster.sh $NUM_WORKERS $NUM_CPUS_PER_WORKER $SESSION $EMAIL"
+	    --bind /scratch/$EMAIL/folktables_data/2018:/ext3/miniconda3/lib/python3.9/site-packages/virny/datasets/2018 \
+	    /share/apps/images/ubuntu-22.04.1.sif \
+	    /bin/bash -c "source /ext3/env.sh; ${EXECUTION_COMMAND}"
