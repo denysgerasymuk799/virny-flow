@@ -1,7 +1,7 @@
 # VirnyFlow
 
 <p align="center">
-    <img src="./docs/virnyflow_architecture.png" alt="System Design" width="75%">
+    <img src="./docs/virnyflow_architecture.png" alt="System Design" width="80%">
 </p>
 
 This repository contains the source code for **VirnyFlow**, a flexible and scalable framework for context-sensitive responsible ML pipeline development. VirnyFlow enables multi-stage, multi-objective optimization of ML pipelines with support for fairness, stability, and uncertainty as optimization criteria. The system is designed to facilitate human-in-the-loop workflows through a modular architecture that integrates evaluation protocol definition, Bayesian optimization and distributed execution. The repository also includes experiment configurations, execution scripts, and benchmarking pipelines used in the paper.
