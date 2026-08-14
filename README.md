@@ -1,4 +1,4 @@
-# VirnyFlow: A Design Space for Context-Sensitive Responsible Model Development
+# VirnyFlow
 
 <p align="center">
     <img src="./docs/virnyflow_architecture.png" alt="System Design" width="75%">
